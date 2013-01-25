@@ -1,0 +1,9 @@
+[submodule ".build"]
+	path = .build
+	url = https://git01.codeplex.com/fbbuild
+[submodule "build"]
+	path = build
+	url = https://git01.codeplex.com/fbbuild
+[submodule "fbbuild"]
+	path = fbbuild
+	url = https://git01.codeplex.com/fbbuild
