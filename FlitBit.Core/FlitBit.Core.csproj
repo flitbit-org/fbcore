@@ -72,6 +72,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\AssemblyInfo.corporate.cs">
+      <Link>Properties\AssemblyInfo.corporate.cs</Link>
+    </Compile>
     <Compile Include="AssemblyLocks.cs" />
     <Compile Include="Buffers\BufferReader.big-endian.cs" />
     <Compile Include="Buffers\BufferReader.cs" />
