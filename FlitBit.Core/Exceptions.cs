@@ -1,7 +1,9 @@
-﻿using System;
+﻿#region COPYRIGHT© 2009-2013 Phillip Clark. All rights reserved.
+// For licensing information see License.txt (MIT style licensing).
+#endregion
+
+using System;
 using System.Runtime.Serialization;
-using System.Diagnostics.Contracts;
-using FlitBit.Core.Properties;
 
 namespace FlitBit.Core
 {

@@ -1,4 +1,4 @@
-﻿#region COPYRIGHT© 2009-2012 Phillip Clark. All rights reserved.
+﻿#region COPYRIGHT© 2009-2013 Phillip Clark. All rights reserved.
 // For licensing information see License.txt (MIT style licensing).
 #endregion
 
@@ -9,12 +9,11 @@ using System.IO;
 using System.Net;
 using System.Reflection;
 using System.Text;
-using System.Web;
 using System.Xml.Linq;
+using FlitBit.Core.Parallel;
 using FlitBit.Core.Properties;
 using FlitBit.Core.Xml;
 using Newtonsoft.Json;
-using FlitBit.Core.Parallel;
 
 namespace FlitBit.Core.Net
 {

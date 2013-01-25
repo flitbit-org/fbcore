@@ -91,14 +91,8 @@
     <Compile Include="Collections\BitVector.cs" />
     <Compile Include="Collections\EnumerableKeyValuePairs.cs" />
     <Compile Include="Collections\Extensions.cs" />
-    <Compile Include="Collections\IRegistrar.cs" />
-    <Compile Include="Collections\IRegistrationKey.cs" />
     <Compile Include="Collections\KeyValuePair.cs" />
     <Compile Include="Collections\NameValueCollectionExtensions.cs" />
-    <Compile Include="Collections\Registrar.K.H.cs" />
-    <Compile Include="Collections\RegistrarExtensions.cs" />
-    <Compile Include="Collections\RegistrationEventArgs.cs" />
-    <Compile Include="Collections\RegistrationException.cs" />
     <Compile Include="Configuration\AbstractConfigurationElementCollection.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="DataGenerator.cs" />
@@ -139,10 +133,6 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\VersionRoot.targets">
-      <Link>VersionRoot.targets</Link>
-      <SubType>Designer</SubType>
-    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildThisFileDirectory)\csproj-import-after.targets" Condition="Exists('$(MSBuildThisFileDirectory)\csproj-import-after.targets')" />
