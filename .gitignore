@@ -1,0 +1,6 @@
+*.suo
+*.version.cs
+*.log
+packages/
+bin/
+obj/
