@@ -126,56 +126,7 @@ namespace FlitBit.Core
 			}
 			return value;
 		}
-
-		/// <summary>
-		/// Gets a lock for a type suitable for synchronizing activity on the type
-		/// without blocking other activity in the VM.
-		/// </summary>
-		/// <param name="type"></param>
-		/// <returns></returns>
-		public static Object GetLockForType(this Type type)
-		{
-			Contract.Requires<ArgumentNullException>(type != null);
-			return GetKeyForType(type);
-		}
-
-		/// <summary>
-		/// Gets a key for a type suitable for representing the type as a hashtable
-		/// or dictionary key without pinning the type and its assembly into memory.
-		/// </summary>
-		/// <param name="type"></param>
-		/// <returns></returns>
-		public static string GetKeyForType(this Type type)
-		{
-			Contract.Requires<ArgumentNullException>(type != null);
-			Contract.Assume(type.AssemblyQualifiedName != null);
-			return InternIt(type.AssemblyQualifiedName);
-		}
-
-		/// <summary>
-		/// Gets a lock for an assembly suitable for synchronizing activity on the 
-		/// assembly without blocking other activity in the VM.
-		/// </summary>
-		/// <param name="assembly">the assembly</param>
-		/// <returns>an object suitable for locking activity against the assembly</returns>
-		public static Object GetLockForAssembly(this Assembly assembly)
-		{
-			Contract.Requires<ArgumentNullException>(assembly != null);
-			return GetKeyForAssembly(assembly);
-		}
-
-		/// <summary>
-		/// Gets a key for an assembly suitable for representing the assembly as a hashtable
-		/// or dictionary key without pinning the assembly into memory.
-		/// </summary>
-		/// <param name="assembly">the assembly</param>
-		/// <returns>a key for an assembly</returns>
-		public static string GetKeyForAssembly(this Assembly assembly)
-		{
-			Contract.Requires<ArgumentNullException>(assembly != null);
-			return InternIt(assembly.FullName);
-		}
-				
+		
 		/// <summary>
 		/// Initializes a referenced variable if it is not already initialized.
 		/// </summary>

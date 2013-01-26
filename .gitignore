@@ -1,7 +1,8 @@
-*.suo
-*.version.cs
-*.log
-packages/
 bin/
 obj/
+packages/
+TestResults/
+*.suo
 *.user
+*.version.cs
+*.log
