@@ -180,7 +180,7 @@ namespace FlitBit.Core
 
 			var comp = EqualityComparer<T>.Default;
 
-			int prime = Constants.RandomPrime;
+			int prime = Constants.NotSoRandomPrime;
 			int result = seed ^ (items.GetHashCode() * prime);
 			foreach (var item in items)
 			{

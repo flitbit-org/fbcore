@@ -165,7 +165,7 @@ namespace FlitBit.Core.Collections
 		/// <returns></returns>
 		public override int GetHashCode()
 		{
-			int prime = Constants.RandomPrime;
+			int prime = Constants.NotSoRandomPrime;
 
 			int result = CHashCodeSeed * prime;
 			result ^= _count * prime;

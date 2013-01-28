@@ -310,7 +310,7 @@ namespace FlitBit.Core
 		/// <returns>the hashcode</returns>
 		public override int GetHashCode()
 		{
-			int prime = Constants.RandomPrime;
+			int prime = Constants.NotSoRandomPrime;
 			var code = CHashCodeSeed * prime;
 			code ^= (int)_status * prime;
 			return code;
