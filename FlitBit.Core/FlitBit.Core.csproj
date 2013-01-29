@@ -145,6 +145,7 @@
     <Compile Include="Parallel\ReactorOptions.cs" />
     <Compile Include="Parallel\ReactorState.cs" />
     <Compile Include="Parallel\UncaughtExceptionArgs.cs" />
+    <Compile Include="PronounceableWordGenerator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -165,6 +166,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <None Include="FlitBit.Core.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildThisFileDirectory)\csproj-import-after.targets" Condition="Exists('$(MSBuildThisFileDirectory)\csproj-import-after.targets')" />

@@ -3,6 +3,7 @@
 #endregion
 
 using System;
+using System.Linq;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Security.Cryptography;
@@ -159,9 +160,17 @@ namespace FlitBit.Core
 		[SuppressMessage("Microsoft.Design", "CA1024")]
 		public char GetChar()
 		{
-			var bytes = GetBytes(sizeof(Char));
-			var ofs = 0;
-			return _reader.ReadChar(bytes, ref ofs);
+			// repeat until we get a char that is not a surrogate.
+			while (true)
+			{
+				var bytes = GetBytes(sizeof(Char));
+				var ofs = 0;
+				var ch = _reader.ReadChar(bytes, ref ofs);
+				if (!Char.IsSurrogate(ch))
+				{
+					return ch;
+				}
+			}
 		}
 
 		/// <summary>
@@ -318,13 +327,12 @@ namespace FlitBit.Core
 					? Convert.ToChar(GetByte())
 					: GetChar();
 
-				// Sanitize the characters; can produce invalid unicode codepoints (won't round-trip).
-				if (!Char.IsSurrogate(c) 
-					&& (Char.IsWhiteSpace(c)
+				// Sanitize the characters; attempt to provide unicode codepoints (round-trip serialize).
+				if (Char.IsWhiteSpace(c)
 					|| Char.IsLetterOrDigit(c)
 					|| Char.IsPunctuation(c)
 					|| Char.IsSeparator(c)
-					|| Char.IsSymbol(c)))
+					|| Char.IsSymbol(c))
 				{
 					result[i++] = c;
 				}
@@ -342,6 +350,19 @@ namespace FlitBit.Core
 			if (length == 0) return String.Empty;
 
 			return new String(GetCharacterArray(length));
+		}
+
+		/// <summary>
+		/// Gets random fake-words.
+		/// </summary>
+		/// <param name="count">number of words to get.</param>
+		/// <returns>words</returns>
+		public string GetWords(int count)
+		{
+			Contract.Requires(count >= 0);
+			var ran = new Random();
+			var pronounceable = new PronounceableWordGenerator();
+			return String.Join(" ", pronounceable.Generate(ran, count, 1, 12));
 		}
 
 		/// <summary>

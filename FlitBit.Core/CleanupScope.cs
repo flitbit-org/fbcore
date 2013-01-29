@@ -94,6 +94,7 @@ namespace FlitBit.Core
 			ICleanupScope ambient;
 			return (Ambient.TryPeek(out ambient)) ? ambient.ShareScope() : default(ICleanupScope);
 		}
+
 		internal static ICleanupScope EnsureAmbient(ICleanupScope ambient)
 		{
 			var scope = ambient ?? new CleanupScope();
@@ -111,6 +112,7 @@ namespace FlitBit.Core
 		}
 
 		readonly ConcurrentStack<StackItem> _items = new ConcurrentStack<StackItem>();
+		readonly bool _independent;
 
 		EventHandler<CleanupScopeItemEventArgs> _itemAdded;
 		EventHandler<CleanupScopeItemEventArgs> _itemDisposed;
@@ -121,25 +123,48 @@ namespace FlitBit.Core
 		/// <summary>
 		/// Creates a new scope.
 		/// </summary>
-		public CleanupScope()
+		public CleanupScope() : this(false)
 		{
-			Ambient.Push(this);
+		}
+
+		/// <summary>
+		/// Creates a new scope.
+		/// </summary>
+		/// <param name="independent">indicates whether the scope is independent of the stack</param>
+		public CleanupScope(bool independent)
+		{
+			this._independent = independent;
+			if (!_independent)
+			{
+				Ambient.Push(this);
+			}
+		}
+
+		/// <summary>
+		/// Creates a new instance.
+		/// </summary>
+		/// <param name="independent">indicates whether the scope is independent of the stack</param>
+		/// <param name="ownerNotifier">the owner, notifier</param>
+		public CleanupScope(bool independent, object ownerNotifier)
+			: this(independent)
+		{
+			_ownerNotifier = ownerNotifier;
 		}
 
 		/// <summary>
 		/// Creates a new instance.
 		/// </summary>
 		/// <param name="ownerNotifier">the owner, notifier</param>
-		public CleanupScope(object ownerNotifier) : this()
+		public CleanupScope(object ownerNotifier) : this(false, ownerNotifier)
 		{
-			_ownerNotifier = ownerNotifier;
 		}
 		
 		/// <summary>
 		/// Creates a new scope and adds to it the disposable item given.
 		/// </summary>
+		/// <param name="independent">indicates whether the scope is independent of the stack</param>
 		/// <param name="items">Items to be disposed when the scope is cleaned up.</param>
-		public CleanupScope(params IDisposable[] items) : this()
+		public CleanupScope(bool independent, params IDisposable[] items) : this(independent)
 		{
 			Contract.Assume(items != null);
 			foreach (IDisposable item in items)
@@ -152,15 +177,34 @@ namespace FlitBit.Core
 		}
 
 		/// <summary>
+		/// Creates a new scope and adds to it the disposable item given.
+		/// </summary>
+		/// <param name="items">Items to be disposed when the scope is cleaned up.</param>
+		public CleanupScope(params IDisposable[] items)
+			: this(false, items)
+		{			
+		}
+
+		/// <summary>
 		/// Creates a new scope and adds an action to be performed when the scope is cleaned up.
 		/// </summary>
+		/// <param name="independent">indicates whether the scope is independent of the stack</param>
 		/// <param name="actions">an array of actions to be performed when the scope is cleaned up.</param>
-		public CleanupScope(params Action[] actions) : this()
+		public CleanupScope(bool independent, params Action[] actions) : this(independent)
 		{
 			foreach (Action action in actions)
 			{
 				_items.Push(new StackItem(action));
 			}
+		}
+
+		/// <summary>
+		/// Creates a new scope and adds an action to be performed when the scope is cleaned up.
+		/// </summary>
+		/// <param name="actions">an array of actions to be performed when the scope is cleaned up.</param>
+		public CleanupScope(params Action[] actions)
+			: this(false, actions)
+		{			
 		}
 		
 		/// <summary>
@@ -233,7 +277,7 @@ namespace FlitBit.Core
 		/// <returns><em>true</em> if disposed as a result of the call; otherwise <em>false</em></returns>
 		protected override bool PerformDispose(bool disposing)
 		{			
-			if (!Ambient.TryPop(this))
+			if (!_independent && !Ambient.TryPop(this))
 			{
 				// Notify the caller that they are calling dispose out of order.
 				// This never happens if the caller uses a 'using' 
