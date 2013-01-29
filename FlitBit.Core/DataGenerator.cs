@@ -319,10 +319,12 @@ namespace FlitBit.Core
 					: GetChar();
 
 				// Sanitize the characters; can produce invalid unicode codepoints (won't round-trip).
-				if (Char.IsWhiteSpace(c)
+				if (!Char.IsSurrogate(c) 
+					&& (Char.IsWhiteSpace(c)
 					|| Char.IsLetterOrDigit(c)
 					|| Char.IsPunctuation(c)
-					|| Char.IsSymbol(c))
+					|| Char.IsSeparator(c)
+					|| Char.IsSymbol(c)))
 				{
 					result[i++] = c;
 				}

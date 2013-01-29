@@ -4,6 +4,7 @@
 
 using System;
 using System.Threading;
+using System.Diagnostics.CodeAnalysis;
 
 namespace FlitBit.Core
 {
@@ -33,13 +34,10 @@ namespace FlitBit.Core
 		/// <summary>
 		/// Disposes the instance.
 		/// </summary>
+		[SuppressMessage("Microsoft.Design", "CA1063", Justification="By design; allows subclasses to determine when GC finalize is suppressed.")]
 		public void Dispose()
 		{
 			this.Dispose(true);
-			if (_disposal.CurrentState == DisposalState.Disposed)
-			{
-				GC.SuppressFinalize(this);
-			}
 		}
 
 		/// <summary>
@@ -49,22 +47,32 @@ namespace FlitBit.Core
 
 		void Dispose(bool disposing)
 		{
-			while (true)
+			while (_disposal.IsLessThan(DisposalState.Disposed))
 			{
-				var current = _disposal.CurrentState;
-				if (current == DisposalState.Disposing)
+				if (_disposal.HasState(DisposalState.Disposed))
+				{
+					throw new ObjectDisposedException(this.GetType().FullName);
+				}
+				else if (_disposal.HasState(DisposalState.Disposing))
 				{
 					if (!_disposal.TrySpinWaitForState(DisposalState.Incomplete, state => state == DisposalState.Disposed))
 					{
 						throw new ObjectDisposedException(this.GetType().FullName);
 					}
 				}
-
-				if (_disposal.TryTransition(DisposalState.Disposing, DisposalState.Incomplete, DisposalState.None))
+				else if (_disposal.TryTransition(DisposalState.Disposing, DisposalState.Incomplete, DisposalState.None))
 				{
-					if (PerformDispose(disposing)) _disposal.ChangeState(DisposalState.Disposed);
-					else _disposal.ChangeState(DisposalState.Incomplete);
-
+					if (PerformDispose(disposing))
+					{
+						if (_disposal.ChangeState(DisposalState.Disposed))
+						{
+							GC.SuppressFinalize(this);
+						}						
+					}
+					else
+					{
+						_disposal.ChangeState(DisposalState.Incomplete);
+					}
 					break;
 				}
 			}
@@ -77,5 +85,6 @@ namespace FlitBit.Core
 		/// <returns>Implementers should return true if the disposal was successful; otherwise false.</returns>
 		protected abstract bool PerformDispose(bool disposing);
 	}
+
 
 }
