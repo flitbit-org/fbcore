@@ -10,7 +10,7 @@
     <projectUrl>http://fbcore.codeplex.com/</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
-    <releaseNotes>Published to CodePlex and packaged for NuGet.</releaseNotes>
+    <releaseNotes>Added support for independent CleanupScopes.</releaseNotes>
     <copyright>Copyright 2013</copyright>
   </metadata>
 </package>
