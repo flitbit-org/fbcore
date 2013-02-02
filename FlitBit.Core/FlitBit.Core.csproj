@@ -131,7 +131,9 @@
     <Compile Include="Disposable.cs" />
     <Compile Include="Exceptions.cs" />
     <Compile Include="Extensions.cs" />
+    <Compile Include="Factory\IFactory.cs" />
     <Compile Include="ICleanupScope.cs" />
+    <Compile Include="Meta\InstanceScopeKind.cs" />
     <Compile Include="Net\Enums.cs" />
     <Compile Include="Net\ResourceRequestExtensions.cs" />
     <Compile Include="Parallel\AsyncResult.cs" />
@@ -166,7 +168,9 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Include="FlitBit.Core.nuspec" />
+    <None Include="FlitBit.Core.nuspec">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildThisFileDirectory)\csproj-import-after.targets" Condition="Exists('$(MSBuildThisFileDirectory)\csproj-import-after.targets')" />
