@@ -131,6 +131,7 @@
     <Compile Include="Disposable.cs" />
     <Compile Include="Exceptions.cs" />
     <Compile Include="Extensions.cs" />
+    <Compile Include="FactoryFactory.cs" />
     <Compile Include="Factory\IFactory.cs" />
     <Compile Include="ICleanupScope.cs" />
     <Compile Include="Meta\InstanceScopeKind.cs" />
