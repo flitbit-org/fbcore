@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.Contracts;
+using System;
 
 namespace FlitBit.Core.Factory
 {
@@ -14,6 +15,20 @@ namespace FlitBit.Core.Factory
 	public interface IFactory
 	{
 		/// <summary>
+		/// Indicates whether the factory can construct typeof T.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <returns></returns>
+		bool CanConstruct<T>();
+
+		/// <summary>
+		/// Gets the implementation type used when type T is constructed.
+		/// </summary>
+		/// <typeparam name="T">type T</typeparam>
+		/// <returns>If the factory can construct instances of type T, the implementation type used; otherwise null.</returns>
+		Type GetImplementationType<T>();
+
+		/// <summary>
 		/// Creates a new instance of type T.
 		/// </summary>
 		/// <typeparam name="T">type T</typeparam>
@@ -27,7 +42,7 @@ namespace FlitBit.Core.Factory
 		/// CodeContracts Class for IFactory
 		/// </summary>
 		[ContractClassFor(typeof(IFactory))]
-		public abstract class ContractForFactory : IFactory
+		internal abstract class ContractForFactory : IFactory
 		{
 			/// <summary>
 			/// Creates a new instance of type T.
@@ -39,6 +54,26 @@ namespace FlitBit.Core.Factory
 				Contract.Ensures(Contract.Result<T>() != null);
 
 				throw new System.NotImplementedException();
+			}
+
+			/// <summary>
+			/// Indicates whether the factory can construct typeof T.
+			/// </summary>
+			/// <typeparam name="T"></typeparam>
+			/// <returns></returns>
+			public bool CanConstruct<T>()
+			{
+				throw new NotImplementedException();
+			}
+
+			/// <summary>
+			/// Gets the implementation type used when type T is constructed.
+			/// </summary>
+			/// <typeparam name="T">type T</typeparam>
+			/// <returns>If the factory can construct instances of type T, the implementation type used; otherwise null.</returns>
+			public Type GetImplementationType<T>()
+			{
+				throw new NotImplementedException();
 			}
 		}
 	}		
