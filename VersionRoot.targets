@@ -7,10 +7,6 @@
 	
 	<PropertyGroup>
 		<AssemblyInfo Condition="!Exists('$(AssemblyInfo)')">Properties\AssemblyInfo.cs</AssemblyInfo>
-		<VersionMajor Condition="'$(VersionMajor)' == '' And Exists('$(MSBuildThisFileDirectory)major.version')">$([System.IO.File]::ReadAllText($(MSBuildThisFileDirectory)major.version))</VersionMajor>
-		<VersionMinor Condition="'$(VersionMinor)' == '' And Exists('$(MSBuildThisFileDirectory)minor.version')">$([System.IO.File]::ReadAllText($(MSBuildThisFileDirectory)minor.version))</VersionMinor>
-		<VersionBuild Condition="'$(VersionBuild)' == '' And Exists('$(MSBuildThisFileDirectory)build.version')">$([System.IO.File]::ReadAllText($(MSBuildThisFileDirectory)build.version))</VersionBuild>
-		<VersionRevision Condition="'$(VersionRevision)' == '' And Exists('$(MSBuildThisFileDirectory)revision.version')">$([System.IO.File]::ReadAllText($(MSBuildThisFileDirectory)revision.version))</VersionRevision>
 		<VersionMajor Condition="'$(VersionMajor)' == ''">0</VersionMajor>
 		<VersionMinor Condition="'$(VersionMinor)' == ''">1</VersionMinor>
 		<VersionBuild Condition="'$(VersionBuild)' == ''">0</VersionBuild>
@@ -54,15 +50,7 @@
 		</CreateProperty>
 	</Target>
 	
-
-	<Target Name="VersioningPrerequisites" 
-					DependsOnTargets="CalcFinalVersionRevision">
-		<!-- take build # from svn revision
-		<SvnInfo Condition="'$(VersionBuild)' == '0'" RepositoryPath="$(MSBuildThisFileDirectory.Replace('\', '/'))">
-			<Output TaskParameter="Revision" PropertyName="VersionBuild" />
-		</SvnInfo>
-		-->
-		
+	<Target Name="VersioningPrerequisites" DependsOnTargets="CalcFinalVersionRevision">
 		<!-- Creates the AssemblyInfo.*.version.cs file -->
 		<ItemGroup>
 			<Line Include="line0"><Text>using System;</Text></Line>
@@ -82,8 +70,7 @@
 		<WriteLinesToFile Condition="'$(MustWriteAssemblyInfoVersionFile)' == 'true'" File="$(AssemblyInfoVersionFile)" Lines="@(Line->'%(Text)')" Overwrite="true" />
 	</Target>
 
-	<Target Name="Versioning" BeforeTargets="BeforeBuild" Condition="'$(RunVersioning)' == 'True'"
-				DependsOnTargets="VersioningPrerequisites">
+	<Target Name="Versioning" BeforeTargets="BeforeBuild" Condition="'$(RunVersioning)' == 'True'" DependsOnTargets="VersioningPrerequisites">
 		<CreateItem Include="$(AssemblyInfoVersionFile)">
 			<Output TaskParameter="Include" ItemName="Compile" />
 		</CreateItem>		
