@@ -134,6 +134,7 @@
     <Compile Include="FactoryFactory.cs" />
     <Compile Include="Factory\IFactory.cs" />
     <Compile Include="ICleanupScope.cs" />
+    <Compile Include="IInterrogateDisposable.cs" />
     <Compile Include="Meta\InstanceScopeKind.cs" />
     <Compile Include="Net\Enums.cs" />
     <Compile Include="Net\ResourceRequestExtensions.cs" />

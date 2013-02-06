@@ -5,6 +5,7 @@
 using System;
 using System.Threading;
 using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 
 namespace FlitBit.Core
 {
@@ -12,7 +13,7 @@ namespace FlitBit.Core
 	/// Abstract logic for disposable objects.
 	/// </summary>
 	[Serializable]
-	public abstract class Disposable : IDisposable
+	public abstract class Disposable : IInterrogateDisposable
 	{
 		enum DisposalState
 		{
@@ -34,10 +35,12 @@ namespace FlitBit.Core
 		/// <summary>
 		/// Disposes the instance.
 		/// </summary>
-		[SuppressMessage("Microsoft.Design", "CA1063", Justification="By design; allows subclasses to determine when GC finalize is suppressed.")]
 		public void Dispose()
 		{
-			this.Dispose(true);
+			if (Dispose(true))
+			{
+				GC.SuppressFinalize(this);
+			}
 		}
 
 		/// <summary>
@@ -45,15 +48,13 @@ namespace FlitBit.Core
 		/// </summary>
 		public bool IsDisposed { get { return _disposal.CurrentState == DisposalState.Disposed; } }
 
-		void Dispose(bool disposing)
+		bool Dispose(bool disposing)
 		{
+			Contract.Requires<ObjectDisposedException>(!this.IsDisposed);
+
 			while (_disposal.IsLessThan(DisposalState.Disposed))
 			{
-				if (_disposal.HasState(DisposalState.Disposed))
-				{
-					throw new ObjectDisposedException(this.GetType().FullName);
-				}
-				else if (_disposal.HasState(DisposalState.Disposing))
+				if (_disposal.HasState(DisposalState.Disposing))
 				{
 					if (!_disposal.TrySpinWaitForState(DisposalState.Incomplete, state => state == DisposalState.Disposed))
 					{
@@ -66,7 +67,7 @@ namespace FlitBit.Core
 					{
 						if (_disposal.ChangeState(DisposalState.Disposed))
 						{
-							GC.SuppressFinalize(this);
+							return true;
 						}						
 					}
 					else
@@ -76,6 +77,7 @@ namespace FlitBit.Core
 					break;
 				}
 			}
+			return false;
 		}
 
 		/// <summary>
