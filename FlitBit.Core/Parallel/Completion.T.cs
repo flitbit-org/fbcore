@@ -31,7 +31,7 @@ namespace FlitBit.Core.Parallel
 	/// <summary>
 	/// Default waitable implementation.
 	/// </summary>
-	public class Completion<T>
+	public class Completion<T> : Disposable
 	{
 		const int Status_Waiting = 0;
 		const int Status_Completed = 1;
@@ -53,13 +53,26 @@ namespace FlitBit.Core.Parallel
 			}
 
 			internal Object Target { get; private set; }
-			internal bool IsCompleted { get { return Thread.VolatileRead(ref _status) == Status_Completed; } }
+
+			internal bool IsCompleted
+			{
+				get
+				{
+					Thread.MemoryBarrier();
+					var state = _status;
+					Thread.MemoryBarrier();
+					return state == Status_Completed;
+				}
+			}
 
 			internal ManualResetEventSlim Event
 			{
 				get
 				{
-					var waitable = Util.VolatileRead(ref _waitable);
+					Thread.MemoryBarrier();
+					var waitable = _waitable;
+					Thread.MemoryBarrier();
+
 					if (waitable == null)
 					{
 						waitable = new ManualResetEventSlim(this.IsCompleted);
@@ -114,7 +127,10 @@ namespace FlitBit.Core.Parallel
 
 			private void SignalCompletedEvent()
 			{
-				var waitable = Util.VolatileRead(ref _waitable);
+				Thread.MemoryBarrier();
+				var waitable = _waitable;
+				Thread.MemoryBarrier();
+
 				if (waitable != null && !waitable.IsSet)
 				{
 					waitable.Set();
@@ -123,7 +139,10 @@ namespace FlitBit.Core.Parallel
 
 			protected override bool PerformDispose(bool disposing)
 			{
-				var waitable = Util.VolatileRead(ref _waitable);
+				Thread.MemoryBarrier();
+				var waitable = _waitable;
+				Thread.MemoryBarrier();
+
 				if (waitable != null)
 				{
 					waitable.Dispose();
@@ -135,7 +154,7 @@ namespace FlitBit.Core.Parallel
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		EventHelper _events;
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		Object _lock;
+		Object _lock = new Object();
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		int _status;
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -148,7 +167,7 @@ namespace FlitBit.Core.Parallel
 		/// <summary>
 		/// Constructs a new instance.
 		/// </summary>
-		public Completion(Object target) 
+		public Completion(Object target)
 		{
 			_events = new EventHelper(this, target);
 			_status = Status_Waiting;
@@ -160,7 +179,21 @@ namespace FlitBit.Core.Parallel
 		/// <param name="value"></param>
 		public void MarkCompleted(T value)
 		{
-			PerformMarkCompleted(this, self => Util.VolatileWrite(ref _value, value), _events.NotifyCompleted);
+			// Ensure the wait completes only once...
+			var state = Thread.VolatileRead(ref _status);
+			if (_status != Status_Waiting)
+				throw new InvalidOperationException("Already completed");
+
+			Thread.MemoryBarrier();
+			_value = value;
+			_status = Status_Completed;
+			Thread.MemoryBarrier();
+
+			lock (_lock)
+			{
+				Monitor.PulseAll(_lock);
+			}
+			_events.NotifyCompleted();
 		}
 
 		/// <summary>
@@ -169,42 +202,26 @@ namespace FlitBit.Core.Parallel
 		/// <param name="fault"></param>
 		public void MarkFaulted(Exception fault)
 		{
-			PerformMarkCompleted(this, self => _fault = fault, _events.NotifyFaulted);
-		}
+			// Ensure the wait completes only once...
+			var state = Thread.VolatileRead(ref _status);
+			if (_status != Status_Waiting)
+				throw new InvalidOperationException("Already completed");
 
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		private Object SyncRoot
-		{
-			get
+			Thread.MemoryBarrier();
+			_fault = fault;
+			_status = Status_Completed;
+			Thread.MemoryBarrier();
+
+			lock (_lock)
 			{
-				var sync = Thread.VolatileRead(ref _lock);
-				if (sync == null)
-				{
-					Boolean done = this.IsCompleted;
-					sync = new Object();
-
-					var prior = Interlocked.CompareExchange(ref _lock, sync, null);
-					if (prior != null)
-					{
-						sync = prior;
-					}
-					else
-					{
-						if (!done && this.IsCompleted)
-						{
-							lock (sync)
-							{
-								// The value was set while creating sync root, signal it.
-								Monitor.PulseAll(sync);
-							}
-						}
-					}
-
-				}
-				return sync;
+				Monitor.PulseAll(_lock);
 			}
+			_events.NotifyFaulted();
 		}
-
+				
+		/// <summary>
+		/// Indicates whether the wait has completed.
+		/// </summary>
 		/// <summary>
 		/// Indicates whether the wait has completed.
 		/// </summary>
@@ -218,8 +235,8 @@ namespace FlitBit.Core.Parallel
 		/// <summary>
 		/// Gets the exception that caused the fault.
 		/// </summary>
-		public Exception Exception { get { return _fault; } }
-
+		public Exception Exception { get { return Util.VolatileRead(ref _fault); } }
+		
 		/// <summary>
 		/// Waits (blocks the current thread) until the value is present or the timeout is exceeded.
 		/// </summary>
@@ -233,13 +250,12 @@ namespace FlitBit.Core.Parallel
 
 			if (!this.IsFaulted && !this.IsCompleted)
 			{
-				var sync = this.SyncRoot;
-				lock (sync)
+				lock (_lock)
 				{
 					remainingTicks = timeoutExpiration - DateTime.Now.Ticks;
 					while (!this.IsFaulted && !this.IsCompleted && remainingTicks > 0)
 					{
-						if (!Monitor.Wait(sync, new TimeSpan(remainingTicks)))
+						if (!Monitor.Wait(_lock, new TimeSpan(remainingTicks)))
 						{
 							return false;
 						}
@@ -267,12 +283,16 @@ namespace FlitBit.Core.Parallel
 		/// <returns><em>true</em> if the value was successfully read; otherwise <em>false</em>.</returns>
 		public bool TryGetValue(out T value)
 		{
-			if (!this.IsFaulted && this.IsCompleted)
+			if (this.IsCompleted)
 			{
-				value = Util.VolatileRead(ref _value);
-				return true;
+				if (!this.IsFaulted)
+				{
+					Thread.MemoryBarrier();
+					value = _value;
+					Thread.MemoryBarrier();
+					return true;
+				}
 			}
-
 			value = default(T);
 			return false;
 		}
@@ -291,16 +311,18 @@ namespace FlitBit.Core.Parallel
 			{
 				return TryGetValue(TimeSpan.FromMilliseconds(millisecondsTimeout), out value);
 			}
-			else if (!this.IsFaulted && this.IsCompleted)
+			else if (this.IsCompleted)
 			{
-				value = Util.VolatileRead(ref _value);
-				return true;
+				if (!this.IsFaulted)
+				{
+					Thread.MemoryBarrier();
+					value = _value;
+					Thread.MemoryBarrier();
+					return true;
+				}
 			}
-			else
-			{
-				value = default(T);
-				return false;
-			}
+			value = default(T);
+			return false;
 		}
 
 		/// <summary>
@@ -315,7 +337,9 @@ namespace FlitBit.Core.Parallel
 		{
 			if (Wait(timeout))
 			{
-				value = Util.VolatileRead(ref _value);
+				Thread.MemoryBarrier();
+				value = _value;
+				Thread.MemoryBarrier();
 				return true;
 			}
 			else
@@ -333,17 +357,19 @@ namespace FlitBit.Core.Parallel
 		{
 			if (!this.IsFaulted && !this.IsCompleted)
 			{
-				var sync = this.SyncRoot;
-				lock (sync)
+				lock (_lock)
 				{
 					while (!this.IsFaulted && !this.IsCompleted)
-						Monitor.Wait(sync);
+						Monitor.Wait(_lock);
 				}
 			}
 			if (this.IsFaulted)
 				throw new ParallelException("Background thread faulted.", _fault);
 
-			return _value;
+			Thread.MemoryBarrier();
+			var value = _value;
+			Thread.MemoryBarrier();
+			return value;
 		}
 
 		/// <summary>
@@ -360,7 +386,10 @@ namespace FlitBit.Core.Parallel
 			}
 			else if (!this.IsFaulted && this.IsCompleted)
 			{
-				return _value;
+				Thread.MemoryBarrier();
+				var value = _value;
+				Thread.MemoryBarrier();
+				return value;
 			}
 
 			throw new TimeoutException();
@@ -376,7 +405,10 @@ namespace FlitBit.Core.Parallel
 		{
 			if (Wait(timeout))
 			{
-				return _value;
+				Thread.MemoryBarrier();
+				var value = _value;
+				Thread.MemoryBarrier();
+				return value;
 			}
 
 			throw new TimeoutException();
@@ -391,8 +423,7 @@ namespace FlitBit.Core.Parallel
 			{
 				if (!this.IsCompleted)
 				{
-					var sync = this.SyncRoot;
-					lock (sync)
+					lock (_lock)
 					{
 						if (!this.IsCompleted)
 						{
@@ -420,8 +451,7 @@ namespace FlitBit.Core.Parallel
 			{
 				if (!this.IsFaulted)
 				{
-					var sync = this.SyncRoot;
-					lock (sync)
+					lock (_lock)
 					{
 						if (!this.IsFaulted && !this.IsCompleted)
 						{
@@ -438,7 +468,7 @@ namespace FlitBit.Core.Parallel
 				}
 			}
 			remove { _events._faulted -= value; }
-		}		
+		}
 
 		/// <summary>
 		/// Gets an async result for .NET framework synchronization.
@@ -469,7 +499,9 @@ namespace FlitBit.Core.Parallel
 		/// <returns></returns>
 		public AsyncResult ToAsyncResult(AsyncCallback asyncCallback, Object asyncHandback, Object asyncState)
 		{
-			var async = Util.VolatileRead(ref _asyncResult);
+			Thread.MemoryBarrier();
+			var async = _asyncResult;
+			Thread.MemoryBarrier();
 			if (async == null)
 			{
 				async = new AsyncResult(asyncCallback, asyncHandback, asyncState);
@@ -574,7 +606,7 @@ namespace FlitBit.Core.Parallel
 		/// <typeparam name="R">result type R</typeparam>
 		/// <param name="continuation">a function to run when the completion succeeds</param>
 		/// <returns>a completion for the success function</returns>
-		public Completion<R> Continue<R>(ContinuationFunc<T,R> continuation)
+		public Completion<R> Continue<R>(ContinuationFunc<T, R> continuation)
 		{
 			if (continuation == null) throw new ArgumentNullException("after");
 
@@ -617,32 +649,16 @@ namespace FlitBit.Core.Parallel
 
 			return waitable;
 		}
-						
+
 		/// <summary>
-		/// Helper method for marking completions.
+		/// Performs dispose on the completion.
 		/// </summary>
-		/// <typeparam name="TSelf"></typeparam>
-		/// <param name="self"></param>
-		/// <param name="callback"></param>
-		/// <param name="after">an action to run after the operation completes</param>
-		protected static void PerformMarkCompleted<TSelf>(TSelf self, Action<TSelf> callback, Action after)
-			where TSelf : Completion<T>
+		/// <param name="disposing"></param>
+		/// <returns></returns>
+		protected override bool PerformDispose(bool disposing)
 		{
-			// Ensure the wait completes only once...
-			if (Interlocked.CompareExchange(ref self._status, Status_Completed, Status_Waiting) != Status_Waiting)
-				throw new InvalidOperationException("Already completed");
-
-			if (callback != null) callback(self);
-
-			var sync = self.SyncRoot;
-			if (sync != null)
-			{
-				lock (sync)
-				{
-					Monitor.PulseAll(sync);
-				}
-			}			
-			if (after != null) after();
+			Util.Dispose(ref _events);
+			return true;
 		}
 	}
 }

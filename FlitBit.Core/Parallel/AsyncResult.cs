@@ -20,13 +20,13 @@ namespace FlitBit.Core.Parallel
 
 		readonly AsyncCallback _asyncCallback;
 		readonly Object _asyncHandback;
-		
+
 		int _completedState = Status_Pending;
 
 		ManualResetEvent _waitHandle;
 		Exception _fault;
 		bool _disposed = false;
-		
+
 		/// <summary>
 		/// Creates a new instance.
 		/// </summary>
@@ -66,7 +66,7 @@ namespace FlitBit.Core.Parallel
 			_asyncHandback = asyncHandback;
 			this.AsyncState = asyncState;
 		}
-		
+
 		#region IAsyncResult implementation
 
 		/// <summary>
@@ -81,7 +81,10 @@ namespace FlitBit.Core.Parallel
 		{
 			get
 			{
-				return Thread.VolatileRead(ref _completedState) == Status_CompletedSynchronously;
+				Thread.MemoryBarrier();
+				var completedState = _completedState;
+				Thread.MemoryBarrier();
+				return completedState == Status_CompletedSynchronously;
 			}
 		}
 		/// <summary>
@@ -93,7 +96,9 @@ namespace FlitBit.Core.Parallel
 			{
 				if (_disposed) throw new ObjectDisposedException(this.GetType().GetReadableFullName());
 
-				var handle = Util.VolatileRead(ref _waitHandle);
+				Thread.MemoryBarrier();
+				var handle = _waitHandle;
+				Thread.MemoryBarrier();
 				if (handle == null)
 				{
 					Boolean done = IsCompleted;
@@ -120,28 +125,91 @@ namespace FlitBit.Core.Parallel
 		/// <summary>
 		/// Gets a value indicating whether the asynchronous operation has completed.
 		/// </summary>
-		public bool IsCompleted { get { return Thread.VolatileRead(ref _completedState) > Status_Completing; } }
+		public bool IsCompleted
+		{
+			get
+			{
+				Thread.MemoryBarrier();
+				var completedState = _completedState;
+				Thread.MemoryBarrier();
+				return completedState > Status_Completing;
+			}
+		}
 
 		#endregion
 
 		/// <summary>
 		/// Indicates whether the asynchronous operation resulted in a fault.
 		/// </summary>
-		public bool IsFaulted { get { return Util.VolatileRead(ref _fault) != null; } }
+		public bool IsFaulted
+		{
+			get
+			{
+				Thread.MemoryBarrier();
+				var fault = _fault;
+				Thread.MemoryBarrier();
+				return fault != null;
+			}
+		}
 
 		/// <summary>
 		/// Gets the exception that caused the fault.
 		/// </summary>
-		public Exception Exception { get { return _fault; } }
+		public Exception Exception
+		{
+			get
+			{
+				Thread.MemoryBarrier();
+				var fault = _fault;
+				Thread.MemoryBarrier();
+				return fault;
+			}
+		}
 
 		internal void MarkCompleted(bool completedSynchronously)
 		{
-			PerformMarkCompleted(this, null, completedSynchronously);
+			if (Interlocked.CompareExchange(ref _completedState, Status_Completing, Status_Pending) != Status_Pending)
+				throw new InvalidOperationException(Resources.Error_AsyncResultAlreadySet);
+
+			var finalState = completedSynchronously ? Status_CompletedSynchronously : Status_CompletedAsynchronously;
+			Interlocked.Exchange(ref _completedState, finalState);
+
+			Thread.MemoryBarrier();
+			var waitable = _waitHandle;
+			Thread.MemoryBarrier();
+			if (waitable != null)
+			{
+				waitable.Set();
+			}
+			Thread.MemoryBarrier();
+			var callback = _asyncCallback;
+			Thread.MemoryBarrier();
+			if (callback != null) callback(this);
 		}
 
 		internal void MarkException(Exception ex, bool completedSynchronously)
 		{
-			PerformMarkCompleted(this, self => { self._fault = ex; }, completedSynchronously);
+			if (Interlocked.CompareExchange(ref _completedState, Status_Completing, Status_Pending) != Status_Pending)
+				throw new InvalidOperationException(Resources.Error_AsyncResultAlreadySet);
+
+			Thread.MemoryBarrier();
+			_fault = ex;
+			Thread.MemoryBarrier();
+
+			var finalState = completedSynchronously ? Status_CompletedSynchronously : Status_CompletedAsynchronously;
+			Interlocked.Exchange(ref _completedState, finalState);
+
+			Thread.MemoryBarrier();
+			var waitable = _waitHandle;
+			Thread.MemoryBarrier();
+			if (waitable != null)
+			{
+				waitable.Set();
+			}
+			Thread.MemoryBarrier();
+			var callback = _asyncCallback;
+			Thread.MemoryBarrier();
+			if (callback != null) callback(this);
 		}
 
 		/// <summary>
@@ -158,7 +226,10 @@ namespace FlitBit.Core.Parallel
 				if (!signalReceived) throw new ParallelTimeoutException();
 			}
 			// If an exception occured, rethrow...
-			if (_fault != null) throw _fault;
+			Thread.MemoryBarrier();
+			var fault = _fault;
+			Thread.MemoryBarrier();
+			if (fault != null) throw new ParallelException(Resources.Err_ExceptionOccurredInParallelThread, fault);
 		}
 
 		/// <summary>
@@ -177,7 +248,10 @@ namespace FlitBit.Core.Parallel
 				if (!signalReceived) throw new ParallelTimeoutException();
 			}
 			// If an exception occured, rethrow...
-			if (_fault != null) throw _fault;
+			Thread.MemoryBarrier();
+			var fault = _fault;
+			Thread.MemoryBarrier();
+			if (fault != null) throw new ParallelException(Resources.Err_ExceptionOccurredInParallelThread, fault);
 		}
 
 		/// <summary>
@@ -196,35 +270,11 @@ namespace FlitBit.Core.Parallel
 				if (!signalReceived) throw new ParallelTimeoutException();
 			}
 			// If an exception occured, rethrow...
-			if (_fault != null) throw _fault;
+			Thread.MemoryBarrier();
+			var fault = _fault;
+			Thread.MemoryBarrier();
+			if (fault != null) throw new ParallelException(Resources.Err_ExceptionOccurredInParallelThread, fault);
 		}
-
-		#region Utility methods
-		/// <summary>
-		/// Helper method for marking completions.
-		/// </summary>
-		/// <typeparam name="TSelf"></typeparam>
-		/// <param name="self"></param>
-		/// <param name="callback"></param>
-		/// <param name="completedSynchronously"></param>
-		protected static void PerformMarkCompleted<TSelf>(TSelf self, Action<TSelf> callback, bool completedSynchronously)
-			where TSelf : AsyncResult
-		{
-			if (Interlocked.CompareExchange(ref self._completedState, Status_Completing, Status_Pending) != Status_Pending)
-				throw new InvalidOperationException(Resources.Error_AsyncResultAlreadySet);
-
-			if (callback != null) callback(self);
-			var finalState = completedSynchronously ? Status_CompletedSynchronously : Status_CompletedAsynchronously;
-			Interlocked.Exchange(ref self._completedState, finalState);
-
-			var waitable = Util.VolatileRead(ref self._waitHandle);
-			if (waitable != null)
-			{
-				waitable.Set();
-			}
-			if (self._asyncCallback != null) self._asyncCallback(self);
-		}		
-		#endregion
 
 		/// <summary>
 		/// Performs a disposal of the async result.

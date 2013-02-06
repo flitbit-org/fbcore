@@ -159,4 +159,7 @@
   <data name="Warn_ErrorWhileDisposingCleanupScope" xml:space="preserve">
     <value>uncaught exception while disposing cleanup scope</value>
   </data>
+  <data name="Err_ExceptionOccurredInParallelThread" xml:space="preserve">
+    <value>An error occured in a parallel thread.</value>
+  </data>
 </root>

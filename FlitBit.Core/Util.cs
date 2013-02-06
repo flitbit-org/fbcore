@@ -4,7 +4,6 @@
 
 using System;
 using System.Diagnostics.Contracts;
-using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -24,6 +23,8 @@ namespace FlitBit.Core
 		public static byte[] GetSHA1Hash(string value)
 		{
 			Contract.Requires<ArgumentNullException>(value != null);
+			Contract.Ensures(Contract.Result<byte[]>() != null);
+
 			return GetSHA1Hash(value, Encoding.UTF8);
 		}
 
@@ -37,13 +38,12 @@ namespace FlitBit.Core
 		{
 			Contract.Requires<ArgumentNullException>(value != null);
 			Contract.Requires<ArgumentNullException>(enc != null);
+			Contract.Ensures(Contract.Result<byte[]>() != null);
 
 			using (var provider = new SHA1CryptoServiceProvider())
 			{
 				var buffer = enc.GetBytes(value);
-				var hash = provider.ComputeHash(buffer, 0, buffer.Length);
-				Contract.Assert(hash != null);
-				return hash;
+				return provider.ComputeHash(buffer, 0, buffer.Length);
 			}
 		}
 
@@ -55,6 +55,7 @@ namespace FlitBit.Core
 		public static string GetSHA1HashAndConvertToBase64(string value)
 		{
 			Contract.Requires<ArgumentNullException>(value != null);
+			Contract.Ensures(Contract.Result<string>() != null);
 
 			return Convert.ToBase64String(GetSHA1Hash(value, Encoding.UTF8));
 		}
@@ -69,6 +70,7 @@ namespace FlitBit.Core
 		{
 			Contract.Requires<ArgumentNullException>(value != null);
 			Contract.Requires<ArgumentNullException>(enc != null);
+			Contract.Ensures(Contract.Result<string>() != null);
 
 			return Convert.ToBase64String(GetSHA1Hash(value, enc));
 		}
@@ -103,6 +105,7 @@ namespace FlitBit.Core
 		internal static object MakeReliableLockFromString(this string value)
 		{
 			Contract.Requires<ArgumentNullException>(value != null);
+			Contract.Ensures(Contract.Result<object>() != null);
 
 			if (String.IsInterned(value) == null)
 			{
@@ -119,6 +122,7 @@ namespace FlitBit.Core
 		public static string InternIt(this string value)
 		{
 			Contract.Requires<ArgumentNullException>(value != null);
+			Contract.Ensures(Contract.Result<string>() != null);
 
 			if (String.IsInterned(value) == null)
 			{
@@ -126,7 +130,7 @@ namespace FlitBit.Core
 			}
 			return value;
 		}
-		
+
 		/// <summary>
 		/// Initializes a referenced variable if it is not already initialized.
 		/// </summary>
@@ -254,34 +258,34 @@ namespace FlitBit.Core
 			}
 		}
 
-    /// <summary>
-    /// Reads the referenced value after synchronizing all processors.
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="reference"></param>
-    /// <returns></returns>
-    public static T VolatileRead<T>(ref T reference)
-    {
-      Thread.MemoryBarrier();
-      T result = reference;
-      Thread.MemoryBarrier();
+		/// <summary>
+		/// Reads the referenced value after synchronizing all processors.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="reference"></param>
+		/// <returns></returns>
+		public static T VolatileRead<T>(ref T reference)
+		{
+			Thread.MemoryBarrier();
+			T result = reference;
+			Thread.MemoryBarrier();
 
-      return result;
-    }
+			return result;
+		}
 
-    /// <summary>
-    /// Writes a value to a reference and synchronizing all processors.
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="reference"></param>
-    /// <param name="value"></param>
-    /// <returns></returns>
-    public static void VolatileWrite<T>(ref T reference, T value)
-    {
-      Thread.MemoryBarrier();
-      reference = value;
-      Thread.MemoryBarrier();
-    }
+		/// <summary>
+		/// Writes a value to a reference and synchronizing all processors.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="reference"></param>
+		/// <param name="value"></param>
+		/// <returns></returns>
+		public static void VolatileWrite<T>(ref T reference, T value)
+		{
+			Thread.MemoryBarrier();
+			reference = value;
+			Thread.MemoryBarrier();
+		}
 	}
 
 }

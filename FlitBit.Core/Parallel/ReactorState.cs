@@ -6,7 +6,7 @@
 namespace FlitBit.Core.Parallel
 {
 	/// <summary>
-	/// Indicates the ParallelReactor's state.
+	/// Indicates the Reactor's state.
 	/// </summary>
 	public enum ReactorState
 	{

@@ -142,6 +142,9 @@
     <Compile Include="Parallel\Completion.T.cs" />
     <Compile Include="Parallel\Continuation.cs" />
     <Compile Include="Parallel\Continue.cs" />
+    <Compile Include="Parallel\DemuxProducer.cs" />
+    <Compile Include="Parallel\Exceptions.cs" />
+    <Compile Include="Parallel\Future.T.cs" />
     <Compile Include="Parallel\Notification.cs" />
     <Compile Include="Parallel\Reactor.T.cs" />
     <Compile Include="Parallel\ReactorExceptionArgs.cs" />

@@ -21,7 +21,7 @@ namespace FlitBit.Core
     /// </summary>
     /// <param name="type"></param>
     /// <returns></returns>
-    public static Object GetLockForType(this Type type)
+    public static object GetLockForType(this Type type)
     {
       Contract.Requires<ArgumentNullException>(type != null);
       Contract.Ensures(Contract.Result<object>() != null);

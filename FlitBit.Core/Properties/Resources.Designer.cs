@@ -79,6 +79,15 @@ namespace FlitBit.Core.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to An error occured in a parallel thread..
+        /// </summary>
+        internal static string Err_ExceptionOccurredInParallelThread {
+            get {
+                return ResourceManager.GetString("Err_ExceptionOccurredInParallelThread", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to reactor has stopped and cannot perform the operation.
         /// </summary>
         internal static string Err_ReactorStopped {
