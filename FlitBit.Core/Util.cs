@@ -90,9 +90,22 @@ namespace FlitBit.Core
 
 			if (Interlocked.CompareExchange(ref item, default(T), disposable) == disposable)
 			{
-				if (disposable is IDisposable)
+				if (disposable is IInterrogateDisposable)
+				{
+					// Catches cases where clients use the parallel features without
+					// appropriate `using` clause/scope. Chained completions without
+					// a cleanup pipe require this catch:
+					if (!((IInterrogateDisposable)disposable).IsDisposed)
+					{
+						((IDisposable)disposable).Dispose();
+						return true;
+					}
+				}
+				else if (disposable is IDisposable)
+				{
 					((IDisposable)disposable).Dispose();
-				return true;
+					return true;
+				}
 			}
 			return false;
 		}

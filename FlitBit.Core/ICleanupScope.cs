@@ -3,13 +3,16 @@
 #endregion
 
 using System;
+using System.Diagnostics.Contracts;
+using FlitBit.Core.Parallel;
 
 namespace FlitBit.Core
 {
 	/// <summary>
 	/// Deliniates a cleanup scope.
 	/// </summary>
-	public interface ICleanupScope : IDisposable
+	[ContractClass(typeof(CodeContracts.ContractForICleanupScope))]
+	public interface ICleanupScope : IInterrogateDisposable, IParallelShared
 	{
 		/// <summary>
 		/// Adds a disposable item to the scope. When the scope
@@ -26,15 +29,54 @@ namespace FlitBit.Core
 		/// completion (on dispose).
 		/// </summary>
 		/// <param name="action"></param>
-		void AddAction(Action action);
-
-		/// <summary>
-		/// Shares the scope; suitable for sharing across threads.
-		/// This call should be wrapped in a 'using clause' to
-		/// ensure proper cleanup of both the shared and the original
-		/// scopes.
-		/// </summary>
-		/// <returns>An equivalent scope.</returns>
-		ICleanupScope ShareScope();
+		void AddAction(Action action);		
 	}
+
+	namespace CodeContracts
+	{
+		/// <summary>
+		/// CodeContracts Class for ICleanupScope
+		/// </summary>
+		[ContractClassFor(typeof(ICleanupScope))]
+		internal abstract class ContractForICleanupScope : ICleanupScope
+		{
+			public T Add<T>(T item) where T : IDisposable
+			{
+				Contract.Requires<ArgumentNullException>(item != null);
+				Contract.Ensures(Contract.Result<T>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public void AddAction(Action action)
+			{
+				Contract.Requires<ArgumentNullException>(action != null);
+				
+				throw new NotImplementedException();
+			}
+
+			public ICleanupScope ShareScope()
+			{
+				Contract.Ensures(Contract.Result<ICleanupScope>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public bool IsDisposed
+			{
+				get { throw new NotImplementedException(); }
+			}
+
+			public void Dispose()
+			{
+				throw new NotImplementedException();
+			}
+
+			public object ParallelShare()
+			{
+				throw new NotImplementedException();
+			}
+		}
+	}
+	
 }

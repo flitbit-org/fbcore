@@ -10,6 +10,7 @@ using System.Diagnostics.Contracts;
 using System.Runtime.InteropServices;
 using System.Threading;
 using FlitBit.Core.Properties;
+using FlitBit.Core.Parallel;
 
 namespace FlitBit.Core
 {
@@ -39,43 +40,6 @@ namespace FlitBit.Core
 	/// </summary>
 	public partial class CleanupScope : Disposable, ICleanupScope
 	{
-		internal static class Ambient
-		{
-			[ThreadStatic]
-			static Stack<ICleanupScope> __stack;
-
-			internal static bool TryPeek(out ICleanupScope ambient)
-			{
-				if (__stack != null && __stack.Count > 0)
-				{
-					ambient = __stack.Peek();
-					return true;
-				}
-				ambient = default(ICleanupScope);
-				return false;
-			}
-
-			internal static bool TryPop(ICleanupScope comparand)
-			{
-				if (__stack == null || __stack.Count == 0) return false;
-
-				var ambient = __stack.Peek();
-				if (Object.ReferenceEquals(ambient, comparand))
-				{
-					__stack.Pop();
-					return true;
-				}
-				return false;
-			}
-
-			internal static void Push(ICleanupScope ambient)
-			{
-				if (__stack == null) __stack = new Stack<ICleanupScope>();
-				__stack.Push(ambient);
-			}
-
-		}
-
 		/// <summary>
 		/// Gets the current "ambient" cleanup scope. This is the nearest
 		/// cleanup scope in the call stack.
@@ -85,22 +49,10 @@ namespace FlitBit.Core
 			get
 			{
 				ICleanupScope ambient;
-				return (Ambient.TryPeek(out ambient)) ? ambient : default(ICleanupScope);
+				return (ContextFlow.TryPeek<ICleanupScope>(out ambient)) ? ambient : default(ICleanupScope);
 			}
 		}
 
-		internal static ICleanupScope ForkAmbient()
-		{
-			ICleanupScope ambient;
-			return (Ambient.TryPeek(out ambient)) ? ambient.ShareScope() : default(ICleanupScope);
-		}
-
-		internal static ICleanupScope EnsureAmbient(ICleanupScope ambient)
-		{
-			var scope = ambient ?? new CleanupScope();
-			Ambient.Push(scope);
-			return scope;
-		}
 		/// <summary>
 		/// Shares the ambient scope if it exists; otherwise, creates a new scope.
 		/// </summary>
@@ -108,7 +60,9 @@ namespace FlitBit.Core
 		public static ICleanupScope NewOrSharedScope()
 		{
 			ICleanupScope ambient;
-			return (Ambient.TryPeek(out ambient)) ? ambient.ShareScope() : new CleanupScope();
+			return (ContextFlow.TryPeek<ICleanupScope>(out ambient)) 
+				? (ICleanupScope)ambient.ParallelShare() 
+				: new CleanupScope();
 		}
 
 		readonly ConcurrentStack<StackItem> _items = new ConcurrentStack<StackItem>();
@@ -136,7 +90,7 @@ namespace FlitBit.Core
 			this._independent = independent;
 			if (!_independent)
 			{
-				Ambient.Push(this);
+				ContextFlow.Push<ICleanupScope>(this);
 			}
 		}
 
@@ -276,8 +230,12 @@ namespace FlitBit.Core
 		/// <param name="disposing">indicates whether the scope is disposing</param>
 		/// <returns><em>true</em> if disposed as a result of the call; otherwise <em>false</em></returns>
 		protected override bool PerformDispose(bool disposing)
-		{			
-			if (!_independent && !Ambient.TryPop(this))
+		{
+			if (disposing && Interlocked.Decrement(ref _disposers) > 0)
+			{
+				return false;
+			}
+			if (!_independent && !ContextFlow.TryPop<ICleanupScope>(this))
 			{
 				// Notify the caller that they are calling dispose out of order.
 				// This never happens if the caller uses a 'using' 
@@ -291,11 +249,7 @@ namespace FlitBit.Core
 					if (!disposing) throw;
 				}
 				if (disposing) throw new InvalidOperationException(message);
-			}
-			if (disposing && Interlocked.Decrement(ref _disposers) > 0)
-			{
-				return false;
-			}
+			}			
 			StackItem item;			
 			while (_items.TryPop(out item))
 			{
@@ -370,6 +324,11 @@ namespace FlitBit.Core
 				this.Disposable = null; // keep compiler happy
 				this.Action = a;
 			}
+		}
+				
+		object IParallelShared.ParallelShare()
+		{
+			return ShareScope();
 		}
 	}
 

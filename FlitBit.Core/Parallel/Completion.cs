@@ -132,14 +132,7 @@ namespace FlitBit.Core.Parallel
 
 			protected override bool PerformDispose(bool disposing)
 			{
-				Thread.MemoryBarrier();
-				var waitable = _waitable;
-				Thread.MemoryBarrier();
-
-				if (waitable != null)
-				{
-					waitable.Dispose();
-				}
+				Util.Dispose(ref _waitable);
 				return true;
 			}
 		}

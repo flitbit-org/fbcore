@@ -1,5 +1,6 @@
-﻿using System.Diagnostics.Contracts;
-using System;
+﻿using System;
+using System.Diagnostics.Contracts;
+using FlitBit.Core.Parallel;
 
 namespace FlitBit.Core.Factory
 {
@@ -12,7 +13,7 @@ namespace FlitBit.Core.Factory
 	/// other IoC containers by implementing IFactory to delegate to the IoC of your choice.
 	/// </remarks>
 	[ContractClass(typeof(CodeContracts.ContractForFactory))]		
-	public interface IFactory
+	public interface IFactory : IParallelShared
 	{
 		/// <summary>
 		/// Indicates whether the factory can construct typeof T.
@@ -34,6 +35,11 @@ namespace FlitBit.Core.Factory
 		/// <typeparam name="T">type T</typeparam>
 		/// <returns>a new instance</returns>
 		T CreateInstance<T>();
+
+		/// <summary>
+		/// Gets or sets the next factory when factories are chained.
+		/// </summary>
+		IFactory Next { get; set; }
 	}
 
 	namespace CodeContracts
@@ -44,11 +50,6 @@ namespace FlitBit.Core.Factory
 		[ContractClassFor(typeof(IFactory))]
 		internal abstract class ContractForFactory : IFactory
 		{
-			/// <summary>
-			/// Creates a new instance of type T.
-			/// </summary>
-			/// <typeparam name="T">type T</typeparam>
-			/// <returns>a new instance</returns>
 			public T CreateInstance<T>()
 			{
 				Contract.Ensures(Contract.Result<T>() != null);
@@ -56,22 +57,29 @@ namespace FlitBit.Core.Factory
 				throw new System.NotImplementedException();
 			}
 
-			/// <summary>
-			/// Indicates whether the factory can construct typeof T.
-			/// </summary>
-			/// <typeparam name="T"></typeparam>
-			/// <returns></returns>
 			public bool CanConstruct<T>()
 			{
 				throw new NotImplementedException();
 			}
 
-			/// <summary>
-			/// Gets the implementation type used when type T is constructed.
-			/// </summary>
-			/// <typeparam name="T">type T</typeparam>
-			/// <returns>If the factory can construct instances of type T, the implementation type used; otherwise null.</returns>
 			public Type GetImplementationType<T>()
+			{
+				throw new NotImplementedException();
+			}			 
+
+			public IFactory Next
+			{
+				get
+				{
+					throw new NotImplementedException();
+				}
+				set
+				{
+					throw new NotImplementedException();
+				}
+			}
+
+			public object ParallelShare()
 			{
 				throw new NotImplementedException();
 			}

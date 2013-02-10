@@ -55,6 +55,7 @@
     <Compile Include="DisposableTests.cs" />
     <Compile Include="DynamicJsonTests.cs" />
     <Compile Include="Net\ResourceTests.cs" />
+    <Compile Include="Parallel\ContextFlowTests.cs" />
     <Compile Include="Parallel\DemuxProducerTests.cs" />
     <Compile Include="Parallel\GoParallelTests.cs" />
     <Compile Include="Parallel\ReactorTests.cs" />

@@ -9,8 +9,8 @@
     <licenseUrl>http://fbcore.codeplex.com/license</licenseUrl>
     <projectUrl>http://fbcore.codeplex.com/</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>$description$</description>
-    <releaseNotes>Added support for independent CleanupScopes.</releaseNotes>
+    <description>Core classes and utilities used by the FlitBit Frameworks.</description>
+    <releaseNotes>New ContextFlow to parallel operations and a default factory pulled down from FlitBit Emit.</releaseNotes>
     <copyright>Copyright 2013</copyright>
   </metadata>
 </package>

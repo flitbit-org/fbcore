@@ -22,11 +22,11 @@ namespace FlitBit.Core.Parallel
 			if (action == null) throw new ArgumentNullException("action");
 			Completion waitable = new Completion(action.Target);
 
-			var ambient = CleanupScope.ForkAmbient();
+			var ambient = ContextFlow.ForkAmbient();
 			ThreadPool.QueueUserWorkItem(new WaitCallback(
 				ignored =>
 				{
-					using (var scope = CleanupScope.EnsureAmbient(ambient))
+					using (var scope = ContextFlow.EnsureAmbient(ambient))
 					{
 						var caught = default(Exception);
 						try
@@ -59,11 +59,11 @@ namespace FlitBit.Core.Parallel
 			if (continuation == null) throw new ArgumentNullException("continuation");
 
 			Completion waitable = new Completion(action.Target);
-			var ambient = CleanupScope.ForkAmbient();
+			var ambient = ContextFlow.ForkAmbient();
 			ThreadPool.QueueUserWorkItem(new WaitCallback(
 				ignored =>
 				{
-					using (var scope = CleanupScope.EnsureAmbient(ambient))
+					using (var scope = ContextFlow.EnsureAmbient(ambient))
 					{
 						var caught = default(Exception);
 						try
@@ -137,11 +137,11 @@ namespace FlitBit.Core.Parallel
 			if (continuation == null) throw new ArgumentNullException("continuation");
 
 			Completion waitable = new Completion(action.Target);
-			var ambient = CleanupScope.ForkAmbient();
+			var ambient = ContextFlow.ForkAmbient();
 			ThreadPool.QueueUserWorkItem(new WaitCallback(
 				ignored =>
 				{
-					using (var scope = CleanupScope.EnsureAmbient(ambient))
+					using (var scope = ContextFlow.EnsureAmbient(ambient))
 					{
 						var caught = default(Exception);
 						try
@@ -212,11 +212,11 @@ namespace FlitBit.Core.Parallel
 			if (fun == null) throw new ArgumentNullException("fun");
 
 			Completion<R> waitable = new Completion<R>(fun.Target);
-			var ambient = CleanupScope.ForkAmbient();
+			var ambient = ContextFlow.ForkAmbient();
 			ThreadPool.QueueUserWorkItem(new WaitCallback(
 				ignored =>
 				{
-					using (var scope = CleanupScope.EnsureAmbient(ambient))
+					using (var scope = ContextFlow.EnsureAmbient(ambient))
 					{
 						R result = default(R);
 						try
@@ -265,11 +265,11 @@ namespace FlitBit.Core.Parallel
 			if (continuation == null) throw new ArgumentNullException("continuation");
 
 			Completion<R> waitable = new Completion<R>(fun.Target);
-			var ambient = CleanupScope.ForkAmbient();
+			var ambient = ContextFlow.ForkAmbient();
 			ThreadPool.QueueUserWorkItem(new WaitCallback(
 				ignored =>
 				{
-					using (var scope = CleanupScope.EnsureAmbient(ambient))
+					using (var scope = ContextFlow.EnsureAmbient(ambient))
 					{
 						R result = default(R);
 						var caught = default(Exception);
@@ -346,11 +346,11 @@ namespace FlitBit.Core.Parallel
 			if (fun == null) throw new ArgumentNullException("fun");
 
 			Completion<R> waitable = new Completion<R>(fun.Target);
-			var ambient = CleanupScope.ForkAmbient();
+			var ambient = ContextFlow.ForkAmbient();
 			ThreadPool.QueueUserWorkItem(new WaitCallback(
 				ignored =>
 				{
-					using (var scope = CleanupScope.EnsureAmbient(ambient))
+					using (var scope = ContextFlow.EnsureAmbient(ambient))
 					{
 						R result = default(R);
 						var caught = default(Exception);
@@ -404,11 +404,11 @@ namespace FlitBit.Core.Parallel
 			if (continuation == null) throw new ArgumentNullException("continuation");
 
 			Completion<R> waitable = new Completion<R>(fun.Target);
-			var ambient = CleanupScope.ForkAmbient();
+			var ambient = ContextFlow.ForkAmbient();
 			ThreadPool.QueueUserWorkItem(new WaitCallback(
 				ignored =>
 				{
-					using (var scope = CleanupScope.EnsureAmbient(ambient))
+					using (var scope = ContextFlow.EnsureAmbient(ambient))
 					{
 						R result = default(R);
 						var caught = default(Exception);
