@@ -16,7 +16,7 @@ namespace FlitBit.Core
 		/// </summary>
 		public static IFactory Factory
 		{
-			get	{	return __provider.GetFactory();	}
+			get	{	return Current.GetFactory();	}
 		}
 
 		/// <summary>
