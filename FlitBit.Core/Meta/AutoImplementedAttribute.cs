@@ -2,7 +2,7 @@
 using FlitBit.Core.Meta;
 using FlitBit.Core.Factory;
 
-namespace FlitBit.Meta
+namespace FlitBit.Core.Meta
 {
 	/// <summary>
 	/// Indicates that an implementation of the interface is generated.

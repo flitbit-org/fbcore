@@ -41,7 +41,7 @@ namespace FlitBit.Core.Tests.Parallel
 			var test = new
 			{
 				Threads = 12,
-				Iterations = 1000000,
+				Iterations = 100000,
 				Max = 100
 			};
 			int originators = 0;
@@ -53,39 +53,52 @@ namespace FlitBit.Core.Tests.Parallel
 			Exception ex = null;
 			for (var i = 0; i < test.Threads; i++)
 			{
-				var thread = new Thread(new ThreadStart(() =>
-				{
-					Random rand = new Random();
-					try
+				var thread = new Thread(new ThreadStart(
+					() =>
 					{
+						Random rand = new Random();
+
 						for (int j = 0; j < test.Iterations; j++)
 						{
-							Observation value;
+							bool observed = false;
 							int item = rand.Next(test.Max);
-							var kind = demux.TryConsume(item, out value);
-							if (value == null)
+							demux.TryConsume(item, new Continuation<Tuple<DemuxResultKind, Observation>>(
+								(e, res) =>
+								{
+									if (e != null && ex == null)
+									{
+										ex = e;
+									}
+									else if (res == null)
+									{
+										Interlocked.Increment(ref blanks);
+									}
+									else
+									{
+										switch (res.Item1)
+										{
+											case DemuxResultKind.None:
+												Interlocked.Increment(ref fails);
+												break;
+											case DemuxResultKind.Observed:
+												Interlocked.Increment(ref observers);
+												break;
+											case DemuxResultKind.Originated:
+												Interlocked.Increment(ref originators);
+												break;
+											default:
+												break;
+										}
+									}
+									observed = true;
+								}));
+
+							while (!observed)
 							{
-								Interlocked.Increment(ref fails);
-							}
-							if (kind.HasFlag(DemuxResultKind.Originated))
-							{
-								Interlocked.Increment(ref originators);
-							}
-							else if (kind.HasFlag(DemuxResultKind.Observed))
-							{
-								Interlocked.Increment(ref observers);
-							}
-							else
-							{
-								Interlocked.Increment(ref blanks);
-							}
+								Thread.Sleep(0);
+							}							
 						}
-					}
-					catch (Exception e)
-					{
-						ex = e;
-					}
-				}));
+					}));
 				thread.Start();
 				threads.Add(thread);
 			}
@@ -124,25 +137,31 @@ namespace FlitBit.Core.Tests.Parallel
 				var tuple = new Tuple<Thread, Object>(new Thread(new ParameterizedThreadStart(n =>
 				{
 					int idx = (int)n;
-					try
-					{
-						object obj;
-						if (producer.TryConsume(0, out obj).HasFlag(DemuxResultKind.Observed))
+					bool completed = false;
+					producer.TryConsume(idx, new Continuation<Tuple<DemuxResultKind, object>>(
+						(e, res) =>
 						{
-							lock (sync)
+							if (e != null)
 							{
-								var tpl = threads[idx];
-								threads[idx] = new Tuple<Thread, object>(tpl.Item1, obj);
+								lock (sync)
+								{
+									var tpl = threads[idx];
+									threads[idx] = new Tuple<Thread, object>(tpl.Item1, e);
+								}
 							}
-						}
-					}
-					catch (Exception e)
+							else
+							{
+								lock (sync)
+								{
+									var tpl = threads[idx];
+									threads[idx] = new Tuple<Thread, object>(tpl.Item1, tpl.Item1);
+								}
+							}
+							completed = true;
+						}));
+					while (!completed)
 					{
-						lock (sync)
-						{
-							var tpl = threads[idx];
-							threads[idx] = new Tuple<Thread, object>(tpl.Item1, e);
-						}
+						Thread.Sleep(0);
 					}
 				})), null);
 				threads[i] = tuple;

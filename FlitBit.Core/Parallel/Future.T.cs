@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading;
+using System.Diagnostics.Contracts;
 
 namespace FlitBit.Core.Parallel
 {
@@ -8,19 +9,21 @@ namespace FlitBit.Core.Parallel
 	/// A Future variable of type T.
 	/// </summary>
 	/// <typeparam name="T">variable type T</typeparam>
-	public sealed class Future<T>
+	public sealed class Future<T> : Disposable, IFuture<T>
 	{
 		const int Status_Waiting = 0;
 		const int Status_Completed = 1;
 
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		Object _lock = new Object();
+		Object _sync = new Object();
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		int _status;
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		Exception _fault;
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		T _value;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		ManualResetEventSlim _waitable;
 
 		/// <summary>
 		/// Constructs a new instance.
@@ -31,19 +34,36 @@ namespace FlitBit.Core.Parallel
 		}
 
 		/// <summary>
+		/// Constructs a new instance.
+		/// </summary>
+		/// <param name="value">the future's value</param>
+		public Future(T value)
+		{
+			_value = value;
+			_status = Status_Completed;
+		}
+
+		/// <summary>
+		/// Gets the future's synchronization object.
+		/// </summary>
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]		
+		public object SyncObject { get { return this._sync; } }
+
+		/// <summary>
 		/// Marks the completion.
 		/// </summary>
 		/// <param name="value"></param>
 		public void MarkCompleted(T value)
 		{
-			lock (_lock)
+			lock (_sync)
 			{
-				// Ensure the wait completes only once...
-				if (_status != Status_Waiting)
-					throw new InvalidOperationException("Already completed");
 				_value = value;
 				_status = Status_Completed;
-				Monitor.PulseAll(_lock);
+				if (_waitable != null)
+				{
+					_waitable.Set();
+				}
+				Monitor.PulseAll(_sync);
 			}
 		}
 
@@ -53,14 +73,15 @@ namespace FlitBit.Core.Parallel
 		/// <param name="fault"></param>
 		public void MarkFaulted(Exception fault)
 		{
-			lock (_lock)
+			lock (_sync)
 			{
-				// Ensure the wait completes only once...
-				if (_status != Status_Waiting)
-					throw new InvalidOperationException("Already completed");
 				_fault = fault;
 				_status = Status_Completed;
-				Monitor.PulseAll(_lock);
+				if (_waitable != null)
+				{
+					_waitable.Set();
+				}
+				Monitor.PulseAll(_sync);
 			}
 		}
 
@@ -92,16 +113,16 @@ namespace FlitBit.Core.Parallel
 		/// Waits (blocks the current thread) until the value is present or the timeout is exceeded.
 		/// </summary>
 		/// <param name="timeout">A timespan representing the timeout period.</param>
-		/// <returns>The future's value.</returns>
+		/// <returns><em>true</em> if the value is present; otherwise <em>false</em>.</returns>
 		public bool Wait(TimeSpan timeout)
 		{
 			if (timeout.Ticks > 0)
 			{
-				lock (_lock)
+				lock (_sync)
 				{
 					if (!this.IsCompleted)
 					{
-						Monitor.Wait(_lock, timeout);
+						Monitor.Wait(_sync, timeout);
 					}
 				}
 			}
@@ -188,11 +209,11 @@ namespace FlitBit.Core.Parallel
 		/// <returns>The future's value.</returns>
 		public T AwaitValue()
 		{
-			lock (_lock)
+			lock (_sync)
 			{
 				if (!this.IsCompleted)
 				{
-					Monitor.Wait(_lock);
+					Monitor.Wait(_sync);
 				}
 			}
 
@@ -242,6 +263,44 @@ namespace FlitBit.Core.Parallel
 			}
 
 			throw new TimeoutException();
+		}
+
+		internal ManualResetEventSlim Waitable
+		{
+			get
+			{
+				if (_waitable == null)
+				{
+					lock (_sync)
+					{
+						if (_waitable == null)
+						{			 
+							_waitable = new ManualResetEventSlim(this.IsCompleted);
+						}
+					}
+				}
+				return _waitable;
+			}
+		}
+
+		/// <summary>
+		/// Gets a wait handle for the future.
+		/// </summary>		
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		public WaitHandle WaitHandle
+		{
+			get {	return Waitable.WaitHandle;	}
+		}
+
+		/// <summary>
+		/// Disposes the future and it's wait handle.
+		/// </summary>
+		/// <param name="disposing">indicates whether the object is disposing</param>
+		/// <returns>if disposing, returns true if the disposal should continue.</returns>
+		protected override bool PerformDispose(bool disposing)
+		{
+			Util.Dispose(ref _waitable);
+			return disposing;
 		}
 	}
 }

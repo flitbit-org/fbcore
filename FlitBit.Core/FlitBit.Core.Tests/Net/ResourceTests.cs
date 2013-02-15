@@ -16,35 +16,38 @@ namespace FlitBit.Core.Tests.Net
 			var supreme = new Uri("http://search.twitter.com/search.json?q=supreme%20court");
 			var erlang = new Uri("http://search.twitter.com/search.json?q=erlang");
 
-			using (var h = hollywood.ParallelGet(res => res.DeserializeResponseAsDynamic()).Continue((e, d) =>
-			{
-				foreach (var tweet in d.results)
-				{
-					Console.WriteLine(String.Concat(tweet.from_user_name, " says: ", tweet.text));
-				}
-			}))
-			{
-				Assert.IsFalse(h.IsCompleted);
-				Assert.IsFalse(h.IsFaulted);
-
-				using (var s = supreme.ParallelGet(res => res.DeserializeResponseAsDynamic()).Continue((e, d) =>
+			using (var h = hollywood.ParallelGet(res => res.DeserializeResponseAsDynamic()).ContinueWithCompletion(
+				(e, d) =>
 				{
 					foreach (var tweet in d.results)
 					{
 						Console.WriteLine(String.Concat(tweet.from_user_name, " says: ", tweet.text));
 					}
 				}))
-				{
-					Assert.IsFalse(s.IsCompleted);
-					Assert.IsFalse(s.IsFaulted);
+			{
+				Assert.IsFalse(h.IsCompleted);
+				Assert.IsFalse(h.IsFaulted);
 
-					using (var erl = erlang.ParallelGet(res => res.DeserializeResponseAsDynamic()).Continue((e, d) =>
+				using (var s = supreme.ParallelGet(res => res.DeserializeResponseAsDynamic()).ContinueWithCompletion(
+					(e, d) =>
 					{
 						foreach (var tweet in d.results)
 						{
 							Console.WriteLine(String.Concat(tweet.from_user_name, " says: ", tweet.text));
 						}
 					}))
+				{
+					Assert.IsFalse(s.IsCompleted);
+					Assert.IsFalse(s.IsFaulted);
+
+					using (var erl = erlang.ParallelGet(res => res.DeserializeResponseAsDynamic()).ContinueWithCompletion(
+						(e, d) =>
+						{
+							foreach (var tweet in d.results)
+							{
+								Console.WriteLine(String.Concat(tweet.from_user_name, " says: ", tweet.text));
+							}
+						}))
 					{
 						Assert.IsFalse(erl.IsCompleted);
 						Assert.IsFalse(erl.IsFaulted);
@@ -55,7 +58,7 @@ namespace FlitBit.Core.Tests.Net
 
 						// In MTA I'd rather:
 						// 
-						// var waitHandles = new WaitHandle[] { h.ToAsyncResult().AsyncWaitHandle, s.ToAsyncResult().AsyncWaitHandle, erl.ToAsyncResult().AsyncWaitHandle };
+						// var waitHandles = new WaitHandle[] { h.WaitHandle, s.WaitHandle, erl.WaitHandle };
 						// WaitHandle.WaitAll(waitHandles);
 					}
 				}
@@ -101,7 +104,8 @@ namespace FlitBit.Core.Tests.Net
 			var req = AttachTestCredentialsUsingBasicAuth(testdb.MakeResourceRequest());
 
 			using (var completion = req.ParallelGet(res => res.DeserializeResponseAsDynamic())
-				.Continue((e, d) =>
+				.ContinueWithCompletion(
+				(e, d) =>
 				{
 					if ((unexpected = e) == null)
 					{
@@ -148,7 +152,8 @@ namespace FlitBit.Core.Tests.Net
 			var postBody = Encoding.UTF8.GetBytes(json);
 
 			using (var completion = req.ParallelPut(postBody, "application/json", res => res.DeserializeResponseAsDynamic())
-				.Continue((e, d) =>
+				.ContinueWithCompletion(
+				(e, d) =>
 				{
 					if ((unexpected = e) == null)
 					{
@@ -183,7 +188,7 @@ namespace FlitBit.Core.Tests.Net
 			var req = AttachTestCredentialsUsingBasicAuth(testdb.MakeResourceRequest());
 
 			using (var completion = req.ParallelGet(res => res.DeserializeResponseAsDynamic())
-				.Continue((e, d) =>
+				.ContinueWithCompletion((e, d) =>
 				{
 					if ((unexpected = e) == null)
 					{
@@ -197,7 +202,7 @@ namespace FlitBit.Core.Tests.Net
 									var delReq = AttachTestCredentialsUsingBasicAuth(doc.MakeResourceRequest());
 
 									var deleteResult = delReq.ParallelDelete(res => res.DeserializeResponseAsDynamic())
-										.Continue((ee, dd) =>
+										.ContinueWithCompletion((ee, dd) =>
 										{
 											if ((unexpected = ee) == null)
 											{
@@ -228,8 +233,6 @@ namespace FlitBit.Core.Tests.Net
 				Assert.IsTrue(completion.IsCompleted);
 			}
 			Assert.IsNull(unexpected);
-		}
-
-	}
-
+		}													 
+	}														 
 }

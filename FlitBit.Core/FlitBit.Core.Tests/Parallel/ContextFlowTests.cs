@@ -27,6 +27,27 @@ namespace FlitBit.Core.Tests.Parallel
 				}
 				Assert.AreSame(context, ContextFlow.Current);
 			}
+		}
+
+		[TestMethod]
+		public void ContextFlow_FlowsWithParallelContinuations()
+		{
+			ICleanupScope capturedScope = null;			
+			Continuation it = 
+				(e) => 
+				{
+					Assert.AreEqual(capturedScope, CleanupScope.Current);
+					Assert.IsFalse(capturedScope.IsDisposed);		
+				};
+
+			// Scopes participate in context flow...
+			using (var scope = CleanupScope.NewOrSharedScope())
+			{
+				capturedScope = scope;
+				var completion = new Completion(this);
+				completion.Continue(it);	 
+				completion.MarkCompleted();
+			}
 		}		
 	}
 }

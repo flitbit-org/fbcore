@@ -19,19 +19,20 @@ namespace FlitBit.Core.Tests.Parallel
 				() =>
 				{
 					Thread.Sleep(TimeSpan.FromSeconds(1));
-				}
-				, e =>
-				{
-					caught = e;
-					completed = true;
-				}
-				))
+				}))
 			{
+				completion.Continue(
+					e =>
+					{
+						caught = e;
+						completed = true;
+					});
 
 				Assert.IsFalse(completion.IsCompleted);
 				Assert.IsFalse(completion.IsFaulted);
 
-				completion.Wait(TimeSpan.FromSeconds(2));
+				// delay just long enough...
+				Thread.Sleep(TimeSpan.FromSeconds(1.2));
 
 				Assert.IsTrue(completion.IsCompleted);
 				Assert.IsFalse(completion.IsFaulted);
@@ -47,19 +48,20 @@ namespace FlitBit.Core.Tests.Parallel
 			Exception caught = null;
 			bool completed = false;
 
-			using (Go.Parallel(
+			using (var completion = Go.Parallel(
 				() =>
 				{
 					Thread.Sleep(TimeSpan.FromSeconds(0.1));
 					throw new InvalidOperationException("Kaboom!");
-				},
-				 e =>
-				 {
-					 caught = e;
-					 completed = true;
-				 }
-				))
+				}))
 			{
+				completion.Continue(
+					e =>
+					{
+						caught = e;
+						completed = true;
+					});
+
 				// delay just long enough...
 				Thread.Sleep(TimeSpan.FromSeconds(0.3));
 			}
@@ -86,22 +88,22 @@ namespace FlitBit.Core.Tests.Parallel
 				{
 					Thread.Sleep(TimeSpan.FromSeconds(0.5));
 					throw new InvalidOperationException("Kaboom!");
-				},
-				e =>
-				{
-					caught = e;
-					completed = true;
-					throw new InvalidOperationException("Whammy!");
-				}
-			))
+				}))
 			{
+				completion.Continue(
+					e =>
+					{
+						caught = e;
+						completed = true;
+						throw new InvalidOperationException("Whammy!");
+					});
 
 				Assert.IsFalse(completion.IsCompleted);
 				Assert.IsFalse(completion.IsFaulted);
 
-				Assert.IsFalse(completion.Wait(TimeSpan.FromSeconds(10)),
-					"false because exception was thrown");
-
+				// delay just long enough...
+				Thread.Sleep(TimeSpan.FromSeconds(1));
+				
 				Assert.IsTrue(completion.IsCompleted);
 				Assert.IsTrue(completion.IsFaulted, "faulted due to the exception 'Kaboom!'");
 
@@ -122,10 +124,10 @@ namespace FlitBit.Core.Tests.Parallel
 					Thread.Sleep(TimeSpan.FromSeconds(1));
 				}))
 			{
-
 				Assert.IsFalse(completion.IsCompleted);
 				Assert.IsFalse(completion.IsFaulted);
 
+				// delay just long enough...
 				Assert.IsTrue(completion.Wait(TimeSpan.FromSeconds(1.2)));
 
 				Assert.IsTrue(completion.IsCompleted);
@@ -134,27 +136,30 @@ namespace FlitBit.Core.Tests.Parallel
 		}
 
 		[TestMethod]
-		public void Parallel_ExecuteInParallelWithArgumentAndResult()
+		public void Parallel_ExecuteFunctionInParallelAndGetResult()
 		{
 			Exception caught = null;
 			bool completed = false;
 			int handbackTotal = 0;
 
 			using (var completion = Go.Parallel(
-				new { Value = new int[] { 1, 2, 3, 4, 5, 6, 7 } }
-				, h =>
+				() =>
 				{
 					Thread.Sleep(TimeSpan.FromSeconds(1));
-					return h.Value.Sum();
-				}
-				, (e, total) =>
-				{
-					caught = e;
-					completed = true;
-					handbackTotal = total;
-				}
-				))
+					return new int[] { 1, 2, 3, 4, 5, 6, 7 }.Sum();
+				}))
 			{
+				completion.Continue(
+					(e, total) =>
+					{
+						caught = e;
+						completed = true;
+						handbackTotal = total;
+					});
+
+				// delay just long enough...
+				Thread.Sleep(TimeSpan.FromSeconds(1.2));
+
 				var result = completion.AwaitValue();
 
 				Assert.IsNull(caught);
@@ -169,22 +174,31 @@ namespace FlitBit.Core.Tests.Parallel
 		{
 			Exception caught = null;
 			bool completed = false;
+			bool observerCalled = false;
 
 			using (var completion = Go.Parallel(
 				() =>
 				{
 					Thread.Sleep(TimeSpan.FromSeconds(1));
-				}
-				, e =>
-				{
-					caught = e;
-					completed = true;
-				}
-				))
+				}))
 			{
+				completion.Continue(
+					e =>
+					{
+						caught = e;
+						completed = true;
+					});
 
 				Assert.IsFalse(completion.IsCompleted);
 				Assert.IsFalse(completion.IsFaulted);
+
+				completion.Continue((e) =>
+				{
+					observerCalled = true;
+				});
+
+				// delay just long enough...
+				Thread.Sleep(TimeSpan.FromSeconds(1.2));
 
 				Assert.IsTrue(completion.Wait(TimeSpan.FromSeconds(2)));
 
@@ -192,16 +206,8 @@ namespace FlitBit.Core.Tests.Parallel
 				Assert.IsFalse(completion.IsFaulted);
 
 				Assert.IsNull(caught);
-				Assert.IsTrue(completed);
-
-				Completion fromEvent = null;
-
-				completion.Completed += (sender, e) =>
-				{
-					fromEvent = e.Completion;
-				};
-
-				Assert.AreSame(fromEvent, completion);
+				Assert.IsTrue(completed);				
+				Assert.IsTrue(observerCalled);				
 			}
 		}
 	}

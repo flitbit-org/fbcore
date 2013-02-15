@@ -19,7 +19,7 @@ namespace FlitBit.Core.Parallel
 			internal static bool TryPeek(out ContextFlow ambient)
 			{
 				if (__stack != null && __stack.Count > 0)
-				{
+				{	
 					ambient = __stack.Peek();
 					return true;
 				}
@@ -29,13 +29,14 @@ namespace FlitBit.Core.Parallel
 
 			internal static bool TryPop(ContextFlow comparand)
 			{
-				if (__stack == null || __stack.Count == 0) return false;
-
-				var ambient = __stack.Peek();
-				if (Object.ReferenceEquals(ambient, comparand))
+				if (comparand != null && __stack != null && __stack.Count > 0)  
 				{
-					__stack.Pop();
-					return true;
+					var ambient = __stack.Peek();
+					if (Object.ReferenceEquals(ambient, comparand))
+					{
+						__stack.Pop();
+						return true;
+					}
 				}
 				return false;
 			}
@@ -89,9 +90,12 @@ namespace FlitBit.Core.Parallel
 		/// <returns>the provided context</returns>
 		public static ContextFlow EnsureAmbient(ContextFlow ambient)
 		{
-			var scope = ambient ?? new ContextFlow();
-			Ambient.Push(scope);
-			return scope;
+			if (ambient != null)
+			{
+				Ambient.Push(ambient);
+				return ambient;
+			}
+			return ContextFlow.Current;
 		}
 
 		/// <summary>
@@ -128,18 +132,16 @@ namespace FlitBit.Core.Parallel
 			{
 				return false;
 			}
-			if (!Ambient.TryPop(this))
+			if (disposing && !Ambient.TryPop(this))
 			{
-				var message = "Context disposed out of order. Thar be shenanigans!";
+				var message = "Context disposed out of order. Thar be shenanigans in the disposery!";
 				try
 				{
-					Trace.TraceWarning(message);
+					OnTraceEvent(TraceEventType.Warning, message); 
 				}
 				catch (Exception)
-				{ // don't surface if we're in a finalizer...
-					if (!disposing) throw;
+				{ 
 				}
-				if (disposing) throw new InvalidOperationException(message);
 			}
 			if (_cleanup != null)
 			{
@@ -224,32 +226,28 @@ namespace FlitBit.Core.Parallel
 		/// Tries to pop at an ambient instance of type T off the context.
 		/// </summary>
 		/// <typeparam name="T">type T</typeparam>
-		/// <param name="ambient">variable where the instance will be returned upon success</param>
+		/// <param name="comparand">an instance for comparison</param>
 		/// <returns>true if successful; otherwise false</returns>
-		public static bool TryPop<T>(T ambient)
+		public static bool TryPop<T>(T comparand)
 			where T : IParallelShared
 		{
 			ContextFlow context;
 			if (Ambient.TryPeek(out context))
 			{
-				return context.PerformTryPop(out ambient);
+				return context.PerformTryPop(comparand);
 			}
-			ambient = default(T);
 			return false;
 		}
 
-		private bool PerformTryPop<T>(out T ambient)
+		private bool PerformTryPop<T>(T comparand)
 			where T : IParallelShared
 		{
 			Stack<Forker> stack;
 			if (_stacks.TryGetValue(typeof(T), out stack) && stack.Count > 0)
 			{
-				ambient = (T)stack.Pop().Item;
-				return true;
+				return Object.ReferenceEquals(comparand, stack.Pop().Item);
 			}
-			ambient = default(T);
 			return false;
-
 		}
 
 		internal void Cleanup(object fork)

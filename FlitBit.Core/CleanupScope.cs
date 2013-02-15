@@ -235,20 +235,18 @@ namespace FlitBit.Core
 			{
 				return false;
 			}
-			if (!_independent && !ContextFlow.TryPop<ICleanupScope>(this))
+			if (disposing && !_independent && !ContextFlow.TryPop<ICleanupScope>(this))
 			{
 				// Notify the caller that they are calling dispose out of order.
 				// This never happens if the caller uses a 'using' 
 				var message = "Cleanup scope disposed out of order. To eliminate this possibility always wrap the scope in a 'using clause'.";
 				try
 				{
-					Trace.TraceWarning(message);
+					OnTraceEvent(TraceEventType.Warning, message);
 				}
 				catch (Exception)
-				{ // don't surface if we're in a finalizer...
-					if (!disposing) throw;
+				{ 
 				}
-				if (disposing) throw new InvalidOperationException(message);
 			}			
 			StackItem item;			
 			while (_items.TryPop(out item))

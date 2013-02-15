@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using FlitBit.Meta;
+using FlitBit.Core.Meta;
 
 namespace FlitBit.Core.Factory
 {

@@ -5,6 +5,7 @@
 using System;
 using System.Threading;
 using FlitBit.Core.Properties;
+using System.Diagnostics.Contracts;
 
 namespace FlitBit.Core.Parallel
 {
@@ -12,28 +13,22 @@ namespace FlitBit.Core.Parallel
 	/// Basic implementation of the ITaskCompletion interface.
 	/// </summary>
 	public class AsyncResult : Disposable, IAsyncResult
-	{
-		const Int32 Status_Pending = 0;
-		const Int32 Status_Completing = 1;
-		const Int32 Status_CompletedSynchronously = 2;
-		const Int32 Status_CompletedAsynchronously = 3;
-
+	{			
 		readonly AsyncCallback _asyncCallback;
 		readonly Object _asyncHandback;
 
-		int _completedState = Status_Pending;
-
-		ManualResetEvent _waitHandle;
-		Exception _fault;
-		bool _disposed = false;
-
+		bool _completedSynchronously;		
+		IFuture<bool> _future;
+		
 		/// <summary>
 		/// Creates a new instance.
 		/// </summary>
-		internal AsyncResult(ManualResetEvent evt)
+		internal AsyncResult(IFuture<bool> future)
 			: this(null, null, null)
 		{
-			_waitHandle = evt;
+			Contract.Requires<ArgumentNullException>(future != null);
+			_future = future;
+			_completedSynchronously = future.IsCompleted;
 		}
 
 		/// <summary>
@@ -62,6 +57,7 @@ namespace FlitBit.Core.Parallel
 		/// <param name="asyncState">A state object for use as a handback for the creator.</param>
 		public AsyncResult(AsyncCallback asyncCallback, Object asyncHandback, Object asyncState)
 		{
+			_future = new Future<bool>();
 			_asyncCallback = asyncCallback;
 			_asyncHandback = asyncHandback;
 			this.AsyncState = asyncState;
@@ -79,13 +75,7 @@ namespace FlitBit.Core.Parallel
 		/// </summary>
 		public bool CompletedSynchronously
 		{
-			get
-			{
-				Thread.MemoryBarrier();
-				var completedState = _completedState;
-				Thread.MemoryBarrier();
-				return completedState == Status_CompletedSynchronously;
-			}
+			get { return _completedSynchronously; }
 		}
 		/// <summary>
 		/// Gets the task's wait handle.
@@ -94,31 +84,7 @@ namespace FlitBit.Core.Parallel
 		{
 			get
 			{
-				if (_disposed) throw new ObjectDisposedException(this.GetType().GetReadableFullName());
-
-				Thread.MemoryBarrier();
-				var handle = _waitHandle;
-				Thread.MemoryBarrier();
-				if (handle == null)
-				{
-					Boolean done = IsCompleted;
-					handle = new ManualResetEvent(done);
-					if (Interlocked.CompareExchange(ref _waitHandle,
-						 handle, null) != null)
-					{
-						// Another thread beat us too it, dispose the event...
-						handle.Close();
-					}
-					else
-					{
-						if (!done && IsCompleted)
-						{
-							// If the operation was completed during signal creation, set the signal...							
-							handle.Set();
-						}
-					}
-				}
-				return handle;
+				return _future.WaitHandle;
 			}
 		}
 
@@ -129,10 +95,7 @@ namespace FlitBit.Core.Parallel
 		{
 			get
 			{
-				Thread.MemoryBarrier();
-				var completedState = _completedState;
-				Thread.MemoryBarrier();
-				return completedState > Status_Completing;
+				return _future.IsCompleted;
 			}
 		}
 
@@ -145,10 +108,8 @@ namespace FlitBit.Core.Parallel
 		{
 			get
 			{
-				Thread.MemoryBarrier();
-				var fault = _fault;
-				Thread.MemoryBarrier();
-				return fault != null;
+				Contract.Requires<ObjectDisposedException>(!IsDisposed);
+				return _future.IsFaulted;
 			}
 		}
 
@@ -159,28 +120,18 @@ namespace FlitBit.Core.Parallel
 		{
 			get
 			{
-				Thread.MemoryBarrier();
-				var fault = _fault;
-				Thread.MemoryBarrier();
-				return fault;
+				Contract.Requires<ObjectDisposedException>(!IsDisposed);
+				return _future.Exception;
 			}
 		}
 
 		internal void MarkCompleted(bool completedSynchronously)
 		{
-			if (Interlocked.CompareExchange(ref _completedState, Status_Completing, Status_Pending) != Status_Pending)
-				throw new InvalidOperationException(Resources.Error_AsyncResultAlreadySet);
+			Contract.Requires<InvalidOperationException>(!IsCompleted);
 
-			var finalState = completedSynchronously ? Status_CompletedSynchronously : Status_CompletedAsynchronously;
-			Interlocked.Exchange(ref _completedState, finalState);
+			_completedSynchronously = completedSynchronously;
+			_future.MarkCompleted(true);
 
-			Thread.MemoryBarrier();
-			var waitable = _waitHandle;
-			Thread.MemoryBarrier();
-			if (waitable != null)
-			{
-				waitable.Set();
-			}
 			Thread.MemoryBarrier();
 			var callback = _asyncCallback;
 			Thread.MemoryBarrier();
@@ -189,23 +140,11 @@ namespace FlitBit.Core.Parallel
 
 		internal void MarkException(Exception ex, bool completedSynchronously)
 		{
-			if (Interlocked.CompareExchange(ref _completedState, Status_Completing, Status_Pending) != Status_Pending)
-				throw new InvalidOperationException(Resources.Error_AsyncResultAlreadySet);
+			Contract.Requires<InvalidOperationException>(!IsCompleted);
 
-			Thread.MemoryBarrier();
-			_fault = ex;
-			Thread.MemoryBarrier();
+			_completedSynchronously = completedSynchronously;
+			_future.MarkFaulted(ex);
 
-			var finalState = completedSynchronously ? Status_CompletedSynchronously : Status_CompletedAsynchronously;
-			Interlocked.Exchange(ref _completedState, finalState);
-
-			Thread.MemoryBarrier();
-			var waitable = _waitHandle;
-			Thread.MemoryBarrier();
-			if (waitable != null)
-			{
-				waitable.Set();
-			}
 			Thread.MemoryBarrier();
 			var callback = _asyncCallback;
 			Thread.MemoryBarrier();
@@ -220,16 +159,13 @@ namespace FlitBit.Core.Parallel
 			if (!this.IsCompleted)
 			{
 				bool signalReceived = this.AsyncWaitHandle.WaitOne();
-				// The following field refs are guaranteed by the getter above.
-				_waitHandle.Close();
-				Util.Dispose<ManualResetEvent>(ref _waitHandle);
-				if (!signalReceived) throw new ParallelTimeoutException();
+				if (!signalReceived) throw new ParallelException("Not completed");
 			}
 			// If an exception occured, rethrow...
-			Thread.MemoryBarrier();
-			var fault = _fault;
-			Thread.MemoryBarrier();
-			if (fault != null) throw new ParallelException(Resources.Err_ExceptionOccurredInParallelThread, fault);
+			if (_future.IsFaulted)
+			{
+				throw new ParallelException(Resources.Err_ExceptionOccurredInParallelThread, _future.Exception);
+			}
 		}
 
 		/// <summary>
@@ -242,16 +178,13 @@ namespace FlitBit.Core.Parallel
 			if (!this.IsCompleted)
 			{
 				bool signalReceived = this.AsyncWaitHandle.WaitOne(timeout, exitContext);
-				// The following field refs are guaranteed by the getter above.
-				_waitHandle.Close();
-				Util.Dispose<ManualResetEvent>(ref _waitHandle);
-				if (!signalReceived) throw new ParallelTimeoutException();
+				if (!signalReceived) throw new ParallelException("Not completed");
 			}
 			// If an exception occured, rethrow...
-			Thread.MemoryBarrier();
-			var fault = _fault;
-			Thread.MemoryBarrier();
-			if (fault != null) throw new ParallelException(Resources.Err_ExceptionOccurredInParallelThread, fault);
+			if (_future.IsFaulted)
+			{
+				throw new ParallelException(Resources.Err_ExceptionOccurredInParallelThread, _future.Exception);
+			}
 		}
 
 		/// <summary>
@@ -264,16 +197,13 @@ namespace FlitBit.Core.Parallel
 			if (!this.IsCompleted)
 			{
 				bool signalReceived = this.AsyncWaitHandle.WaitOne(millisecondsTimeout, exitContext);
-				// The following field refs are guaranteed by the getter above.
-				_waitHandle.Close();
-				Util.Dispose<ManualResetEvent>(ref _waitHandle);
-				if (!signalReceived) throw new ParallelTimeoutException();
+				if (!signalReceived) throw new ParallelException("Not completed");
 			}
 			// If an exception occured, rethrow...
-			Thread.MemoryBarrier();
-			var fault = _fault;
-			Thread.MemoryBarrier();
-			if (fault != null) throw new ParallelException(Resources.Err_ExceptionOccurredInParallelThread, fault);
+			if (_future.IsFaulted)
+			{
+				throw new ParallelException(Resources.Err_ExceptionOccurredInParallelThread, _future.Exception);
+			}
 		}
 
 		/// <summary>
@@ -283,7 +213,7 @@ namespace FlitBit.Core.Parallel
 		/// <returns></returns>
 		protected override bool PerformDispose(bool disposing)
 		{
-			Util.Dispose(ref this._waitHandle);
+			Util.Dispose(ref _future);
 			return true;
 		}
 	}

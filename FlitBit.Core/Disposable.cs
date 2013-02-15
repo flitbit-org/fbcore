@@ -6,6 +6,7 @@ using System;
 using System.Threading;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.Diagnostics;
 
 namespace FlitBit.Core
 {
@@ -23,6 +24,21 @@ namespace FlitBit.Core
 			Disposed = 3
 		}
 		Status<DisposalState> _disposal = new Status<DisposalState>();
+
+#if DEBUG
+		/// <summary>
+		/// Creates a new instance.
+		/// </summary>
+		public Disposable()
+		{
+			this.CreationStack = new System.Diagnostics.StackTrace().GetFrames();
+		}
+
+		/// <summary>
+		/// Exposes the call stack at the time of creation (DEBUG).
+		/// </summary>
+		public System.Diagnostics.StackFrame[] CreationStack { get; private set; }
+#endif		
 
 		/// <summary>
 		/// Finalizes the instance.
@@ -50,8 +66,6 @@ namespace FlitBit.Core
 
 		bool Dispose(bool disposing)
 		{
-			Contract.Requires<ObjectDisposedException>(!this.IsDisposed);
-
 			while (_disposal.IsLessThan(DisposalState.Disposed))
 			{
 				if (_disposal.HasState(DisposalState.Disposing))
@@ -78,6 +92,44 @@ namespace FlitBit.Core
 				}
 			}
 			return false;
+		}
+
+		/// <summary>
+		/// Checks whether the class should trace events of <paramref name="eventType"/>.
+		/// </summary>
+		/// <param name="eventType">an event type</param>
+		/// <returns><em>true</em> if the event type should be traced; otherwise <em>false</em>.</returns>
+		protected virtual bool ShouldTrace(TraceEventType eventType)
+		{
+				return false;
+		}
+
+		/// <summary>
+		/// Trace event sink. Should be specialized by subclasses to record trace events.
+		/// </summary>
+		/// <param name="eventType">an event type</param>
+		/// <param name="message">a trace message</param>
+		protected virtual void OnTraceEvent(TraceEventType eventType, string message)
+		{
+#if DEBUG
+			if (eventType <= TraceEventType.Warning)
+			{
+				Console.WriteLine(String.Concat(GetType().GetReadableFullName(), ": ", eventType));
+				Console.WriteLine(message);
+				Console.WriteLine(">> Creation stack... ");
+				foreach (var frame in CreationStack)
+				{
+					var method = frame.GetMethod();
+					Console.WriteLine(String.Concat("\t >> ", method.DeclaringType.GetReadableSimpleName(), ".", method.Name));
+				}
+				Console.WriteLine(">> Disposal stack... ");
+				foreach (var frame in new System.Diagnostics.StackTrace().GetFrames())
+				{	
+					var method = frame.GetMethod();
+					Console.WriteLine(String.Concat("\t >> ", method.DeclaringType.GetReadableSimpleName(), ".", method.Name));
+				}
+			}
+#endif																																
 		}
 
 		/// <summary>

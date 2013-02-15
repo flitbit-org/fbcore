@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Diagnostics.Contracts;
+using System.Threading;
 
 namespace FlitBit.Core.Parallel
 {
@@ -30,129 +32,85 @@ namespace FlitBit.Core.Parallel
 	/// <typeparam name="R">result type R</typeparam>
 	public abstract class DemuxProducer<A, R>
 	{
-		/// <summary>
-		/// Default timeout period.
-		/// </summary>
-		public static readonly TimeSpan DefaultDemuxTimeout = TimeSpan.FromSeconds(30);
-		/// <summary>
-		/// Default number of timeout retries.
-		/// </summary>
-		public static readonly int DefaultMaxRetries = 3;
-
-		struct DemuxRecord
-		{
-			public DemuxRecord(DemuxResultKind kind, R value)
-			{
-				Kind = kind;
-				Value = value;
-			}
-			public DemuxResultKind Kind;
-			public R Value;
-		}
-		readonly TimeSpan _demuxTimeout;
-		readonly int _maxRetries;
-		readonly ConcurrentDictionary<A, Future<DemuxRecord>> _concurrentActiviy = new ConcurrentDictionary<A, Future<DemuxRecord>>();
+		readonly ConcurrentDictionary<A, Completion<Tuple<DemuxResultKind, R>>> _concurrentActiviy = new ConcurrentDictionary<A, Completion<Tuple<DemuxResultKind, R>>>();
 
 		/// <summary>
 		/// Creates a new instance.
 		/// </summary>
 		public DemuxProducer()
-			: this(DefaultDemuxTimeout, DefaultMaxRetries)
 		{
-		}
-
-		/// <summary>
-		/// Creates a new instance.
-		/// </summary>
-		/// <param name="demuxTimeout">a timeout period</param>
-		public DemuxProducer(TimeSpan demuxTimeout)
-			: this(demuxTimeout, DefaultMaxRetries)
-		{
-		}
-
-		/// <summary>
-		/// Creates a new instance.
-		/// </summary>
-		/// <param name="demuxTimeout">a timeout period</param>
-		/// <param name="maxRetries">max timeout retries</param>
-		public DemuxProducer(TimeSpan demuxTimeout, int maxRetries)
-		{
-			_demuxTimeout = demuxTimeout;
-			_maxRetries = maxRetries;
 		}
 
 		/// <summary>
 		/// Tries to demux a completion result.
 		/// </summary>
 		/// <param name="args"></param>
-		/// <param name="value"></param>
-		/// <returns></returns>
-		public DemuxResultKind TryConsume(A args, out R value)
+		/// <param name="consumer">A continuation called upon completion.</param>
+		public void TryConsume(A args, Continuation<Tuple<DemuxResultKind,R>> consumer)
 		{
-			var retries = 0;
-			while (true)
+			Contract.Requires<ArgumentNullException>(consumer != null);
+			DemuxTryConsume(args, consumer);
+		}
+
+		void DemuxTryConsume(A args, Continuation<Tuple<DemuxResultKind, R>> continuation)
+		{
+			Completion<Tuple<DemuxResultKind, R>> completion = null, capture = null;
+			completion = _concurrentActiviy.GetOrAdd(args, a =>
 			{
-				try
+				capture = new Completion<Tuple<DemuxResultKind, R>>(this);
+				return capture;
+			});
+
+			if (Object.ReferenceEquals(capture, completion))
+			{
+				ThreadPool.QueueUserWorkItem(unused =>
 				{
-					return DemuxTryConsume(args, out value);
-				}
-				catch (TimeoutException)
-				{
-					retries++;
-					if (retries == _maxRetries)
-					{
-						throw;
-					}
-				}
+					PerformDemuxOriginatorLogic(args, completion, continuation);
+				});
+			}
+			else
+			{
+				completion.Continue(continuation);			
 			}
 		}
 
-		DemuxResultKind DemuxTryConsume(A args, out R value)
+		private void PerformDemuxOriginatorLogic(A args, Completion<Tuple<DemuxResultKind, R>> completion, Continuation<Tuple<DemuxResultKind, R>> continuation)
 		{
-			var originator = false;
-			Future<DemuxRecord> future = null, capture = null;
+			var res = default(Tuple<DemuxResultKind, R>);
 			try
 			{
-				future = _concurrentActiviy.GetOrAdd(args, a =>
+				bool valueProduced;
+				R value;
+				try
 				{
-					capture = new Future<DemuxRecord>();
-					return capture;
-				});
-
-				originator = Object.ReferenceEquals(capture, future);
-				if (originator)
-				{
-					if (ProduceResult(args, out value))
-					{
-						capture.MarkCompleted(new DemuxRecord(DemuxResultKind.Observed, value));
-					}
-					else
-					{
-						capture.MarkCompleted(new DemuxRecord(DemuxResultKind.None, value));
-					}
-					return DemuxResultKind.Originated;
+					valueProduced = ProduceResult(args, out value);
 				}
-			}
-			catch (Exception ex)
-			{
-				if (originator)
+				catch (Exception e)
 				{
-					capture.MarkFaulted(ex);
-					throw;
+					completion.MarkFaulted(e);
+					continuation(e, res);
+					return;
 				}
+				if (valueProduced)
+				{
+					completion.MarkCompleted(new Tuple<DemuxResultKind, R>(DemuxResultKind.Observed, value));
+					continuation(null, new Tuple<DemuxResultKind, R>(DemuxResultKind.Originated, value));
+				}
+				else
+				{
+					res = new Tuple<DemuxResultKind, R>(DemuxResultKind.None, default(R));
+					completion.MarkCompleted(new Tuple<DemuxResultKind, R>(DemuxResultKind.Observed, value));
+					continuation(null, res);
+				}			
 			}
 			finally
-			{
-				if (originator)
-				{
-					Future<DemuxRecord> unused;
-					_concurrentActiviy.TryRemove(args, out unused);
-				}
+			{	
+				Completion<Tuple<DemuxResultKind, R>> unused;
+				_concurrentActiviy.TryRemove(args, out unused);
+				completion.Dispose();
 			}
-			var record = future.AwaitValue(_demuxTimeout);
-			value = record.Value;
-			return record.Kind;
 		}
+	
 
 		/// <summary>
 		/// Produces the requested result.

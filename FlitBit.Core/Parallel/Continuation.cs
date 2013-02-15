@@ -57,4 +57,6 @@ namespace FlitBit.Core.Parallel
 	/// cases, the <paramref name="fault"/> argument will be null; otherwise
 	/// it is the exception raised by the operation being continued.</remarks>
 	public delegate R ContinuationFunc<in T, out R>(Exception fault, T item);
+
+	
 }
