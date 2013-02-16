@@ -10,7 +10,7 @@
     <projectUrl>http://fbcore.codeplex.com/</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Core classes and utilities used by the FlitBit Frameworks.</description>
-    <releaseNotes>New ContextFlow to parallel operations and a default factory pulled down from FlitBit Emit.</releaseNotes>
+    <releaseNotes>Re-signed the assembly.</releaseNotes>
     <copyright>Copyright 2013</copyright>
   </metadata>
 </package>
