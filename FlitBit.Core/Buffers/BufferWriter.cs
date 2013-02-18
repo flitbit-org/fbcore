@@ -44,7 +44,8 @@ namespace FlitBit.Core.Buffers
 		/// <summary>
 		/// Creates a new instance.
 		/// </summary>
-		protected BufferWriter() : this(Encoding.Unicode)
+		protected BufferWriter()
+			: this(Encoding.Unicode)
 		{
 		}
 
@@ -95,7 +96,7 @@ namespace FlitBit.Core.Buffers
 			Contract.Assert(buffer != null);
 			Contract.Assert(offset >= 0);
 			Contract.Assert(offset <= buffer.Length - 1, Resources.Chk_OffsetWouldResultInBufferOverrun);
-			
+
 			buffer[offset++] = (byte)((value) ? 1 : 0);
 			return sizeof(byte);
 		}
@@ -111,7 +112,7 @@ namespace FlitBit.Core.Buffers
 			Contract.Assert(buffer != null);
 			Contract.Assert(offset >= 0);
 			Contract.Assert(offset <= buffer.Length - 1, Resources.Chk_OffsetWouldResultInBufferOverrun);
-			
+
 			buffer[offset++] = value;
 			return sizeof(byte);
 		}
@@ -128,8 +129,8 @@ namespace FlitBit.Core.Buffers
 			Contract.Assert(buffer != null);
 			Contract.Assert(offset >= 0);
 			Contract.Assert(offset <= buffer.Length - 1, Resources.Chk_OffsetWouldResultInBufferOverrun);
-			Contract.Assert(offset + value.Length <= buffer.Length + buffer.Length, Resources.Chk_OffsetWouldResultInBufferOverrun);
-			
+			Contract.Assert(offset + value.Length <= buffer.Length, Resources.Chk_OffsetWouldResultInBufferOverrun);
+
 			Array.Copy(value, 0, buffer, offset, value.Length);
 			offset += value.Length;
 			return value.Length;
@@ -220,7 +221,7 @@ namespace FlitBit.Core.Buffers
 			Contract.Assert(buffer != null);
 			Contract.Assert(offset >= 0);
 			Contract.Assert(offset <= buffer.Length - 16, Resources.Chk_OffsetWouldResultInBufferOverrun);
-			
+
 			int written = 0;
 			foreach (int b in Decimal.GetBits(value))
 			{
@@ -389,7 +390,7 @@ namespace FlitBit.Core.Buffers
 		public int Write(byte[] buffer, ref int offset, Char[] value, bool byteLengthPrefix)
 		{
 			Contract.Assert(value != null);
-			
+
 			return Write(buffer, ref offset, value, byteLengthPrefix, this.Encoding);
 		}
 
@@ -423,7 +424,7 @@ namespace FlitBit.Core.Buffers
 					throw new InvalidOperationException(Resources.Chk_OffsetWouldResultInBufferOverrun);
 			}
 
-			offset += coder.GetBytes(value, 0, value.Length, buffer, offset);			
+			offset += coder.GetBytes(value, 0, value.Length, buffer, offset);
 			return offset - startingPos;
 		}
 
@@ -446,5 +447,5 @@ namespace FlitBit.Core.Buffers
 			return reflector.WriteToBuffer(this, buffer, ref offset, value);
 		}
 	}
-	
+
 }
