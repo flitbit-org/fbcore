@@ -15,7 +15,7 @@ namespace FlitBit.Core.Tests.Parallel
 			Exception caught = null;
 			bool completed = false;
 
-			using (var completion = Go.Parallel(
+			using (var completion = Go.ParallelWithCompletion(
 				() =>
 				{
 					Thread.Sleep(TimeSpan.FromSeconds(1));
@@ -48,7 +48,7 @@ namespace FlitBit.Core.Tests.Parallel
 			Exception caught = null;
 			bool completed = false;
 
-			using (var completion = Go.Parallel(
+			using (var completion = Go.ParallelWithCompletion(
 				() =>
 				{
 					Thread.Sleep(TimeSpan.FromSeconds(0.1));
@@ -83,7 +83,7 @@ namespace FlitBit.Core.Tests.Parallel
 				uncaught = e.Error;
 			});
 
-			using (var completion = Go.Parallel(
+			using (var completion = Go.ParallelWithCompletion(
 				() =>
 				{
 					Thread.Sleep(TimeSpan.FromSeconds(0.5));
@@ -118,7 +118,7 @@ namespace FlitBit.Core.Tests.Parallel
 		[TestMethod]
 		public void Parallel_ExecutionCanBeAwaited()
 		{
-			using (var completion = Go.Parallel(
+			using (var completion = Go.ParallelWithCompletion(
 				() =>
 				{
 					Thread.Sleep(TimeSpan.FromSeconds(1));
@@ -142,7 +142,7 @@ namespace FlitBit.Core.Tests.Parallel
 			bool completed = false;
 			int handbackTotal = 0;
 
-			using (var completion = Go.Parallel(
+			using (var completion = Go.ParallelWithCompletion(
 				() =>
 				{
 					Thread.Sleep(TimeSpan.FromSeconds(1));
@@ -176,7 +176,7 @@ namespace FlitBit.Core.Tests.Parallel
 			bool completed = false;
 			bool observerCalled = false;
 
-			using (var completion = Go.Parallel(
+			using (var completion = Go.ParallelWithCompletion(
 				() =>
 				{
 					Thread.Sleep(TimeSpan.FromSeconds(1));

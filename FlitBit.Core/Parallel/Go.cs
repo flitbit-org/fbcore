@@ -17,8 +17,109 @@ namespace FlitBit.Core.Parallel
 		/// Performs an action in parallel.
 		/// </summary>
 		/// <param name="action">an action</param>
+		public static void Parallel(Action action)
+		{
+			Contract.Requires<ArgumentNullException>(action != null);
+
+			Completion waitable = new Completion(action.Target);
+			var ambient = ContextFlow.ForkAmbient();
+			ThreadPool.QueueUserWorkItem(
+				ignored =>
+				{
+					using (var scope = ContextFlow.EnsureAmbient(ambient))
+					{
+						try
+						{
+							action();
+						}
+						catch (Exception e)
+						{
+							NotifyUncaughtException(action.Target, e);
+						}
+					}
+				});
+		}
+
+		/// <summary>
+		/// Performs an action in parallel.
+		/// </summary>
+		/// <param name="action">an action</param>
+		/// <param name="continuation">a continuation called upon completion.</param>
+		public static void Parallel(Action action, Continuation continuation)
+		{
+			Contract.Requires<ArgumentNullException>(action != null);
+			Contract.Requires<ArgumentNullException>(continuation != null);
+
+			Completion waitable = new Completion(action.Target);
+			var ambient = ContextFlow.ForkAmbient();
+			ThreadPool.QueueUserWorkItem(
+				ignored =>
+				{
+					using (var scope = ContextFlow.EnsureAmbient(ambient))
+					{
+						try
+						{
+							try
+							{
+								action();
+							}
+							catch (Exception e)
+							{
+								continuation(e);
+								return;
+							}
+							continuation(null);
+						}
+						catch (Exception e)
+						{
+							NotifyUncaughtException(continuation.Target, e);
+						}
+					}
+				});
+		}
+
+		/// <summary>
+		/// Performs the function in parallel.
+		/// </summary>
+		/// <typeparam name="R">result type R</typeparam>
+		/// <param name="fun">an action</param>
+		/// <param name="continuation">a continuation called upon completion.</param>
+		public static void Parallel<R>(Func<R> fun, Continuation<R> continuation)
+		{
+			Contract.Requires<ArgumentNullException>(fun != null);
+			Contract.Requires<ArgumentNullException>(continuation != null);
+
+			var ambient = ContextFlow.ForkAmbient();
+			ThreadPool.QueueUserWorkItem(
+				ignored =>
+				{
+					using (var scope = ContextFlow.EnsureAmbient(ambient))
+					{
+						try
+						{
+							continuation(null, fun());
+						}
+						catch (Exception e)
+						{
+							try
+							{
+								continuation(e, default(R));
+							}
+							catch (Exception ee)
+							{
+								NotifyUncaughtException(continuation.Target, ee);
+							}
+						}
+					}
+				});
+		}
+
+		/// <summary>
+		/// Performs an action in parallel.
+		/// </summary>
+		/// <param name="action">an action</param>
 		/// <returns>a completion</returns>
-		public static Completion Parallel(Action action)
+		public static Completion ParallelWithCompletion(Action action)
 		{
 			Contract.Requires<ArgumentNullException>(action != null);
 			Contract.Ensures(Contract.Result<Completion>() != null);
@@ -50,7 +151,7 @@ namespace FlitBit.Core.Parallel
 		/// <typeparam name="R">result type R</typeparam>
 		/// <param name="fun">an action</param>
 		/// <returns>a completion where the results will be returned upon completion</returns>
-		public static Completion<R> Parallel<R>(Func<R> fun)
+		public static Completion<R> ParallelWithCompletion<R>(Func<R> fun)
 		{
 			Contract.Requires<ArgumentNullException>(fun != null);
 			Contract.Ensures(Contract.Result<Completion<R>>() != null);
