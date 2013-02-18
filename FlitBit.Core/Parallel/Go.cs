@@ -9,7 +9,7 @@ using System.Threading;
 namespace FlitBit.Core.Parallel
 {
 	/// <summary>
-	/// Parallelism using thread pool.
+	/// Parallelism utilities.
 	/// </summary>
 	public static class Go
 	{
@@ -179,7 +179,7 @@ namespace FlitBit.Core.Parallel
 		static EventHandler<UncaughtExceptionArgs> _onUncaughtException;
 
 		/// <summary>
-		/// Event fired when uncaught exceptions are raised by parallel executions.
+		/// Event fired when uncaught exceptions are raised by parallel operations.
 		/// </summary>
 		public static event EventHandler<UncaughtExceptionArgs> OnUncaughtException
 		{
@@ -187,7 +187,12 @@ namespace FlitBit.Core.Parallel
 			remove { _onUncaughtException -= value; }
 		}
 
-		internal static void NotifyUncaughtException(object sender, Exception e)
+		/// <summary>
+		/// Notifies event handlers that an exception has occurred in a paralle operation.
+		/// </summary>
+		/// <param name="sender">the sender</param>
+		/// <param name="e">the exception that was raised.</param>
+		public static void NotifyUncaughtException(object sender, Exception e)
 		{
 			if (_onUncaughtException != null)
 			{
