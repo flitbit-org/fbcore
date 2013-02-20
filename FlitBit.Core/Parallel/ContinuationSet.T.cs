@@ -142,7 +142,7 @@ namespace FlitBit.Core.Parallel
 			{
 				if (Thread.VolatileRead(ref _completed) > 0)
 				{
-					ThreadPool.QueueUserWorkItem(background_Notifier);
+					Go.Parallel(background_Notifier);
 				}
 			}
 		}
@@ -158,7 +158,7 @@ namespace FlitBit.Core.Parallel
 			{
 				if (Thread.VolatileRead(ref _completed) > 0)
 				{
-					ThreadPool.QueueUserWorkItem(background_Notifier);
+					Go.Parallel(background_Notifier);
 				}
 			}
 			return waitable;
@@ -175,7 +175,7 @@ namespace FlitBit.Core.Parallel
 			{
 				if (Thread.VolatileRead(ref _completed) > 0)
 				{
-					ThreadPool.QueueUserWorkItem(background_Notifier);
+					Go.Parallel(background_Notifier);
 				}
 			}
 			return waitable;
@@ -186,10 +186,10 @@ namespace FlitBit.Core.Parallel
 			Util.VolatileWrite(ref _fault, e);
 			Util.VolatileWrite(ref _res, res);
 			Interlocked.Increment(ref _completed);
-			ThreadPool.QueueUserWorkItem(background_Notifier);
+			Go.Parallel(background_Notifier);
 		}
 
-		void background_Notifier(object state)
+		void background_Notifier()
 		{
 			var e = Util.VolatileRead(ref _fault);
 			var res = Util.VolatileRead(ref _res);

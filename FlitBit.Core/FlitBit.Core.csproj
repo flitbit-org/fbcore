@@ -139,6 +139,7 @@
     <Compile Include="IInterrogateDisposable.cs" />
     <Compile Include="Meta\AutoImplementedAttribute.cs" />
     <Compile Include="Meta\InstanceScopeKind.cs" />
+    <Compile Include="Meta\SensitiveInfoAttribute.cs" />
     <Compile Include="Net\Enums.cs" />
     <Compile Include="Net\ResourceRequestExtensions.cs" />
     <Compile Include="Parallel\AsyncResult.cs" />

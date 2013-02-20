@@ -63,10 +63,7 @@ namespace FlitBit.Core.Parallel
 
 			if (Object.ReferenceEquals(capture, completion))
 			{
-				ThreadPool.QueueUserWorkItem(unused =>
-				{
-					PerformDemuxOriginatorLogic(args, completion, continuation);
-				});
+				Go.Parallel(() => PerformDemuxOriginatorLogic(args, completion, continuation));
 			}
 			else
 			{

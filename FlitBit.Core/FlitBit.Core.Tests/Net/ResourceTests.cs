@@ -116,7 +116,7 @@ namespace FlitBit.Core.Tests.Net
 								foreach (var row in d.rows)
 								{
 									var value = row.doc;
-									Console.WriteLine(String.Concat("timestamp: ", value.timestamp, ", id: ", row.id, ", info: ", value.info, ", machine_name: ", value.machine_name));
+									Console.WriteLine(String.Concat("timestamp: ", value.timestamp, ", machine_name: ", value.machine_name, ", id: ", row.id, ", info: ", value.info));
 								}
 							}
 						}
@@ -138,10 +138,11 @@ namespace FlitBit.Core.Tests.Net
 		public void HttpGetDynamic_CanPerformHttpPutAgainstApiRequiringBasicAuth()
 		{
 			// This resource is a Couch DB...
+			var rand = new Random(Environment.TickCount);
 			var dataGen = new DataGenerator();
 
 			var docid = Guid.NewGuid().ToString("N");
-			var data = new { timestamp = DateTime.UtcNow, info = dataGen.GetString(80), machine_name = Environment.MachineName };
+			var data = new { timestamp = DateTime.UtcNow, info = dataGen.GetWords(rand.Next(8,80)), machine_name = Environment.MachineName };
 
 			var testdb = new Uri(String.Concat("https://flitbit.cloudant.com/trubl/", docid));
 			Exception unexpected = null;
@@ -199,8 +200,9 @@ namespace FlitBit.Core.Tests.Net
 								foreach (var row in d.rows)
 								{
 									var doc = new Uri(String.Concat(db, "/", row.id, "?rev=", row.value.rev));
-									var delReq = AttachTestCredentialsUsingBasicAuth(doc.MakeResourceRequest());
-
+									var delReq = AttachTestCredentialsUsingBasicAuth(doc.MakeResourceRequest());									
+									Console.WriteLine(String.Concat("Deleting: ", doc));							
+								
 									var deleteResult = delReq.ParallelDelete(res => res.DeserializeResponseAsDynamic())
 										.ContinueWithCompletion((ee, dd) =>
 										{
@@ -208,6 +210,7 @@ namespace FlitBit.Core.Tests.Net
 											{
 												try
 												{
+													Console.WriteLine(String.Concat("Success deleting: ", doc));
 													Assert.IsTrue(dd.ok);
 												}
 												catch (Exception assertionFailure)
@@ -216,9 +219,10 @@ namespace FlitBit.Core.Tests.Net
 												}
 											}
 										});
-									deleteResult.Wait(TimeSpan.FromSeconds(5));
-									Assert.IsTrue(deleteResult.IsCompleted);
-									break;
+									if (deleteResult.Wait(TimeSpan.FromSeconds(5)))
+									{
+										Assert.IsTrue(deleteResult.IsCompleted);
+									}									
 								}
 							}
 						}
@@ -229,8 +233,10 @@ namespace FlitBit.Core.Tests.Net
 					}
 				}))
 			{
-				completion.Wait(TimeSpan.FromSeconds(10));
-				Assert.IsTrue(completion.IsCompleted);
+				if (completion.Wait(TimeSpan.FromSeconds(10)))
+				{
+					Assert.IsTrue(completion.IsCompleted);
+				}
 			}
 			Assert.IsNull(unexpected);
 		}													 
