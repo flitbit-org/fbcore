@@ -51,6 +51,7 @@
     </CodeAnalysisDependentAssemblyPaths>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Buffers\BuffersTest.cs" />
     <Compile Include="CleanupScopeTests.cs" />
     <Compile Include="DisposableTests.cs" />
     <Compile Include="DynamicJsonTests.cs" />

@@ -39,10 +39,6 @@ namespace FlitBit.Core.Buffers
 		[CLSCompliant(false)]
 		public override int Write(byte[] buffer, ref int offset, ushort value)
 		{
-			Contract.Assert(buffer != null);
-			Contract.Assert(offset >= 0);
-			Contract.Assert(offset <= buffer.Length - 2, Resources.Chk_OffsetWouldResultInBufferOverrun);
-			
 			int v = (int)value;
 			unchecked
 			{
@@ -63,10 +59,6 @@ namespace FlitBit.Core.Buffers
 		[CLSCompliant(false)]
 		public override int Write(byte[] buffer, ref int offset, uint value)
 		{
-			Contract.Assert(buffer != null);
-			Contract.Assert(offset >= 0);
-			Contract.Assert(offset <= buffer.Length - 4, Resources.Chk_OffsetWouldResultInBufferOverrun);
-			
 			unchecked
 			{
 				buffer[offset + 3] = (byte)((value >> 24) & 0xFF);
@@ -88,10 +80,6 @@ namespace FlitBit.Core.Buffers
 		[CLSCompliant(false)]
 		public override int Write(byte[] buffer, ref int offset, ulong value)
 		{
-			Contract.Assert(buffer != null);
-			Contract.Assert(offset >= 0);
-			Contract.Assert(offset <= buffer.Length - 8, Resources.Chk_OffsetWouldResultInBufferOverrun);
-			
 			unchecked
 			{
 				buffer[offset + 7] = (byte)((value >> 56) & 0xFF);

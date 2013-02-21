@@ -56,8 +56,7 @@ namespace FlitBit.Core.Buffers
 		protected BufferWriter(Encoding enc)
 		{
 			Contract.Requires<ArgumentNullException>(enc != null);
-
-			Encoding = enc;
+			this.Encoding = enc;
 		}
 
 		/// <summary>
@@ -74,10 +73,6 @@ namespace FlitBit.Core.Buffers
 		/// <param name="value">fill value</param>
 		public void FillBytes(byte[] buffer, ref int offset, int count, byte value)
 		{
-			Contract.Assert(buffer != null);
-			Contract.Assert(offset >= 0);
-			Contract.Assert(count < buffer.Length - offset, Resources.Chk_OffsetWouldResultInBufferOverrun);
-
 			int last = offset + count - 1;
 			while (offset <= last)
 			{
@@ -93,10 +88,6 @@ namespace FlitBit.Core.Buffers
 		/// <returns>number of bytes written</returns>
 		public int Write(byte[] buffer, ref int offset, bool value)
 		{
-			Contract.Assert(buffer != null);
-			Contract.Assert(offset >= 0);
-			Contract.Assert(offset <= buffer.Length - 1, Resources.Chk_OffsetWouldResultInBufferOverrun);
-
 			buffer[offset++] = (byte)((value) ? 1 : 0);
 			return sizeof(byte);
 		}
@@ -109,10 +100,6 @@ namespace FlitBit.Core.Buffers
 		/// <returns>number of bytes written</returns>
 		public int Write(byte[] buffer, ref int offset, byte value)
 		{
-			Contract.Assert(buffer != null);
-			Contract.Assert(offset >= 0);
-			Contract.Assert(offset <= buffer.Length - 1, Resources.Chk_OffsetWouldResultInBufferOverrun);
-
 			buffer[offset++] = value;
 			return sizeof(byte);
 		}
@@ -126,11 +113,6 @@ namespace FlitBit.Core.Buffers
 		/// <returns>number of bytes written</returns>
 		public int Write(byte[] buffer, ref int offset, byte[] value)
 		{
-			Contract.Assert(buffer != null);
-			Contract.Assert(offset >= 0);
-			Contract.Assert(offset <= buffer.Length - 1, Resources.Chk_OffsetWouldResultInBufferOverrun);
-			Contract.Assert(offset + value.Length <= buffer.Length, Resources.Chk_OffsetWouldResultInBufferOverrun);
-
 			Array.Copy(value, 0, buffer, offset, value.Length);
 			offset += value.Length;
 			return value.Length;
@@ -147,12 +129,6 @@ namespace FlitBit.Core.Buffers
 		/// <returns>number of bytes written</returns>
 		public int Write(byte[] buffer, ref int offset, byte[] value, int sourceOffset, int count)
 		{
-			Contract.Assert(buffer != null);
-			Contract.Assert(offset >= 0);
-			Contract.Assert(offset <= buffer.Length - 1, Resources.Chk_OffsetWouldResultInBufferOverrun);
-			Contract.Assert(count >= 0);
-			//Contract.Assert(offset + buffer.Length <= count, Resources.Chk_OffsetWouldResultInBufferOverrun);
-
 			if (value != null)
 			{
 				Array.Copy(value, sourceOffset, buffer, offset, count);
@@ -218,10 +194,6 @@ namespace FlitBit.Core.Buffers
 		/// <returns>number of bytes written</returns>
 		public int Write(byte[] buffer, ref int offset, decimal value)
 		{
-			Contract.Assert(buffer != null);
-			Contract.Assert(offset >= 0);
-			Contract.Assert(offset <= buffer.Length - 16, Resources.Chk_OffsetWouldResultInBufferOverrun);
-
 			int written = 0;
 			foreach (int b in Decimal.GetBits(value))
 			{
@@ -277,10 +249,6 @@ namespace FlitBit.Core.Buffers
 		[CLSCompliant(false)]
 		public virtual int Write(byte[] buffer, ref int offset, ushort value)
 		{
-			Contract.Assert(buffer != null);
-			Contract.Assert(offset >= 0);
-			Contract.Assert(offset <= buffer.Length - 2, Resources.Chk_OffsetWouldResultInBufferOverrun);
-
 			throw new NotImplementedException();
 		}
 
@@ -294,10 +262,6 @@ namespace FlitBit.Core.Buffers
 		[CLSCompliant(false)]
 		public virtual int Write(byte[] buffer, ref int offset, uint value)
 		{
-			Contract.Assert(buffer != null);
-			Contract.Assert(offset >= 0);
-			Contract.Assert(offset <= buffer.Length - 4, Resources.Chk_OffsetWouldResultInBufferOverrun);
-
 			throw new NotImplementedException();
 		}
 
@@ -311,10 +275,6 @@ namespace FlitBit.Core.Buffers
 		[CLSCompliant(false)]
 		public virtual int Write(byte[] buffer, ref int offset, ulong value)
 		{
-			Contract.Assert(buffer != null);
-			Contract.Assert(offset >= 0);
-			Contract.Assert(offset <= buffer.Length - 8, Resources.Chk_OffsetWouldResultInBufferOverrun);
-
 			throw new NotImplementedException();
 		}
 
@@ -340,8 +300,6 @@ namespace FlitBit.Core.Buffers
 		/// <returns>number of bytes written</returns>
 		public int Write(byte[] buffer, ref int offset, string value, bool byteLengthPrefix)
 		{
-			Contract.Assert(value != null);
-
 			return Write(buffer, ref offset, value, byteLengthPrefix, this.Encoding);
 		}
 
@@ -356,11 +314,6 @@ namespace FlitBit.Core.Buffers
 		/// <returns>number of bytes written</returns>
 		public int Write(byte[] buffer, ref int offset, string value, bool byteLengthPrefix, Encoding coder)
 		{
-			Contract.Assert(buffer != null);
-			Contract.Assert(offset >= 0);
-			Contract.Assert(value != null);
-			Contract.Assert(coder != null);
-
 			var startingPos = offset;
 			var encodedLength = coder.GetByteCount(value);
 			if (byteLengthPrefix)
@@ -389,8 +342,6 @@ namespace FlitBit.Core.Buffers
 		/// <returns>number of bytes written</returns>
 		public int Write(byte[] buffer, ref int offset, Char[] value, bool byteLengthPrefix)
 		{
-			Contract.Assert(value != null);
-
 			return Write(buffer, ref offset, value, byteLengthPrefix, this.Encoding);
 		}
 
@@ -405,11 +356,6 @@ namespace FlitBit.Core.Buffers
 		/// <returns>number of bytes written</returns>
 		public int Write(byte[] buffer, ref int offset, Char[] value, bool byteLengthPrefix, Encoding coder)
 		{
-			Contract.Assert(buffer != null);
-			Contract.Assert(offset >= 0);
-			Contract.Assert(value != null);
-			Contract.Assert(coder != null);
-
 			var startingPos = offset;
 			var encodedLength = coder.GetByteCount(value);
 			if (byteLengthPrefix)
@@ -440,10 +386,6 @@ namespace FlitBit.Core.Buffers
 		[CLSCompliant(false)]
 		public int WriteReflectedObject<T>(byte[] buffer, ref int offset, IBufferReflector<T> reflector, T value)
 		{
-			Contract.Assert(buffer != null);
-			Contract.Assert(offset >= 0);
-			Contract.Assert(value != null);
-
 			return reflector.WriteToBuffer(this, buffer, ref offset, value);
 		}
 	}

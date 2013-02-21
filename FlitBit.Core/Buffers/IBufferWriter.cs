@@ -4,6 +4,8 @@
 
 using System;
 using System.Text;
+using System.Diagnostics.Contracts;
+using FlitBit.Core.Properties;
 
 namespace FlitBit.Core.Buffers
 {
@@ -11,6 +13,7 @@ namespace FlitBit.Core.Buffers
 	/// Helper for writing binary data to a buffer.
 	/// </summary>
 	[CLSCompliant(false)]
+	[ContractClass(typeof(CodeContracts.ContractForIBufferWriter))]		
 	public interface IBufferWriter
 	{
 		/// <summary>
@@ -205,4 +208,226 @@ namespace FlitBit.Core.Buffers
 		int WriteReflectedObject<T>(byte[] buffer, ref int offset, IBufferReflector<T> reflector, T value);
 	}
 
+	namespace CodeContracts
+	{
+		/// <summary>
+		/// CodeContracts Class for IBufferWriter
+		/// </summary>
+		[ContractClassFor(typeof(IBufferWriter))]
+		internal abstract class ContractForIBufferWriter : IBufferWriter
+		{
+			/// <summary>
+			/// Gets the encoding used when writing string data.
+			/// </summary>
+			public Encoding Encoding
+			{
+				get
+				{
+					Contract.Ensures(Contract.Result<Encoding>() != null);
+
+					throw new NotImplementedException();
+				}
+			}
+
+			public void FillBytes(byte[] buffer, ref int offset, int count, byte value)
+			{
+				Contract.Requires<ArgumentNullException>(buffer != null);
+				Contract.Requires<ArgumentOutOfRangeException>(offset >= 0);
+				Contract.Requires<ArgumentOutOfRangeException>(count <= buffer.Length - offset, Resources.Chk_OffsetWouldResultInBufferOverrun);
+
+				throw new NotImplementedException();
+			}
+
+			public int Write(byte[] buffer, ref int offset, bool value)
+			{
+				Contract.Requires<ArgumentNullException>(buffer != null);
+				Contract.Requires<ArgumentOutOfRangeException>(offset >= 0);
+				Contract.Requires<ArgumentOutOfRangeException>(sizeof(bool) <= buffer.Length - offset, Resources.Chk_OffsetWouldResultInBufferOverrun);
+
+				throw new NotImplementedException();
+			}
+			
+			public int Write(byte[] buffer, ref int offset, byte value)
+			{
+				Contract.Requires<ArgumentNullException>(buffer != null);
+				Contract.Requires<ArgumentOutOfRangeException>(offset >= 0);
+				Contract.Requires<ArgumentOutOfRangeException>(sizeof(byte) <= buffer.Length - offset, Resources.Chk_OffsetWouldResultInBufferOverrun);
+
+				throw new NotImplementedException();
+			}
+
+			public int Write(byte[] buffer, ref int offset, byte[] value)
+			{
+				Contract.Requires<ArgumentNullException>(buffer != null);
+				Contract.Requires<ArgumentNullException>(value != null);
+				Contract.Requires<ArgumentOutOfRangeException>(offset >= 0);
+				Contract.Requires<ArgumentOutOfRangeException>(value.Length <= buffer.Length - offset, Resources.Chk_OffsetWouldResultInBufferOverrun);
+
+				throw new NotImplementedException();
+			}
+
+			public int Write(byte[] buffer, ref int offset, byte[] value, int sourceOffset, int count)
+			{
+				Contract.Requires<ArgumentNullException>(buffer != null);
+				Contract.Requires<ArgumentNullException>(value != null);
+				Contract.Requires<ArgumentOutOfRangeException>(offset >= 0);
+				Contract.Requires<ArgumentOutOfRangeException>(sourceOffset >= 0);
+				Contract.Requires<ArgumentOutOfRangeException>(count <= value.Length - sourceOffset);
+				Contract.Requires<ArgumentOutOfRangeException>(count <= buffer.Length - offset, Resources.Chk_OffsetWouldResultInBufferOverrun);
+
+				throw new NotImplementedException();
+			}
+
+			public int Write(byte[] buffer, ref int offset, char value)
+			{
+				Contract.Requires<ArgumentNullException>(buffer != null);
+				Contract.Requires<ArgumentOutOfRangeException>(offset >= 0);
+				Contract.Requires<ArgumentOutOfRangeException>(sizeof(char) <= buffer.Length - offset, Resources.Chk_OffsetWouldResultInBufferOverrun);
+
+				throw new NotImplementedException();
+			}
+
+			public int Write(byte[] buffer, ref int offset, short value)
+			{
+				Contract.Requires<ArgumentNullException>(buffer != null);
+				Contract.Requires<ArgumentOutOfRangeException>(offset >= 0);
+				Contract.Requires<ArgumentOutOfRangeException>(sizeof(short) <= buffer.Length - offset, Resources.Chk_OffsetWouldResultInBufferOverrun);
+
+				throw new NotImplementedException();
+			}
+
+			public int Write(byte[] buffer, ref int offset, int value)
+			{
+				Contract.Requires<ArgumentNullException>(buffer != null);
+				Contract.Requires<ArgumentOutOfRangeException>(offset >= 0);
+				Contract.Requires<ArgumentOutOfRangeException>(sizeof(int) <= buffer.Length - offset, Resources.Chk_OffsetWouldResultInBufferOverrun);
+
+				throw new NotImplementedException();
+			}
+
+			public int Write(byte[] buffer, ref int offset, long value)
+			{
+				Contract.Requires<ArgumentNullException>(buffer != null);
+				Contract.Requires<ArgumentOutOfRangeException>(offset >= 0);
+				Contract.Requires<ArgumentOutOfRangeException>(sizeof(long) <= buffer.Length - offset, Resources.Chk_OffsetWouldResultInBufferOverrun);
+
+				throw new NotImplementedException();
+			}
+
+			public int Write(byte[] buffer, ref int offset, decimal value)
+			{
+				Contract.Requires<ArgumentNullException>(buffer != null);
+				Contract.Requires<ArgumentOutOfRangeException>(offset >= 0);
+				Contract.Requires<ArgumentOutOfRangeException>(sizeof(decimal) <= buffer.Length - offset, Resources.Chk_OffsetWouldResultInBufferOverrun);
+
+				throw new NotImplementedException();
+			}
+
+			public int Write(byte[] buffer, ref int offset, double value)
+			{
+				Contract.Requires<ArgumentNullException>(buffer != null);
+				Contract.Requires<ArgumentOutOfRangeException>(offset >= 0);
+				Contract.Requires<ArgumentOutOfRangeException>(sizeof(double) <= buffer.Length - offset, Resources.Chk_OffsetWouldResultInBufferOverrun);
+
+				throw new NotImplementedException();
+			}
+
+			public int Write(byte[] buffer, ref int offset, float value)
+			{
+				Contract.Requires<ArgumentNullException>(buffer != null);
+				Contract.Requires<ArgumentOutOfRangeException>(offset >= 0);
+				Contract.Requires<ArgumentOutOfRangeException>(sizeof(float) <= buffer.Length - offset, Resources.Chk_OffsetWouldResultInBufferOverrun);
+
+				throw new NotImplementedException();
+			}
+
+			public int Write(byte[] buffer, ref int offset, sbyte value)
+			{
+				Contract.Requires<ArgumentNullException>(buffer != null);
+				Contract.Requires<ArgumentOutOfRangeException>(offset >= 0);
+				Contract.Requires<ArgumentOutOfRangeException>(sizeof(sbyte) <= buffer.Length - offset, Resources.Chk_OffsetWouldResultInBufferOverrun);
+
+				throw new NotImplementedException();
+			}
+
+			public virtual int Write(byte[] buffer, ref int offset, ushort value)
+			{
+				Contract.Requires<ArgumentNullException>(buffer != null);
+				Contract.Requires<ArgumentOutOfRangeException>(offset >= 0);
+				Contract.Requires<ArgumentOutOfRangeException>(sizeof(ushort) <= buffer.Length - offset, Resources.Chk_OffsetWouldResultInBufferOverrun);
+
+				throw new NotImplementedException();
+			}
+
+			public virtual int Write(byte[] buffer, ref int offset, uint value)
+			{
+				Contract.Requires<ArgumentNullException>(buffer != null);
+				Contract.Requires<ArgumentOutOfRangeException>(offset >= 0);
+				Contract.Requires<ArgumentOutOfRangeException>(sizeof(uint) <= buffer.Length - offset, Resources.Chk_OffsetWouldResultInBufferOverrun);
+
+				throw new NotImplementedException();
+			}
+
+			public virtual int Write(byte[] buffer, ref int offset, ulong value)
+			{
+				Contract.Requires<ArgumentNullException>(buffer != null);
+				Contract.Requires<ArgumentOutOfRangeException>(offset >= 0);
+				Contract.Requires<ArgumentOutOfRangeException>(sizeof(ulong) <= buffer.Length - offset, Resources.Chk_OffsetWouldResultInBufferOverrun);
+
+				throw new NotImplementedException();
+			}
+
+			public int Write(byte[] buffer, ref int offset, Guid value)
+			{
+				Contract.Requires<ArgumentNullException>(buffer != null);
+				Contract.Requires<ArgumentOutOfRangeException>(offset >= 0);
+				Contract.Requires<ArgumentOutOfRangeException>(16 <= buffer.Length - offset, Resources.Chk_OffsetWouldResultInBufferOverrun);
+
+				throw new NotImplementedException();
+			}
+
+			public int Write(byte[] buffer, ref int offset, string value, bool byteLengthPrefix)
+			{
+				Contract.Requires<ArgumentNullException>(buffer != null);
+				Contract.Requires<ArgumentOutOfRangeException>(offset >= 0);
+
+				throw new NotImplementedException();
+			}
+
+			public int Write(byte[] buffer, ref int offset, string value, bool byteLengthPrefix, Encoding coder)
+			{
+				Contract.Requires<ArgumentNullException>(buffer != null);
+				Contract.Requires<ArgumentOutOfRangeException>(offset >= 0);
+				Contract.Requires<ArgumentNullException>(coder != null);
+
+				throw new NotImplementedException();
+			}
+
+			public int Write(byte[] buffer, ref int offset, Char[] value, bool byteLengthPrefix)
+			{
+				Contract.Requires<ArgumentNullException>(buffer != null);
+				Contract.Requires<ArgumentOutOfRangeException>(offset >= 0);
+
+				throw new NotImplementedException();
+			}
+
+			public int Write(byte[] buffer, ref int offset, Char[] value, bool byteLengthPrefix, Encoding coder)
+			{
+				Contract.Requires<ArgumentNullException>(buffer != null);
+				Contract.Requires<ArgumentOutOfRangeException>(offset >= 0);
+				Contract.Requires<ArgumentNullException>(coder != null);
+
+				throw new NotImplementedException();
+			}
+
+			public int WriteReflectedObject<T>(byte[] buffer, ref int offset, IBufferReflector<T> reflector, T value)
+			{
+				Contract.Requires<ArgumentNullException>(buffer != null);
+				Contract.Requires<ArgumentNullException>(reflector != null);
+				Contract.Requires<ArgumentOutOfRangeException>(offset >= 0);
+
+				throw new NotImplementedException();
+			}
+		}
+	}
 }

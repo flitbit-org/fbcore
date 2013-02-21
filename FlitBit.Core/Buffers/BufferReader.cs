@@ -70,10 +70,6 @@ namespace FlitBit.Core.Buffers
 		/// <returns>a value</returns>
 		public bool ReadBoolean(byte[] buffer, ref int offset)
 		{
-			Contract.Assert(buffer != null);
-			Contract.Assert(offset >= 0);
-			Contract.Assert(offset <= buffer.Length - 1, Resources.Chk_OffsetWouldResultInBufferOverrun);
-			
 			return buffer[offset++] == 1;
 		}
 
@@ -85,10 +81,6 @@ namespace FlitBit.Core.Buffers
 		/// <returns>a byte array</returns>
 		public byte ReadByte(byte[] buffer, ref int offset)
 		{
-			Contract.Assert(buffer != null);
-			Contract.Assert(offset >= 0);
-			Contract.Assert(offset <= buffer.Length - 1, Resources.Chk_OffsetWouldResultInBufferOverrun);
-
 			return buffer[offset++];
 		}
 
@@ -101,10 +93,6 @@ namespace FlitBit.Core.Buffers
 		/// <returns>a byte array</returns>
 		public byte[] ReadBytes(byte[] buffer, ref int offset, int count)
 		{
-			Contract.Assert(buffer != null);
-			Contract.Assert(offset >= 0);
-			Contract.Assert(offset <= buffer.Length - count, Resources.Chk_OffsetWouldResultInBufferOverrun);
-
 			byte[] result = new byte[count];
 			if (count > 0)
 			{
@@ -178,10 +166,6 @@ namespace FlitBit.Core.Buffers
 		/// <returns>a decimal value</returns>
 		public decimal ReadDecimal(byte[] buffer, ref int offset)
 		{
-			Contract.Assert(buffer != null);
-			Contract.Assert(offset >= 0);
-			Contract.Assert(offset <= buffer.Length - 16, Resources.Chk_OffsetWouldResultInBufferOverrun);
-
 			int[] bits = new int[4];
 			bits[0] = ReadInt32(buffer, ref offset);
 			bits[1] = ReadInt32(buffer, ref offset);
@@ -231,10 +215,6 @@ namespace FlitBit.Core.Buffers
 		/// <returns>a UInt32 value</returns>
 		public virtual ushort ReadUInt16(byte[] buffer, ref int offset)
 		{
-			Contract.Assert(buffer != null);
-			Contract.Assert(offset >= 0);
-			Contract.Assert(offset <= buffer.Length - sizeof(ushort), Resources.Chk_OffsetWouldResultInBufferOverrun);
-			
 			throw new NotImplementedException();
 		}
 
@@ -246,10 +226,6 @@ namespace FlitBit.Core.Buffers
 		/// <returns>a UInt32 value</returns>
 		public virtual uint ReadUInt32(byte[] buffer, ref int offset)
 		{
-			Contract.Assert(buffer != null);
-			Contract.Assert(offset >= 0);
-			Contract.Assert(offset <= buffer.Length - sizeof(uint), Resources.Chk_OffsetWouldResultInBufferOverrun);
-
 			throw new NotImplementedException();
 		}
 
@@ -261,10 +237,6 @@ namespace FlitBit.Core.Buffers
 		/// <returns>a UInt64 value</returns>
 		public virtual ulong ReadUInt64(byte[] buffer, ref int offset)
 		{
-			Contract.Assert(buffer != null);
-			Contract.Assert(offset >= 0);
-			Contract.Assert(offset <= buffer.Length - sizeof(ulong), Resources.Chk_OffsetWouldResultInBufferOverrun);
-
 			throw new NotImplementedException();
 		}
 
@@ -313,10 +285,6 @@ namespace FlitBit.Core.Buffers
 		/// <returns>a string value</returns>
 		public string ReadEncodedString(byte[] buffer, ref int offset, int byteCount, Encoding coder)
 		{
-			Contract.Assert(buffer != null);
-			Contract.Assert(offset >= 0);
-			Contract.Assert(offset + byteCount <= buffer.Length, Resources.Chk_OffsetWouldResultInBufferOverrun);
-
 			var chars = coder.GetChars(buffer, offset, byteCount);
 			offset += byteCount;
 			return new String(chars);
@@ -331,10 +299,6 @@ namespace FlitBit.Core.Buffers
 		/// <returns>a char array</returns>
 		public char[] ReadCharArray(byte[] buffer, ref int offset, int arrayLength)
 		{
-			Contract.Assert(buffer != null);
-			Contract.Assert(offset >= 0);
-			Contract.Assert(offset <= buffer.Length - (sizeof(char) * arrayLength), Resources.Chk_OffsetWouldResultInBufferOverrun);
-
 			var result = new Char[arrayLength];
 			for (var i = 0; i < arrayLength; i++)
 			{
@@ -353,10 +317,6 @@ namespace FlitBit.Core.Buffers
 		/// <returns>the instance of type T read from the buffer</returns>
 		public T ReadReflectedObject<T>(byte[] buffer, ref int offset, IBufferReflector<T> reflector)
 		{
-			Contract.Assert(buffer != null);
-			Contract.Assert(offset >= 0);
-			Contract.Assert(reflector != null);
-
 			T value;
 			var bytesConsumed = reflector.ReadFromBuffer(this, buffer, ref offset, out value);
 			return (bytesConsumed > 0) ? value : default(T);		
