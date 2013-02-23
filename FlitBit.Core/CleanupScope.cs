@@ -99,7 +99,7 @@ namespace FlitBit.Core
 		/// </summary>
 		/// <param name="independent">indicates whether the scope is independent of the stack</param>
 		/// <param name="ownerNotifier">the owner, notifier</param>
-		public CleanupScope(bool independent, object ownerNotifier)
+		public CleanupScope(object ownerNotifier, bool independent)
 			: this(independent)
 		{
 			_ownerNotifier = ownerNotifier;
@@ -109,7 +109,7 @@ namespace FlitBit.Core
 		/// Creates a new instance.
 		/// </summary>
 		/// <param name="ownerNotifier">the owner, notifier</param>
-		public CleanupScope(object ownerNotifier) : this(false, ownerNotifier)
+		public CleanupScope(object ownerNotifier) : this(ownerNotifier, false)
 		{
 		}
 		
