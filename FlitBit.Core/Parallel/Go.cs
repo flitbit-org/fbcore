@@ -21,7 +21,6 @@ namespace FlitBit.Core.Parallel
 		{
 			Contract.Requires<ArgumentNullException>(action != null);
 
-			Completion waitable = new Completion(action.Target);
 			var ambient = ContextFlow.ForkAmbient();
 			ThreadPool.QueueUserWorkItem(
 				ignored =>
@@ -50,7 +49,6 @@ namespace FlitBit.Core.Parallel
 			Contract.Requires<ArgumentNullException>(action != null);
 			Contract.Requires<ArgumentNullException>(continuation != null);
 
-			Completion waitable = new Completion(action.Target);
 			var ambient = ContextFlow.ForkAmbient();
 			ThreadPool.QueueUserWorkItem(
 				ignored =>
