@@ -3,6 +3,7 @@
 #endregion
 
 using System;
+using System.Linq;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
@@ -30,6 +31,7 @@ namespace FlitBit.Core.Parallel
 		readonly Reactor<NotifyRecord> _invoker;
 		readonly ConcurrentDictionary<int, Notifier> _notifiers = new ConcurrentDictionary<int, Notifier>();
 		readonly ConcurrentQueue<Notifier> _availableNotifiers = new ConcurrentQueue<Notifier>();
+		readonly ConcurrentQueue<NotifyRecord> _incomming = new ConcurrentQueue<NotifyRecord>();
 
 		private Notification()
 		{
@@ -65,18 +67,23 @@ namespace FlitBit.Core.Parallel
 					}
 				} 
 			};
+			_incomming.Enqueue(record);
 
 			Notifier candidate;
 			while (_availableNotifiers.TryDequeue(out candidate))
 			{
-				if (candidate.Add(record))
+				if (candidate.Wake())
 				{
+					if (!candidate.IsFull)
+					{
+						_availableNotifiers.Enqueue(candidate);
+					}
 					return;
 				}
 			}
-			var notifier = new Notifier(this);
+			var notifier = new Notifier(this, _incomming);
 			_notifiers.TryAdd(notifier.ID, notifier);
-			notifier.Add(record);
+			notifier.Wake();
 		}
 
 		void MakeAvailable(Notifier notifier)
@@ -107,11 +114,12 @@ namespace FlitBit.Core.Parallel
 			Thread _waiter;
 			ManualResetEvent _signal;
 			int _count = 0;
-			readonly ConcurrentQueue<NotifyRecord> _incomming = new ConcurrentQueue<NotifyRecord>();
+			readonly ConcurrentQueue<NotifyRecord> _incomming;
 
-			internal Notifier(Notification owner)
+			internal Notifier(Notification owner, ConcurrentQueue<NotifyRecord> incomming)
 			{
 				_owner = owner;
+				_incomming = incomming;
 				_id = Interlocked.Increment(ref __identityCount);
 				_waiter = new Thread(ListenForSyncObjects);
 				_waiter.Start();
@@ -120,23 +128,15 @@ namespace FlitBit.Core.Parallel
 
 			internal int ID { get { return _id; } }
 
-			internal bool Add(NotifyRecord record)
+			internal bool Wake()
 			{
 				if (!IsDisposed && _status.IsLessThan(State.Disposing))
 				{
-					var count = Thread.VolatileRead(ref _count);
-					if (count + _incomming.Count < CRecordsPerWaitPeriod)
-					{ // appears to have room for more waithandles...
-						var double_checked = Interlocked.CompareExchange(ref _count, count + 1, count);
-						if (double_checked == count)
-						{ // we won the potential race-condition, truly has room...
-							_incomming.Enqueue(record);
-							_signal.Set();
-							if (!IsFull)
-							{
-								_owner.MakeAvailable(this);
-							}
-						}
+					if (Thread.VolatileRead(ref _count) < CRecordsPerWaitPeriod)
+					{
+						Interlocked.Increment(ref _count);
+						_signal.Set();
+						return true;
 					}
 				}
 				return false;
@@ -144,14 +144,18 @@ namespace FlitBit.Core.Parallel
 
 			internal bool IsFull { get { return Thread.VolatileRead(ref _count) == CRecordsPerWaitPeriod; } }
 
+			class WaitRecord
+			{
+				public NotifyRecord NotifyRecord;
+				public WaitHandle WaitHandle;
+			}
+
 			void ListenForSyncObjects()
 			{
 				const int wake = 0;
-				const int offset = -1;
-
-				var records = new List<NotifyRecord>();
-				var handles = new List<WaitHandle>();
-				handles.Add(_signal);
+				
+				var records = new List<WaitRecord>();
+				records.Add(new WaitRecord { WaitHandle = _signal });
 
 				while (_status.SetStateIfLessThan(State.Loading, State.Disposing))
 				{
@@ -159,12 +163,26 @@ namespace FlitBit.Core.Parallel
 					while (records.Count < CRecordsPerWaitPeriod
 						&& _incomming.TryDequeue(out item))
 					{
-						records.Add(item);
-						handles.Add(item.Async.AsyncWaitHandle);
+						if (item.Async.IsCompleted) 
+						{
+							_owner.PerformNotify(item);
+						}
+						else 
+						{
+							var handle = item.Async.AsyncWaitHandle;
+							if (handle != null)
+							{
+								records.Add(new WaitRecord { NotifyRecord = item, WaitHandle = handle });
+							}
+						}
+					}
+					if (records.Count < CRecordsPerWaitPeriod)
+					{
+						_owner.MakeAvailable(this);
 					}
 
-					Thread.VolatileWrite(ref _count, handles.Count);
-					var waiting = handles.ToArray();
+					Thread.VolatileWrite(ref _count, records.Count);
+					var waiting = records.Select(r => r.WaitHandle).ToArray();
 					if (_status.SetStateIfLessThan(State.Waiting, State.Disposing))
 					{
 						int signaled = WaitHandle.WaitAny(waiting);
@@ -172,9 +190,9 @@ namespace FlitBit.Core.Parallel
 						if (signaled > wake)
 						{
 							_status.SetStateIfLessThan(State.Notifying, State.Disposing);
-							handles.RemoveAt(signaled);
-							_owner.PerformNotify(records[signaled + offset]);
-							records.RemoveAt(signaled + offset);
+							var it = records[signaled];
+							records.Remove(it);
+							_owner.PerformNotify(it.NotifyRecord);							
 						}
 						else
 						{
