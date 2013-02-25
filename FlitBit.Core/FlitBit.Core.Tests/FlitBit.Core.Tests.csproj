@@ -60,6 +60,7 @@
     <Compile Include="Parallel\ContextFlowTests.cs" />
     <Compile Include="Parallel\DemuxProducerTests.cs" />
     <Compile Include="Parallel\GoParallelTests.cs" />
+    <Compile Include="Parallel\NotificationTests.cs" />
     <Compile Include="Parallel\ReactorTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UtilTests.cs" />

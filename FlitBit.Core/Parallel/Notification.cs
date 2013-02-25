@@ -6,6 +6,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
+using System.Diagnostics.Contracts;
 
 namespace FlitBit.Core.Parallel
 {
@@ -14,6 +15,13 @@ namespace FlitBit.Core.Parallel
 	/// </summary>
 	public sealed class Notification
 	{
+		static Lazy<Notification> __singleton = new Lazy<Notification>(() => new Notification(), LazyThreadSafetyMode.ExecutionAndPublication);
+
+		/// <summary>
+		/// Accesses the (Lazy) notification instance.
+		/// </summary>
+		public static Notification Instance { get { return __singleton.Value; } }
+
 		internal struct NotifyRecord
 		{
 			public IAsyncResult Async;
@@ -33,10 +41,30 @@ namespace FlitBit.Core.Parallel
 		/// completes.
 		/// </summary>
 		/// <param name="async">the async result</param>
-		/// <param name="continuation">the continuation</param>
-		public void ContinueWith(IAsyncResult async, Action continuation)
+		/// <param name="after">the continuation</param>
+		public void ContinueWith(IAsyncResult async, Action after)
 		{
-			var record = new NotifyRecord { Async = async, Handler = continuation };
+			Contract.Requires<ArgumentNullException>(async != null);
+			Contract.Requires<ArgumentNullException>(after != null);
+
+			var ambient = ContextFlow.ForkAmbient();			
+			var record = new NotifyRecord { 
+				Async = async,
+				Handler = () =>
+				{
+					using (var scope = ContextFlow.EnsureAmbient(ambient))
+					{
+						try
+						{
+							after();
+						}
+						catch (Exception e)
+						{
+							Go.NotifyUncaughtException(after.Target, e);
+						}
+					}
+				} 
+			};
 
 			Notifier candidate;
 			while (_availableNotifiers.TryDequeue(out candidate))
