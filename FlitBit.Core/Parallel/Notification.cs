@@ -23,19 +23,23 @@ namespace FlitBit.Core.Parallel
 		/// </summary>
 		public static Notification Instance { get { return __singleton.Value; } }
 
+		static int __recordID = 0;
+
 		internal struct NotifyRecord
 		{
+			public int ID;
 			public IAsyncResult Async;
+			public WaitHandle Handle;
 			public Action Handler;
 		}
 		readonly Reactor<NotifyRecord> _invoker;
-		readonly ConcurrentDictionary<int, Notifier> _notifiers = new ConcurrentDictionary<int, Notifier>();
-		readonly ConcurrentQueue<Notifier> _availableNotifiers = new ConcurrentQueue<Notifier>();
+		readonly Notifier _notifier;
 		readonly ConcurrentQueue<NotifyRecord> _incomming = new ConcurrentQueue<NotifyRecord>();
 
 		private Notification()
 		{
 			_invoker = new Reactor<NotifyRecord>((self, rec) => rec.Handler());
+			_notifier = new Notifier(true, _incomming, _invoker);
 		}
 
 		/// <summary>
@@ -51,6 +55,7 @@ namespace FlitBit.Core.Parallel
 
 			var ambient = ContextFlow.ForkAmbient();			
 			var record = new NotifyRecord { 
+				ID = Interlocked.Increment(ref __recordID),
 				Async = async,
 				Handler = () =>
 				{
@@ -68,38 +73,14 @@ namespace FlitBit.Core.Parallel
 				} 
 			};
 			_incomming.Enqueue(record);
-
-			Notifier candidate;
-			while (_availableNotifiers.TryDequeue(out candidate))
-			{
-				if (candidate.Wake())
-				{
-					if (!candidate.IsFull)
-					{
-						_availableNotifiers.Enqueue(candidate);
-					}
-					return;
-				}
-			}
-			var notifier = new Notifier(this, _incomming);
-			_notifiers.TryAdd(notifier.ID, notifier);
-			notifier.Wake();
-		}
-
-		void MakeAvailable(Notifier notifier)
-		{
-			_availableNotifiers.Enqueue(notifier);
-		}
-
-		void PerformNotify(NotifyRecord item)
-		{
-			_invoker.Push(item);
+			_notifier.Wake(null);
 		}
 
 		internal class Notifier : Disposable
 		{
 			static readonly int CRecordsPerWaitPeriod = 63;
 			static int __identityCount = 0;
+
 			enum State
 			{
 				Initial = 0,
@@ -109,80 +90,131 @@ namespace FlitBit.Core.Parallel
 				Disposing = 1 << 4,
 			}
 			readonly Status<State> _status = new Status<State>(State.Initial);
+			readonly Reactor<NotifyRecord> _notifier;
 			readonly int _id;
-			readonly Notification _owner;
+			IFuture<bool> _alert;
 			Thread _waiter;
 			ManualResetEvent _signal;
-			int _count = 0;
+			IEnumerable<NotifyRecord> _items;
 			readonly ConcurrentQueue<NotifyRecord> _incomming;
-
-			internal Notifier(Notification owner, ConcurrentQueue<NotifyRecord> incomming)
+			
+			internal Notifier(bool leader, ConcurrentQueue<NotifyRecord> incomming, Reactor<NotifyRecord> notifier)
 			{
-				_owner = owner;
 				_incomming = incomming;
+				_notifier = notifier;
 				_id = Interlocked.Increment(ref __identityCount);
-				_waiter = new Thread(ListenForSyncObjects);
-				_waiter.Start();
+				if (leader)
+				{
+					_waiter = new Thread(PerformLeaderLogic);
+				}
+				else
+				{
+					_waiter = new Thread(PerformFollowerLogic);
+				}
 				_signal = new ManualResetEvent(false);
+				_waiter.Start();
 			}
 
 			internal int ID { get { return _id; } }
 
-			internal bool Wake()
+			internal void Wake(IFuture<bool> alert)
 			{
 				if (!IsDisposed && _status.IsLessThan(State.Disposing))
 				{
-					if (Thread.VolatileRead(ref _count) < CRecordsPerWaitPeriod)
-					{
-						Interlocked.Increment(ref _count);
-						_signal.Set();
-						return true;
-					}
+					Util.VolatileWrite(ref _alert, alert);
+					_signal.Set();
 				}
-				return false;
 			}
 
-			internal bool IsFull { get { return Thread.VolatileRead(ref _count) == CRecordsPerWaitPeriod; } }
-
-			class WaitRecord
+			void PerformLeaderLogic()
 			{
-				public NotifyRecord NotifyRecord;
-				public WaitHandle WaitHandle;
-			}
-
-			void ListenForSyncObjects()
-			{
-				const int wake = 0;
-				
-				var records = new List<WaitRecord>();
-				records.Add(new WaitRecord { WaitHandle = _signal });
-
+				var subordinates = new List<Notifier>();
 				while (_status.SetStateIfLessThan(State.Loading, State.Disposing))
 				{
-					NotifyRecord item;
-					while (records.Count < CRecordsPerWaitPeriod
-						&& _incomming.TryDequeue(out item))
+					var queue = new Queue<IFuture<bool>>();
+					foreach (var sub in subordinates)
 					{
-						if (item.Async.IsCompleted) 
-						{
-							_owner.PerformNotify(item);
-						}
-						else 
-						{
-							var handle = item.Async.AsyncWaitHandle;
-							if (handle != null)
-							{
-								records.Add(new WaitRecord { NotifyRecord = item, WaitHandle = handle });
-							}
-						}
+						var futr = new Future<bool>();
+						sub.Wake(futr);
+						queue.Enqueue(futr);
 					}
-					if (records.Count < CRecordsPerWaitPeriod)
+					// Expects all threads to set the future's value.
+					while (queue.Count > 0)
 					{
-						_owner.MakeAvailable(this);
+						var ea = queue.Dequeue();
+						ea.Wait(TimeSpan.MaxValue);
 					}
 
-					Thread.VolatileWrite(ref _count, records.Count);
-					var waiting = records.Select(r => r.WaitHandle).ToArray();
+					NotifyRecord rec;
+					List<NotifyRecord> records = new List<NotifyRecord>();
+					while (_incomming.TryDequeue(out rec))
+					{
+						if (rec.Async.IsCompleted) _notifier.Push(rec);
+						else
+						{
+							records.Add(rec);
+						}
+					}
+					var arr = records.ToArray();
+					int i = 0, j = 0;
+					while (j < records.Count)
+					{
+						if (i == subordinates.Count) subordinates.Add(new Notifier(false, _incomming, _notifier));
+						var sub = subordinates[i++];
+						int ub = Math.Min(CRecordsPerWaitPeriod, records.Count - j);
+						NotifyRecord[] slice = new NotifyRecord[ub];
+						Array.Copy(arr, j, slice, 0, ub);
+						sub.Push(arr);
+						j += ub;
+					}
+					if (_incomming.Count == 0)
+					{
+						if (subordinates.Count > i)
+						{
+							var remove = subordinates[i];
+							subordinates.RemoveAt(i);
+							remove.Dispose();
+						}
+						if (_status.SetStateIfLessThan(State.Waiting, State.Disposing))
+						{
+							_signal.WaitOne();
+							_signal.Reset();
+						}
+					}
+				}
+			}
+
+			private void Push(IEnumerable<NotifyRecord> items)
+			{
+				Util.VolatileWrite(ref _items, items);
+				_signal.Set();
+			}
+
+			void PerformFollowerLogic()
+			{
+				const int wake = 0;
+				const int offset = -1;
+				
+				while (_status.SetStateIfLessThan(State.Loading, State.Disposing))
+				{
+					var records = new List<NotifyRecord>();
+					if (_items != null)
+					{
+						foreach (var item in _items)
+						{
+							if (item.Async.IsCompleted)
+							{
+								_notifier.Push(item);
+							}
+							else
+							{
+								records.Add(item);
+							}
+						}
+						_items = null;
+					}
+					var waiting = new WaitHandle[] { _signal }
+						.Concat(records.Where(r => r.Async.AsyncWaitHandle != null).Select(r => r.Async.AsyncWaitHandle)).ToArray();
 					if (_status.SetStateIfLessThan(State.Waiting, State.Disposing))
 					{
 						int signaled = WaitHandle.WaitAny(waiting);
@@ -190,13 +222,27 @@ namespace FlitBit.Core.Parallel
 						if (signaled > wake)
 						{
 							_status.SetStateIfLessThan(State.Notifying, State.Disposing);
-							var it = records[signaled];
-							records.Remove(it);
-							_owner.PerformNotify(it.NotifyRecord);							
+							var it = records[signaled + offset];
+							_items = records.Where(r => r.ID != it.ID);
+							_notifier.Push(it);
 						}
 						else
 						{
 							_signal.Reset();
+							var alert = Util.VolatileRead(ref _alert);
+							if (alert != null)
+							{
+								_alert = null;
+								foreach (var it in records)
+								{
+									_incomming.Enqueue(it);
+								}
+								alert.MarkCompleted(true);
+							}
+							else
+							{
+								_items = records;
+							}
 						}
 					}
 				}
