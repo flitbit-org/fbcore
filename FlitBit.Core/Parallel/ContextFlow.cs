@@ -143,12 +143,15 @@ namespace FlitBit.Core.Parallel
 				{ 
 				}
 			}
-			if (_cleanup != null)
+			if (disposing)
 			{
-				foreach (var d in _cleanup)
+				if (_cleanup != null)
 				{
-					var dd = d;
-					Util.Dispose(ref dd);
+					foreach (var d in _cleanup)
+					{
+						var dd = d;
+						Util.Dispose(ref dd);
+					}
 				}
 			}
 			return true;

@@ -318,26 +318,8 @@ namespace FlitBit.Core
 			Contract.Requires(length >= 0);
 			if (length == 0) return new char[0];
 
-			char[] result = new char[length];
-			var i = 0;
-			while (i < result.Length)
-			{
-				// let the majority of characters be in the ascii range...
-				char c = (i % 2 == 0 || i % 3 == 0)
-					? Convert.ToChar(GetByte())
-					: GetChar();
-
-				// Sanitize the characters; attempt to provide unicode codepoints (round-trip serialize).
-				if (Char.IsWhiteSpace(c)
-					|| Char.IsLetterOrDigit(c)
-					|| Char.IsPunctuation(c)
-					|| Char.IsSeparator(c)
-					|| Char.IsSymbol(c))
-				{
-					result[i++] = c;
-				}
-			}
-			return result;
+			var bytes = GetBytes(length);
+			return Convert.ToBase64String(bytes).Substring(length).ToCharArray();
 		}
 		/// <summary>
 		/// Gets a random string value.
@@ -349,7 +331,22 @@ namespace FlitBit.Core
 			Contract.Requires(length >= 0);
 			if (length == 0) return String.Empty;
 
-			return new String(GetCharacterArray(length));
+			var bytes = GetBytes(length);
+			return Convert.ToBase64String(bytes).Substring(length);
+		}
+
+		/// <summary>
+		/// Gets a random string value.
+		/// </summary>
+		/// <param name="length">length of the string</param>
+		/// <returns>the value</returns>
+		public string GetStringWithLineBreaks(int length)
+		{
+			Contract.Requires(length >= 0);
+			if (length == 0) return String.Empty;
+
+			var bytes = GetBytes(length);
+			return Convert.ToBase64String(bytes, Base64FormattingOptions.InsertLineBreaks).Substring(length);
 		}
 
 		/// <summary>

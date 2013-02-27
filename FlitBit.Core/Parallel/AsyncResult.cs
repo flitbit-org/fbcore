@@ -213,7 +213,10 @@ namespace FlitBit.Core.Parallel
 		/// <returns></returns>
 		protected override bool PerformDispose(bool disposing)
 		{
-			Util.Dispose(ref _future);
+			if (disposing)
+			{
+				Util.Dispose(ref _future);
+			}
 			return true;
 		}
 	}

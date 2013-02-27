@@ -348,8 +348,15 @@ namespace FlitBit.Core.Parallel
 
 			protected override bool PerformDispose(bool disposing)
 			{
-				Thread.VolatileWrite(ref _status, CStatus_Stopping);
-				_signal.Set();
+				if (disposing)
+				{
+					Thread.VolatileWrite(ref _status, CStatus_Stopping);
+					_alert.Set();
+					_signal.Set();
+					Thread.Yield();
+					_signal.Dispose();
+					_alert.Dispose();
+				}
 				return true;
 			}
 		}

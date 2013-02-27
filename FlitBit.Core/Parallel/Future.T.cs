@@ -300,7 +300,10 @@ namespace FlitBit.Core.Parallel
 		/// <returns>if disposing, returns true if the disposal should continue.</returns>
 		protected override bool PerformDispose(bool disposing)
 		{
-			Util.Dispose(ref _waitable);
+			if (disposing)
+			{
+				Util.Dispose(ref _waitable);
+			}
 			return disposing;
 		}
 	}

@@ -247,33 +247,36 @@ namespace FlitBit.Core
 				catch (Exception)
 				{ 
 				}
-			}			
-			StackItem item;			
-			while (_items.TryPop(out item))
+			}
+			if (disposing)
 			{
-				try
+				StackItem item;
+				while (_items.TryPop(out item))
 				{
-					if (item.Disposable != null)
-					{
-						item.Disposable.Dispose();
-						NotifyItemDisposed(item.Disposable);
-					}
-					else if (item.Action != null) item.Action();
-				}
-				catch (Exception e)
-				{
-					if (disposing) throw;
-
-					// We may be in the GC, trace as a warning and eat any exception
-					// thrown by trace logic...
 					try
 					{
-						Trace.TraceWarning(String.Concat(Resources.Warn_ErrorWhileDisposingCleanupScope,
-							": ", (item.Disposable == null) ? item.Action.GetFullName() : item.Disposable.GetType().FullName,
-							"; ", e.FormatForLogging())
-								);
+						if (item.Disposable != null)
+						{
+							item.Disposable.Dispose();
+							NotifyItemDisposed(item.Disposable);
+						}
+						else if (item.Action != null) item.Action();
 					}
-					catch (Exception) { /* safety net, intentionally eat the since we might be in GC thread */ }
+					catch (Exception e)
+					{
+						if (disposing) throw;
+
+						// We may be in the GC, trace as a warning and eat any exception
+						// thrown by trace logic...
+						try
+						{
+							Trace.TraceWarning(String.Concat(Resources.Warn_ErrorWhileDisposingCleanupScope,
+								": ", (item.Disposable == null) ? item.Action.GetFullName() : item.Disposable.GetType().FullName,
+								"; ", e.FormatForLogging())
+									);
+						}
+						catch (Exception) { /* safety net, intentionally eat the since we might be in GC thread */ }
+					}
 				}
 			}
 			return true;
