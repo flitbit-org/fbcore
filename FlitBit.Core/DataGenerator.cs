@@ -360,7 +360,7 @@ namespace FlitBit.Core
 		public string GetWords(int count)
 		{
 			Contract.Requires(count >= 0);
-			var ran = new Random();
+			var ran = new Random(Environment.TickCount);
 			var pronounceable = new PronounceableWordGenerator();
 			return String.Join(" ", pronounceable.Generate(ran, count, 1, 12));
 		}

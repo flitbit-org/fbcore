@@ -3,11 +3,12 @@
 #endregion
 
 using System;
-using System.Linq;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Threading;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
+using System.Linq;
+using System.Threading;
 
 namespace FlitBit.Core.Parallel
 {
@@ -32,14 +33,13 @@ namespace FlitBit.Core.Parallel
 			public WaitHandle Handle;
 			public Action Handler;
 		}
-		readonly Reactor<NotifyRecord> _invoker;
-		readonly Notifier _notifier;
+		readonly Reactor<NotifyRecord> _invoker = new Reactor<NotifyRecord>((self, rec) => rec.Handler());
 		readonly ConcurrentQueue<NotifyRecord> _incomming = new ConcurrentQueue<NotifyRecord>();
+		readonly Lazy<Notifier> _notifier;
 
 		private Notification()
 		{
-			_invoker = new Reactor<NotifyRecord>((self, rec) => rec.Handler());
-			_notifier = new Notifier(true, _incomming, _invoker);
+			_notifier = new Lazy<Notifier>(() => new Notifier(_incomming, _invoker), LazyThreadSafetyMode.ExecutionAndPublication);
 		}
 
 		/// <summary>
@@ -53,8 +53,9 @@ namespace FlitBit.Core.Parallel
 			Contract.Requires<ArgumentNullException>(async != null);
 			Contract.Requires<ArgumentNullException>(after != null);
 
-			var ambient = ContextFlow.ForkAmbient();			
-			var record = new NotifyRecord { 
+			var ambient = ContextFlow.ForkAmbient();
+			var record = new NotifyRecord
+			{
 				ID = Interlocked.Increment(ref __recordID),
 				Async = async,
 				Handler = () =>
@@ -70,194 +71,285 @@ namespace FlitBit.Core.Parallel
 							Go.NotifyUncaughtException(after.Target, e);
 						}
 					}
-				} 
+				}
 			};
 			_incomming.Enqueue(record);
-			_notifier.Wake(null);
+			_notifier.Value.Wake();
 		}
 
 		internal class Notifier : Disposable
 		{
-			static readonly int CRecordsPerWaitPeriod = 63;
-			static int __identityCount = 0;
+			const int CStatus_None = 0;
+			const int CStatus_Ok = 1;
+			const int CStatus_Waiting = 2;
+			const int CStatus_Repartition = 3;
+			const int CStatus_Stopping = 5;
+			const int CStatus_Stopped = 6;
 
-			enum State
+			const int CRecordsPerWaitPeriod = 63;
+			static int __threadID = 0;
+
+			class NotifierState
 			{
-				Initial = 0,
-				Loading = 1,
-				Waiting = 1 << 2,
-				Notifying = 1 << 3,
-				Disposing = 1 << 4,
+				int _status = CStatus_None;
+				List<NotifyRecord> _records;
+
+				public int ID { get; set; }
+				public ManualResetEvent Alert { get; set; }
+				public List<NotifyRecord> Records { get { return Util.VolatileRead(ref _records); } }
+				public ConcurrentQueue<NotifyRecord> SharedQueue { get; set; }
+				public Reactor<NotifyRecord> Notifier { get; set; }
+
+				public int Status { get { return Thread.VolatileRead(ref _status); } }
+
+				public int MarkOk(int expect, List<NotifyRecord> records)
+				{
+					var res = Interlocked.CompareExchange(ref _status, CStatus_Ok, expect);
+					if (res == expect && records != null)
+					{
+						Util.VolatileWrite(ref _records, records);
+					}
+					return res;
+				}
+				public int MarkWaiting(int expect)
+				{
+					return Interlocked.CompareExchange(ref _status, CStatus_Waiting, expect);
+				}
+				public bool MarkRepartition()
+				{
+					int res = Thread.VolatileRead(ref _status);
+					while (res < CStatus_Stopping)
+					{
+						if (Interlocked.CompareExchange(ref _status, CStatus_Repartition, res) == res)
+						{
+							return true;
+						}
+						// lost race condition, loop to ensure it is still ok...
+						res = Thread.VolatileRead(ref _status);
+					}
+					return false;
+				}
+				public void MarkStopped()
+				{
+					Thread.VolatileWrite(ref _status, CStatus_Stopped);
+				}
+				public void Stop()
+				{
+					int res = Thread.VolatileRead(ref _status);
+					if (res < CStatus_Stopping)
+					{
+						Thread.VolatileWrite(ref _status, CStatus_Stopping);
+					}
+				}
+				internal void WaitFor(int state)
+				{
+					while (Status != state)
+					{
+						Thread.Yield();
+					}
+				}
 			}
-			readonly Status<State> _status = new Status<State>(State.Initial);
-			readonly Reactor<NotifyRecord> _notifier;
+
 			readonly int _id;
-			IFuture<bool> _alert;
-			Thread _waiter;
-			ManualResetEvent _signal;
-			IEnumerable<NotifyRecord> _items;
-			readonly ConcurrentQueue<NotifyRecord> _incomming;
-			
-			internal Notifier(bool leader, ConcurrentQueue<NotifyRecord> incomming, Reactor<NotifyRecord> notifier)
+			readonly Thread _waiter;
+			readonly ManualResetEvent _alert;
+			readonly AutoResetEvent _signal;
+			readonly ConcurrentQueue<NotifyRecord> _queue;
+			readonly Reactor<NotifyRecord> _notifier;
+			int _status = CStatus_None;
+
+			internal Notifier(ConcurrentQueue<NotifyRecord> queue, Reactor<NotifyRecord> notifier)
 			{
-				_incomming = incomming;
+				_id = Interlocked.Increment(ref __threadID);
+				_queue = queue;
 				_notifier = notifier;
-				_id = Interlocked.Increment(ref __identityCount);
-				if (leader)
-				{
-					_waiter = new Thread(PerformLeaderLogic);
-				}
-				else
-				{
-					_waiter = new Thread(PerformFollowerLogic);
-				}
-				_signal = new ManualResetEvent(false);
+				_alert = new ManualResetEvent(false);
+				_signal = new AutoResetEvent(false);
+				_waiter = new Thread(PerformLeaderLogic);
 				_waiter.Start();
 			}
 
 			internal int ID { get { return _id; } }
 
-			internal void Wake(IFuture<bool> alert)
+			internal void Wake()
 			{
-				if (!IsDisposed && _status.IsLessThan(State.Disposing))
+				int res = Thread.VolatileRead(ref _status);
+				while (res < CStatus_Stopping)
 				{
-					Util.VolatileWrite(ref _alert, alert);
-					_signal.Set();
+					if (res == CStatus_Repartition) break; // if currently repartitioning then no need to wake.
+					if (res == CStatus_Waiting
+						&& Interlocked.CompareExchange(ref _status, CStatus_Repartition, CStatus_Waiting) == CStatus_Waiting)
+					{
+						_signal.Set();
+						break; // was waiting and we set status to repartitioning.
+					}
+					// lost race condition, loop to ensure it is still ok...
+					res = Thread.VolatileRead(ref _status);
 				}
 			}
 
 			void PerformLeaderLogic()
 			{
-				var subordinates = new List<Notifier>();
-				while (_status.SetStateIfLessThan(State.Loading, State.Disposing))
+				var listeners = new List<NotifierState>();
+				try
 				{
-					var queue = new Queue<IFuture<bool>>();
-					foreach (var sub in subordinates)
+					int res;
+					while ((res = Thread.VolatileRead(ref _status)) < CStatus_Stopping)
 					{
-						var futr = new Future<bool>();
-						sub.Wake(futr);
-						queue.Enqueue(futr);
-					}
-					// Expects all threads to set the future's value.
-					while (queue.Count > 0)
-					{
-						var ea = queue.Dequeue();
-						ea.Wait(TimeSpan.MaxValue);
-					}
+						if (res == CStatus_Repartition)
+						{
+							if (_queue.Count > 0)
+							{
+								var candidates = new List<NotifierState>();
+								foreach (var c in listeners)
+								{
+									if (c.MarkRepartition()) candidates.Add(c);
+									else c.Stop();
+								}
+								_alert.Set();
+								foreach (var c in candidates)
+								{
+									c.WaitFor(CStatus_Ok);
+								}
+								_alert.Reset();
+								NotifyRecord rec;
+								List<NotifyRecord> records = new List<NotifyRecord>();
+								while (_queue.TryDequeue(out rec))
+								{
+									if (rec.Async.IsCompleted) _notifier.Push(rec);
+									else
+									{
+										records.Add(rec);
+									}
+								}
+								var arr = records.ToArray();
+								int i = 0, j = 0;
+								NotifierState sub;
+								while (j < records.Count)
+								{
+									int ub = Math.Min(CRecordsPerWaitPeriod, records.Count - j);
+									NotifyRecord[] slice = new NotifyRecord[ub];
+									Array.Copy(arr, j, slice, 0, ub);
+									j += ub;
+									var items = new List<NotifyRecord>(slice);
 
-					NotifyRecord rec;
-					List<NotifyRecord> records = new List<NotifyRecord>();
-					while (_incomming.TryDequeue(out rec))
-					{
-						if (rec.Async.IsCompleted) _notifier.Push(rec);
+									if (i == candidates.Count)
+									{
+										candidates.Add(sub = new NotifierState
+										{
+											ID = Interlocked.Increment(ref __threadID),
+											Alert = _alert,
+											SharedQueue = _queue,
+											Notifier = _notifier
+										});
+										new Thread(PerformFollowerLogic).Start(sub);
+										sub.MarkOk(CStatus_None, items);
+									}
+									else
+									{
+										sub = candidates[i];
+										sub.MarkOk(CStatus_Repartition, items);
+									}
+
+									i++;
+								}
+								_alert.Set();
+								_alert.Reset();
+								listeners = new List<NotifierState>(candidates);
+							}
+							Interlocked.CompareExchange(ref _status, CStatus_Ok, CStatus_Repartition);
+						}
 						else
 						{
-							records.Add(rec);
-						}
-					}
-					var arr = records.ToArray();
-					int i = 0, j = 0;
-					while (j < records.Count)
-					{
-						if (i == subordinates.Count) subordinates.Add(new Notifier(false, _incomming, _notifier));
-						var sub = subordinates[i++];
-						int ub = Math.Min(CRecordsPerWaitPeriod, records.Count - j);
-						NotifyRecord[] slice = new NotifyRecord[ub];
-						Array.Copy(arr, j, slice, 0, ub);
-						sub.Push(arr);
-						j += ub;
-					}
-					if (_incomming.Count == 0)
-					{
-						if (subordinates.Count > i)
-						{
-							var remove = subordinates[i];
-							subordinates.RemoveAt(i);
-							remove.Dispose();
-						}
-						if (_status.SetStateIfLessThan(State.Waiting, State.Disposing))
-						{
-							_signal.WaitOne();
-							_signal.Reset();
+							if (Interlocked.CompareExchange(ref _status, CStatus_Waiting, res) == res)
+							{
+								_signal.WaitOne();
+							}
 						}
 					}
 				}
+				catch (ThreadAbortException)
+				{
+				}
+				catch (Exception e)
+				{
+					Go.NotifyUncaughtException(this, e);
+				}
+				Thread.VolatileWrite(ref _status, CStatus_Stopped);
 			}
 
-			private void Push(IEnumerable<NotifyRecord> items)
-			{
-				Util.VolatileWrite(ref _items, items);
-				_signal.Set();
-			}
-
-			void PerformFollowerLogic()
+			void PerformFollowerLogic(object state)
 			{
 				const int wake = 0;
 				const int offset = -1;
-				
-				while (_status.SetStateIfLessThan(State.Loading, State.Disposing))
+				NotifierState status = (NotifierState)state;
+				status.MarkOk(CStatus_None, null);
+				try
 				{
-					var records = new List<NotifyRecord>();
-					if (_items != null)
+					int res;
+					while ((res = status.Status) < CStatus_Stopping)
 					{
-						foreach (var item in _items)
+						var items = status.Records;
+						switch (res)
 						{
-							if (item.Async.IsCompleted)
-							{
-								_notifier.Push(item);
-							}
-							else
-							{
-								records.Add(item);
-							}
-						}
-						_items = null;
-					}
-					var waiting = new WaitHandle[] { _signal }
-						.Concat(records.Where(r => r.Async.AsyncWaitHandle != null).Select(r => r.Async.AsyncWaitHandle)).ToArray();
-					if (_status.SetStateIfLessThan(State.Waiting, State.Disposing))
-					{
-						int signaled = WaitHandle.WaitAny(waiting);
-
-						if (signaled > wake)
-						{
-							_status.SetStateIfLessThan(State.Notifying, State.Disposing);
-							var it = records[signaled + offset];
-							_items = records.Where(r => r.ID != it.ID);
-							_notifier.Push(it);
-						}
-						else
-						{
-							_signal.Reset();
-							var alert = Util.VolatileRead(ref _alert);
-							if (alert != null)
-							{
-								_alert = null;
-								foreach (var it in records)
+							case CStatus_Ok:
+							case CStatus_Waiting:
+								if (items == null || !items.Any())
 								{
-									_incomming.Enqueue(it);
+									status.Alert.WaitOne();
 								}
-								alert.MarkCompleted(true);
-							}
-							else
-							{
-								_items = records;
-							}
+								else
+								{
+									var waiting = new WaitHandle[] { status.Alert }.Concat(
+										from r in items
+										where r.Async.AsyncWaitHandle != null
+										select r.Async.AsyncWaitHandle
+										)
+										.ToArray();
+									if (res == status.MarkWaiting(res))
+									{
+										int signaled = WaitHandle.WaitAny(waiting);
+										if (signaled > wake)
+										{
+											var it = items[signaled + offset];
+											items.RemoveAt(signaled + offset);
+											_notifier.Push(it);
+										}
+									}
+								}
+								break;
+							case CStatus_Repartition:
+								if (items != null)
+								{
+									var q = status.SharedQueue;
+									foreach (var it in items) { q.Enqueue(it); }
+								}
+								status.MarkOk(CStatus_Repartition, null);
+								break;
+							default:
+								break;
 						}
 					}
 				}
+				catch (ThreadAbortException)
+				{
+				}
+				catch (Exception e)
+				{
+					Go.NotifyUncaughtException(this, e);
+				}
+				Thread.VolatileWrite(ref _status, CStatus_Stopped);
+			}
+
+			protected override bool ShouldTrace(TraceEventType eventType)
+			{
+				return eventType <= TraceEventType.Warning;
 			}
 
 			protected override bool PerformDispose(bool disposing)
 			{
-				if (_waiter != null && _waiter.IsAlive)
-				{
-					_status.SetStateIfLessThan(State.Disposing, State.Disposing);
-					_signal.Set();
-					_waiter.Join();
-					Util.Dispose(ref _signal);
-					Util.Dispose(ref _waiter);
-				}
+				Thread.VolatileWrite(ref _status, CStatus_Stopping);
+				_signal.Set();
 				return true;
 			}
 		}

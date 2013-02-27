@@ -147,7 +147,8 @@ namespace FlitBit.Core.Parallel
 			{
 				foreach (var d in _cleanup)
 				{
-					d.Dispose();
+					var dd = d;
+					Util.Dispose(ref dd);
 				}
 			}
 			return true;

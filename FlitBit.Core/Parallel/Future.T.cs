@@ -265,6 +265,7 @@ namespace FlitBit.Core.Parallel
 			throw new TimeoutException();
 		}
 
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		internal ManualResetEventSlim Waitable
 		{
 			get

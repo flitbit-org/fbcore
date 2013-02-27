@@ -24,8 +24,11 @@ namespace FlitBit.Core.Tests.Parallel
 				var res = (HttpWebResponse)future.Value;
 
 				Console.WriteLine(res.GetResponseBodyAsString());
-			}
 
+
+
+				
+			}	
 		}
 	}
 }

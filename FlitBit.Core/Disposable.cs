@@ -72,7 +72,11 @@ namespace FlitBit.Core
 				{
 					if (!_disposal.TrySpinWaitForState(DisposalState.Incomplete, state => state == DisposalState.Disposed))
 					{
-						throw new ObjectDisposedException(this.GetType().FullName);
+						if (ShouldTrace(TraceEventType.Error))
+						{
+							OnTraceEvent(TraceEventType.Error, "Disposed object disposed again.");
+						}
+						return false;
 					}
 				}
 				else if (_disposal.TryTransition(DisposalState.Disposing, DisposalState.Incomplete, DisposalState.None))
