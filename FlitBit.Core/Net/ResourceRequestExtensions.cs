@@ -202,6 +202,7 @@ namespace FlitBit.Core.Net
 		{
 			HttpPostJson(req, body, Encoding.UTF8, after);
 		}
+
 		/// <summary>
 		/// Performs an HTTP POST against a URI as JSON.
 		/// </summary>
@@ -234,6 +235,7 @@ namespace FlitBit.Core.Net
 		{
 			HttpPutJson(req, body, Encoding.UTF8, after);
 		}
+
 		/// <summary>
 		/// Performs an HTTP PUT against a URI as JSON.
 		/// </summary>
@@ -254,6 +256,28 @@ namespace FlitBit.Core.Net
 
 			ExecuteHttpVerbWithPostBody(req, buffer, "application/json", "PUT", after);
 		}
+
+        /// <summary>Performs an HTTP PUT against a URI as text.</summary>
+        /// <param name="req">The request.</param>
+        /// <param name="body">The body.</param>
+        /// <param name="after">The continuation to be executed after.</param>
+        public static void HttpPutText(this HttpWebRequest req, string body, Action<Exception, HttpWebResponse> after)
+        {
+            HttpPutText(req, body, Encoding.UTF8, after);
+        }
+
+	    /// <summary>Performs an HTTP PUT against a URI as text.</summary>
+	    /// <param name="req">The request.</param>
+	    /// <param name="body">The body.</param>
+	    /// <param name="encoding">The content encoding.</param>
+	    /// <param name="after">The continuation to be executed after.</param>
+	    public static void HttpPutText(this HttpWebRequest req, string body, Encoding encoding, Action<Exception, HttpWebResponse> after)
+        {
+            Encoding lclEncoding = encoding ?? Encoding.UTF8;
+            var buffer = lclEncoding.GetBytes(body);
+
+            ExecuteHttpVerbWithPostBody(req, buffer, "text/plain", "PUT", after);
+        }
 		
 		/// <summary>
 		/// Performs an HTTP POST against a URI as XML.
@@ -266,6 +290,7 @@ namespace FlitBit.Core.Net
 		{
 			HttpPostJson(req, body, Encoding.UTF8, after);
 		}
+
 		/// <summary>
 		/// Performs an HTTP POST against a URI as XML.
 		/// </summary>
@@ -298,6 +323,7 @@ namespace FlitBit.Core.Net
 		{
 			HttpPutXml(req, body, Encoding.UTF8, after);
 		}
+
 		/// <summary>
 		/// Performs an HTTP PUT against a URI as XML.
 		/// </summary>
