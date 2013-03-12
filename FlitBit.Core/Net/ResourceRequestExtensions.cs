@@ -17,7 +17,11 @@ using Newtonsoft.Json;
 
 namespace FlitBit.Core.Net
 {
-	/// <summary>
+    using System.Xml;
+
+    using Formatting = Newtonsoft.Json.Formatting;
+
+    /// <summary>
 	/// Extensions for resource oriented HTTP requests.
 	/// </summary>
 	public static class ResourceRequestExtensions
@@ -28,7 +32,7 @@ namespace FlitBit.Core.Net
 		public static readonly string ResourceClientString = String
 			.Concat(Resources.ResourceClientName, Assembly.GetExecutingAssembly().GetName().Version.ToString());
 
-		static readonly string DefaultAcceptHeader = "application/json, text/json;q=0.9, application/xml;q=0.8, text/xml;q=0.7";
+		static readonly string DefaultAcceptHeader = "application/json, text/json;q=0.9, application/xml;q=0.8, text/xml;q=0.7, text/plain";
 
 		/// <summary>
 		/// Given a URI, makes a web request.
@@ -282,24 +286,36 @@ namespace FlitBit.Core.Net
 		/// <summary>
 		/// Performs an HTTP POST against a URI as XML.
 		/// </summary>
-		/// <typeparam name="B">body type B</typeparam>
-		/// <param name="req">the http request</param>
-		/// <param name="body">the post body</param>
-		/// <param name="after">an action to be called upon completion</param>
-		public static void HttpPostXml<B>(this HttpWebRequest req, B body, Action<Exception, HttpWebResponse> after)
+		/// <param name="req">
+		/// the http request
+		/// </param>
+		/// <param name="body">
+		/// the post body
+		/// </param>
+		/// <param name="after">
+		/// an action to be called upon completion
+		/// </param>
+		public static void HttpPostXml(this HttpWebRequest req, XmlDocument body, Action<Exception, HttpWebResponse> after)
 		{
-			HttpPostJson(req, body, Encoding.UTF8, after);
+			HttpPostXml(req, body, Encoding.UTF8, after);
 		}
 
 		/// <summary>
 		/// Performs an HTTP POST against a URI as XML.
 		/// </summary>
-		/// <typeparam name="B">body type B</typeparam>
-		/// <param name="req">the http request</param>
-		/// <param name="body">the post body</param>
-		/// <param name="encoding">the content encoding</param>
-		/// <param name="after">an action to be called upon completion</param>
-		public static void HttpPostXml<B>(this HttpWebRequest req, B body, Encoding encoding, Action<Exception, HttpWebResponse> after)
+		/// <param name="req">
+		/// the http request
+		/// </param>
+		/// <param name="body">
+		/// the post body
+		/// </param>
+		/// <param name="encoding">
+		/// the content encoding
+		/// </param>
+		/// <param name="after">
+		/// an action to be called upon completion
+		/// </param>
+		public static void HttpPostXml(this HttpWebRequest req, XmlDocument body, Encoding encoding, Action<Exception, HttpWebResponse> after)
 		{
 			Contract.Requires(req != null);
 			Contract.Requires(body != null);
@@ -307,7 +323,7 @@ namespace FlitBit.Core.Net
 
 			Encoding enc = encoding ?? Encoding.UTF8;
 
-			var bodyAsString = body.ToString();
+			var bodyAsString = body.OuterXml;
 			var buffer = enc.GetBytes(bodyAsString);
 			
 			ExecuteHttpVerbWithPostBody(req, buffer, "application/xml", "POST", after);
