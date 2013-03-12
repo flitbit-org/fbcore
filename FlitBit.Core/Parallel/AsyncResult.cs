@@ -1,56 +1,52 @@
 ﻿#region COPYRIGHT© 2009-2013 Phillip Clark. All rights reserved.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
+using System.Diagnostics.Contracts;
 using System.Threading;
 using FlitBit.Core.Properties;
-using System.Diagnostics.Contracts;
 
 namespace FlitBit.Core.Parallel
 {
 	/// <summary>
-	/// Basic implementation of the ITaskCompletion interface.
+	///   Basic implementation of the ITaskCompletion interface.
 	/// </summary>
 	public class AsyncResult : Disposable, IAsyncResult
-	{			
+	{
 		readonly AsyncCallback _asyncCallback;
-		readonly Object _asyncHandback;
 
-		bool _completedSynchronously;		
 		IFuture<bool> _future;
-		
+
 		/// <summary>
-		/// Creates a new instance.
+		///   Creates a new instance.
 		/// </summary>
 		internal AsyncResult(IFuture<bool> future)
 			: this(null, null, null)
 		{
 			Contract.Requires<ArgumentNullException>(future != null);
 			_future = future;
-			_completedSynchronously = future.IsCompleted;
+			this.CompletedSynchronously = future.IsCompleted;
 		}
 
 		/// <summary>
-		/// Creates a new instance.
+		///   Creates a new instance.
 		/// </summary>
 		public AsyncResult()
-			: this(null, null, null)
-		{
-		}
+			: this(null, null, null) { }
 
 		/// <summary>
-		/// Creates a new instance and initializes the AsyncCallback.
+		///   Creates a new instance and initializes the AsyncCallback.
 		/// </summary>
 		/// <param name="asyncCallback">A delegate to be called when the async operation completes.</param>
 		/// <param name="asyncHandback">A handback object passed to the AsyncCallback when the operation completes.</param>
 		public AsyncResult(AsyncCallback asyncCallback, Object asyncHandback)
-			: this(asyncCallback, asyncHandback, null)
-		{
-		}
+			: this(asyncCallback, asyncHandback, null) { }
 
 		/// <summary>
-		/// Creates a new instance and initializes the AsyncCallback.
+		///   Creates a new instance and initializes the AsyncCallback.
 		/// </summary>
 		/// <param name="asyncCallback">A delegate to be called when the async operation completes.</param>
 		/// <param name="asyncHandback">A handback object passed to the AsyncCallback when the operation completes.</param>
@@ -59,50 +55,47 @@ namespace FlitBit.Core.Parallel
 		{
 			_future = new Future<bool>();
 			_asyncCallback = asyncCallback;
-			_asyncHandback = asyncHandback;
+			this.AsyncHandback = asyncHandback;
 			this.AsyncState = asyncState;
 		}
 
 		#region IAsyncResult implementation
 
 		/// <summary>
-		/// Gets the task's asynchronous state.
+		///   Gets the task's asynchronous state.
 		/// </summary>
 		public Object AsyncState { get; private set; }
 
 		/// <summary>
-		/// Indicates whether the task completed synchronously.
+		///  Gets the handback object given at the asynchronous operations begin.
 		/// </summary>
-		public bool CompletedSynchronously
-		{
-			get { return _completedSynchronously; }
-		}
+		public Object AsyncHandback { get; private set; }
+
 		/// <summary>
-		/// Gets the task's wait handle.
+		///   Indicates whether the task completed synchronously.
+		/// </summary>
+		public bool CompletedSynchronously { get; private set; }
+
+		/// <summary>
+		///   Gets the task's wait handle.
 		/// </summary>
 		public WaitHandle AsyncWaitHandle
 		{
-			get
-			{
-				return _future.WaitHandle;
-			}
+			get { return _future.WaitHandle; }
 		}
 
 		/// <summary>
-		/// Gets a value indicating whether the asynchronous operation has completed.
+		///   Gets a value indicating whether the asynchronous operation has completed.
 		/// </summary>
 		public bool IsCompleted
 		{
-			get
-			{
-				return _future.IsCompleted;
-			}
+			get { return _future.IsCompleted; }
 		}
 
 		#endregion
 
 		/// <summary>
-		/// Indicates whether the asynchronous operation resulted in a fault.
+		///   Indicates whether the asynchronous operation resulted in a fault.
 		/// </summary>
 		public bool IsFaulted
 		{
@@ -114,7 +107,7 @@ namespace FlitBit.Core.Parallel
 		}
 
 		/// <summary>
-		/// Gets the exception that caused the fault.
+		///   Gets the exception that caused the fault.
 		/// </summary>
 		public Exception Exception
 		{
@@ -129,37 +122,46 @@ namespace FlitBit.Core.Parallel
 		{
 			Contract.Requires<InvalidOperationException>(!IsCompleted);
 
-			_completedSynchronously = completedSynchronously;
+			this.CompletedSynchronously = completedSynchronously;
 			_future.MarkCompleted(true);
 
 			Thread.MemoryBarrier();
 			var callback = _asyncCallback;
 			Thread.MemoryBarrier();
-			if (callback != null) callback(this);
+			if (callback != null)
+			{
+				callback(this);
+			}
 		}
 
 		internal void MarkException(Exception ex, bool completedSynchronously)
 		{
 			Contract.Requires<InvalidOperationException>(!IsCompleted);
 
-			_completedSynchronously = completedSynchronously;
+			this.CompletedSynchronously = completedSynchronously;
 			_future.MarkFaulted(ex);
 
 			Thread.MemoryBarrier();
 			var callback = _asyncCallback;
 			Thread.MemoryBarrier();
-			if (callback != null) callback(this);
+			if (callback != null)
+			{
+				callback(this);
+			}
 		}
 
 		/// <summary>
-		/// Ends the asynchronous operation.
+		///   Ends the asynchronous operation.
 		/// </summary>
 		public void EndInvoke()
 		{
 			if (!this.IsCompleted)
 			{
-				bool signalReceived = this.AsyncWaitHandle.WaitOne();
-				if (!signalReceived) throw new ParallelException("Not completed");
+				var signalReceived = this.AsyncWaitHandle.WaitOne();
+				if (!signalReceived)
+				{
+					throw new ParallelException("Not completed");
+				}
 			}
 			// If an exception occured, rethrow...
 			if (_future.IsFaulted)
@@ -169,7 +171,7 @@ namespace FlitBit.Core.Parallel
 		}
 
 		/// <summary>
-		/// Ends the asynchronous operation.
+		///   Ends the asynchronous operation.
 		/// </summary>
 		/// <param name="timeout"></param>
 		/// <param name="exitContext"></param>
@@ -177,8 +179,11 @@ namespace FlitBit.Core.Parallel
 		{
 			if (!this.IsCompleted)
 			{
-				bool signalReceived = this.AsyncWaitHandle.WaitOne(timeout, exitContext);
-				if (!signalReceived) throw new ParallelException("Not completed");
+				var signalReceived = this.AsyncWaitHandle.WaitOne(timeout, exitContext);
+				if (!signalReceived)
+				{
+					throw new ParallelException("Not completed");
+				}
 			}
 			// If an exception occured, rethrow...
 			if (_future.IsFaulted)
@@ -188,7 +193,7 @@ namespace FlitBit.Core.Parallel
 		}
 
 		/// <summary>
-		/// Ends the asynchronous operation.
+		///   Ends the asynchronous operation.
 		/// </summary>
 		/// <param name="millisecondsTimeout"></param>
 		/// <param name="exitContext"></param>
@@ -196,8 +201,11 @@ namespace FlitBit.Core.Parallel
 		{
 			if (!this.IsCompleted)
 			{
-				bool signalReceived = this.AsyncWaitHandle.WaitOne(millisecondsTimeout, exitContext);
-				if (!signalReceived) throw new ParallelException("Not completed");
+				var signalReceived = this.AsyncWaitHandle.WaitOne(millisecondsTimeout, exitContext);
+				if (!signalReceived)
+				{
+					throw new ParallelException("Not completed");
+				}
 			}
 			// If an exception occured, rethrow...
 			if (_future.IsFaulted)
@@ -207,7 +215,7 @@ namespace FlitBit.Core.Parallel
 		}
 
 		/// <summary>
-		/// Performs a disposal of the async result.
+		///   Performs a disposal of the async result.
 		/// </summary>
 		/// <param name="disposing"></param>
 		/// <returns></returns>

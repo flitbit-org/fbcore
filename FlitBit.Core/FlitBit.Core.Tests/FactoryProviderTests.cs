@@ -21,7 +21,7 @@ namespace FlitBit.Core.Tests
 
 			// Can still get a factory...
 			factory = FactoryProvider.Factory;
-			Assert.IsNotNull(factory); 
+			Assert.IsNotNull(factory);
 		}
 	}
 }

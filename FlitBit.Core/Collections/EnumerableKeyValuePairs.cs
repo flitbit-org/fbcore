@@ -1,30 +1,36 @@
 ﻿#region COPYRIGHT© 2009-2013 Phillip Clark. All rights reserved.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace FlitBit.Core.Collections
 {
 	/// <summary>
-	/// Enumerable interface over key-value-pairs.
+	///   Enumerable interface over key-value-pairs.
 	/// </summary>
 	public class EnumerableKeyValuePairs : IEnumerable<KeyValuePair>
 	{
 		KeyValuePair[] _kvps;
 
 		/// <summary>
-		/// Creates a new instance from an input string.
+		///   Creates a new instance from an input string.
 		/// </summary>
 		/// <param name="input">The input string.</param>
 		/// <param name="pairSep">The character that separates key value pairs</param>
 		/// <param name="kvpSep">The character that separates keys from values</param>
 		public EnumerableKeyValuePairs(string input, char pairSep, char kvpSep)
 		{
-			if (input == null) throw new ArgumentNullException("input");
+			if (input == null)
+			{
+				throw new ArgumentNullException("input");
+			}
 
-			List<KeyValuePair> items = new List<KeyValuePair>();
+			var items = new List<KeyValuePair>();
 			foreach (var s in input.Split(pairSep))
 			{
 				KeyValuePair kvp;
@@ -37,7 +43,7 @@ namespace FlitBit.Core.Collections
 		}
 
 		/// <summary>
-		/// Gets the enumerator.
+		///   Gets the enumerator.
 		/// </summary>
 		/// <returns></returns>
 		public IEnumerator<KeyValuePair> GetEnumerator()
@@ -48,9 +54,6 @@ namespace FlitBit.Core.Collections
 			}
 		}
 
-		System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
-		{
-			return GetEnumerator();
-		}
+		IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
 	}
 }

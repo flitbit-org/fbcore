@@ -17,7 +17,7 @@ namespace FlitBit.Core.Tests.Xml
 	<Person id='2994'><Name>Wilbur Brandoff</Name></Person>
 </People>";
 
-			dynamic xdyn = XDynamic.Parse(source);
+			var xdyn = XDynamic.Parse(source);
 
 			Assert.IsNotNull(xdyn);
 			Assert.IsNotNull(xdyn.Person);
@@ -26,8 +26,8 @@ namespace FlitBit.Core.Tests.Xml
 			var peeps = xdyn.Person as IEnumerable<dynamic>;
 
 			var gilbert = (from p in peeps
-										 where p.Name.Contains("Gilbert")
-										 select p).Single();
+										where p.Name.Contains("Gilbert")
+										select p).Single();
 			Assert.IsNotNull(gilbert);
 			Assert.AreEqual("1347", gilbert.id);
 		}

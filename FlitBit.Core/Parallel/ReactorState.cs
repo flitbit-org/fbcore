@@ -1,37 +1,43 @@
 ﻿#region COPYRIGHT© 2009-2013 Phillip Clark. All rights reserved.
-// For licensing information see License.txt (MIT style licensing).
-#endregion
 
+// For licensing information see License.txt (MIT style licensing).
+
+#endregion
 
 namespace FlitBit.Core.Parallel
 {
 	/// <summary>
-	/// Indicates the Reactor's state.
+	///   Indicates the Reactor's state.
 	/// </summary>
 	public enum ReactorState
 	{
 		/// <summary>
-		/// Indicates the reactor is idle.
+		///   Indicates the reactor is idle.
 		/// </summary>
 		Idle = 0,
+
 		/// <summary>
-		/// Indicates the reactor is active.
+		///   Indicates the reactor is active.
 		/// </summary>
 		Active = 1,
+
 		/// <summary>
-		/// Indicates the reactor is suspending.
+		///   Indicates the reactor is suspending.
 		/// </summary>
 		SuspendSignaled = 2,
+
 		/// <summary>
-		/// Indicates the reactor is suspended.
+		///   Indicates the reactor is suspended.
 		/// </summary>
 		Suspended = 3,
+
 		/// <summary>
-		/// Indicates the reactor is stopping.
+		///   Indicates the reactor is stopping.
 		/// </summary>
 		StopSignaled = 4,
+
 		/// <summary>
-		/// Indicates the reactor has stopped.
+		///   Indicates the reactor has stopped.
 		/// </summary>
 		Stopped = 5,
 	}

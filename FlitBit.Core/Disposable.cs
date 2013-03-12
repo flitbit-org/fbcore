@@ -1,17 +1,16 @@
 ﻿#region COPYRIGHT© 2009-2013 Phillip Clark. All rights reserved.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
-using System.Threading;
-using System.Diagnostics.CodeAnalysis;
-using System.Diagnostics.Contracts;
 using System.Diagnostics;
 
 namespace FlitBit.Core
 {
 	/// <summary>
-	/// Abstract logic for disposable objects.
+	///   Abstract logic for disposable objects.
 	/// </summary>
 	[Serializable]
 	public abstract class Disposable : IInterrogateDisposable
@@ -23,33 +22,28 @@ namespace FlitBit.Core
 			Disposing = 2,
 			Disposed = 3
 		}
+
 		Status<DisposalState> _disposal = new Status<DisposalState>();
 
 #if DEBUG
 		/// <summary>
-		/// Creates a new instance.
+		///   Creates a new instance.
 		/// </summary>
-		public Disposable()
-		{
-			this.CreationStack = new System.Diagnostics.StackTrace().GetFrames();
-		}
+		public Disposable() { this.CreationStack = new StackTrace().GetFrames(); }
 
 		/// <summary>
-		/// Exposes the call stack at the time of creation (DEBUG).
+		///   Exposes the call stack at the time of creation (DEBUG).
 		/// </summary>
-		public System.Diagnostics.StackFrame[] CreationStack { get; private set; }
-#endif		
+		public StackFrame[] CreationStack { get; private set; }
+#endif
 
 		/// <summary>
-		/// Finalizes the instance.
+		///   Finalizes the instance.
 		/// </summary>
-		~Disposable()
-		{
-			this.Dispose(false);
-		}
+		~Disposable() { this.Dispose(false); }
 
 		/// <summary>
-		/// Disposes the instance.
+		///   Disposes the instance.
 		/// </summary>
 		public void Dispose()
 		{
@@ -60,9 +54,12 @@ namespace FlitBit.Core
 		}
 
 		/// <summary>
-		/// Indicates whether the instance has been disposed.
+		///   Indicates whether the instance has been disposed.
 		/// </summary>
-		public bool IsDisposed { get { return _disposal.CurrentState == DisposalState.Disposed; } }
+		public bool IsDisposed
+		{
+			get { return _disposal.CurrentState == DisposalState.Disposed; }
+		}
 
 		bool Dispose(bool disposing)
 		{
@@ -86,7 +83,7 @@ namespace FlitBit.Core
 						if (_disposal.ChangeState(DisposalState.Disposed))
 						{
 							return true;
-						}						
+						}
 					}
 					else
 					{
@@ -99,17 +96,16 @@ namespace FlitBit.Core
 		}
 
 		/// <summary>
-		/// Checks whether the class should trace events of <paramref name="eventType"/>.
+		///   Checks whether the class should trace events of <paramref name="eventType" />.
 		/// </summary>
 		/// <param name="eventType">an event type</param>
-		/// <returns><em>true</em> if the event type should be traced; otherwise <em>false</em>.</returns>
-		protected virtual bool ShouldTrace(TraceEventType eventType)
-		{
-				return false;
-		}
+		/// <returns>
+		///   <em>true</em> if the event type should be traced; otherwise <em>false</em>.
+		/// </returns>
+		protected virtual bool ShouldTrace(TraceEventType eventType) { return false; }
 
 		/// <summary>
-		/// Trace event sink. Should be specialized by subclasses to record trace events.
+		///   Trace event sink. Should be specialized by subclasses to record trace events.
 		/// </summary>
 		/// <param name="eventType">an event type</param>
 		/// <param name="message">a trace message</param>
@@ -127,22 +123,20 @@ namespace FlitBit.Core
 					Console.WriteLine(String.Concat("\t >> ", method.DeclaringType.GetReadableSimpleName(), ".", method.Name));
 				}
 				Console.WriteLine(">> Disposal stack... ");
-				foreach (var frame in new System.Diagnostics.StackTrace().GetFrames())
-				{	
+				foreach (var frame in new StackTrace().GetFrames())
+				{
 					var method = frame.GetMethod();
 					Console.WriteLine(String.Concat("\t >> ", method.DeclaringType.GetReadableSimpleName(), ".", method.Name));
 				}
 			}
-#endif																																
+#endif
 		}
 
 		/// <summary>
-		/// Performs the dispose logic.
+		///   Performs the dispose logic.
 		/// </summary>
 		/// <param name="disposing">Whether the object is disposing (IDisposable.Dispose method was called).</param>
 		/// <returns>Implementers should return true if the disposal was successful; otherwise false.</returns>
 		protected abstract bool PerformDispose(bool disposing);
 	}
-
-
 }

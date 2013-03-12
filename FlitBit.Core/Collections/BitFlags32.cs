@@ -1,5 +1,7 @@
 ﻿#region COPYRIGHT© 2009-2013 Phillip Clark. All rights reserved.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
@@ -10,39 +12,43 @@ using FlitBit.Core.Properties;
 namespace FlitBit.Core.Collections
 {
 	/// <summary>
-	/// Utility class for working with bit/flags.
+	///   Utility class for working with bit/flags.
 	/// </summary>
-	[StructLayout(LayoutKind.Sequential)]
-	[Serializable]
+	[StructLayout(LayoutKind.Sequential), Serializable]
 	public struct BitFlags32 : IEquatable<BitFlags32>
 	{
 		static readonly int CHashCodeSeed = typeof(BitFlags32).AssemblyQualifiedName.GetHashCode();
 		internal const int CFlagCount = 32;
-		static readonly string[] CNibbleBitPatterns = new string[] { "0000", "0001", "0010", "0011", "0100", "0101", "0110", "0111", "1000", "1001", "1010", "1011", "1100", "1101", "1110", "1111", };
+
+		static readonly string[] CNibbleBitPatterns = new string[]
+			{
+				"0000", "0001", "0010", "0011", "0100", "0101", "0110", "0111", "1000", "1001", "1010", "1011", "1100", "1101",
+				"1110", "1111",
+			};
 
 		/// <summary>
-		/// Empty instance; all bits turned off.
+		///   Empty instance; all bits turned off.
 		/// </summary>
 		public static readonly BitFlags32 Empty = new BitFlags32(0);
 
 		int _flags;
 
 		/// <summary>
-		/// Creates a new instance.
+		///   Creates a new instance.
 		/// </summary>
 		/// <param name="flags">flag values</param>
-		public BitFlags32(int flags)
+		public BitFlags32(int flags) { _flags = flags; }
+
+		/// <summary>
+		///   Indicates whether the bit flags are empty (none set to true).
+		/// </summary>
+		public bool IsEmpty
 		{
-			_flags = flags;
+			get { return _flags == 0; }
 		}
 
 		/// <summary>
-		/// Indicates whether the bit flags are empty (none set to true).
-		/// </summary>
-		public bool IsEmpty { get { return _flags == 0; } }
-
-		/// <summary>
-		/// Number of flags currently set to true.
+		///   Number of flags currently set to true.
 		/// </summary>
 		public int TrueFlagCount
 		{
@@ -50,101 +56,98 @@ namespace FlitBit.Core.Collections
 		}
 
 		/// <summary>
-		/// Gets and sets bit values to ON (true) or OFF (false).
+		///   Gets and sets bit values to ON (true) or OFF (false).
 		/// </summary>
 		public bool this[int bit]
 		{
 			get
 			{
 				if (bit < 0 || bit >= CFlagCount)
+				{
 					throw new ArgumentOutOfRangeException("bit", Resources.Chk_ExpectedOffsetIn32BitRange);
+				}
 
 				return (_flags & (1 << bit)) != 0;
 			}
 		}
 
 		/// <summary>
-		/// Turns the bit on at the position indicated.
+		///   Turns the bit on at the position indicated.
 		/// </summary>
 		/// <param name="bit">bit position</param>
 		/// <returns>flags with the indicated bit turned on</returns>
 		public BitFlags32 On(int bit)
 		{
 			if (bit < 0 || bit >= CFlagCount)
+			{
 				throw new ArgumentOutOfRangeException("bit", Resources.Chk_ExpectedOffsetIn32BitRange);
-			
+			}
+
 			return IncludeFlags(1 << bit);
 		}
 
 		/// <summary>
-		/// Turns the bit off at the position indicated.
+		///   Turns the bit off at the position indicated.
 		/// </summary>
 		/// <param name="bit">bit position</param>
 		/// <returns>flags with the indicated bit turned off</returns>
 		public BitFlags32 Off(int bit)
 		{
 			if (bit < 0 || bit >= CFlagCount)
+			{
 				throw new ArgumentOutOfRangeException("bit", Resources.Chk_ExpectedOffsetIn32BitRange);
-			
+			}
+
 			return ExcludeFlags(1 << bit);
 		}
 
 		/// <summary>
-		/// Includes all of the flags given. (turns on bits corresponding to the bits given)
+		///   Includes all of the flags given. (turns on bits corresponding to the bits given)
 		/// </summary>
 		/// <param name="flags">flags to turn on</param>
 		/// <returns>the flags for chaining</returns>
-		public BitFlags32 IncludeFlags(int flags)
-		{
-			return new BitFlags32(_flags | flags);
-		}
+		public BitFlags32 IncludeFlags(int flags) { return new BitFlags32(_flags | flags); }
 
 		/// <summary>
-		/// Excludes all of the flags given. (turns off bits corresponding to the bits given)
+		///   Excludes all of the flags given. (turns off bits corresponding to the bits given)
 		/// </summary>
 		/// <param name="flags">flags to turn off</param>
 		/// <returns>the flags for chaining</returns>
-		public BitFlags32 ExcludeFlags(int flags)
-		{
-			return new BitFlags32(_flags &= ~(flags));
-		}
+		public BitFlags32 ExcludeFlags(int flags) { return new BitFlags32(_flags &= ~(flags)); }
 
 		/// <summary>
-		/// Determines if the flags are equal to another.
+		///   Determines if the flags are equal to another.
 		/// </summary>
 		/// <param name="other">the other</param>
 		/// <returns>true if equal; otherwise false</returns>
-		public bool Equals(BitFlags32 other)
-		{
-			return _flags == other._flags;
-		}
+		public bool Equals(BitFlags32 other) { return _flags == other._flags; }
 
 		/// <summary>
-		/// Determines if the flags are equal to another object.
+		///   Determines if the flags are equal to another object.
 		/// </summary>
 		/// <param name="obj">the other object</param>
 		/// <returns>true if equal; otherwise false</returns>
 		public override bool Equals(object obj)
 		{
 			return obj is BitFlags32
-				&& Equals((BitFlags32)obj);
+				&& Equals((BitFlags32) obj);
 		}
 
 		/// <summary>
-		/// Gets a hashcode for the instance.
+		///   Gets a hashcode for the instance.
 		/// </summary>
 		/// <returns>a hashcode</returns>
 		public override int GetHashCode()
 		{
-			int prime = Constants.NotSoRandomPrime; // a random prime
+			var prime = Constants.NotSoRandomPrime; // a random prime
 
-			int result = CHashCodeSeed * prime;
-			result ^= prime * _flags;
+			var result = CHashCodeSeed*prime;
+			result ^= prime*_flags;
 			return result;
 		}
 
 		/// <summary>
-		/// Converts the bit vector into a bit string.
+		///   Converts the bit vector into a bit string.
 		/// </summary>
 		/// <returns>bits string</returns>
 		public override string ToString()
@@ -162,45 +165,33 @@ namespace FlitBit.Core.Collections
 		}
 
 		/// <summary>
-		/// Equality operator.
+		///   Equality operator.
 		/// </summary>
 		/// <param name="lhs">left hand comparand</param>
 		/// <param name="rhs">right hand comparand</param>
 		/// <returns>true if the comparands are equal; otherwise false</returns>
-		public static bool operator ==(BitFlags32 lhs, BitFlags32 rhs)
-		{
-			return lhs._flags == rhs._flags;
-		}
+		public static bool operator ==(BitFlags32 lhs, BitFlags32 rhs) { return lhs._flags == rhs._flags; }
 
 		/// <summary>
-		/// Inequality operator.
+		///   Inequality operator.
 		/// </summary>
 		/// <param name="lhs">left hand comparand</param>
 		/// <param name="rhs">right hand comparand</param>
 		/// <returns>true if the comparands are NOT equal; otherwise false</returns>
-		public static bool operator !=(BitFlags32 lhs, BitFlags32 rhs)
-		{
-			return lhs._flags != rhs._flags;
-		}
+		public static bool operator !=(BitFlags32 lhs, BitFlags32 rhs) { return lhs._flags != rhs._flags; }
 
 		/// <summary>
-		/// Implicit conversion operator from BitFlags to Int32.
+		///   Implicit conversion operator from BitFlags to Int32.
 		/// </summary>
 		/// <param name="flags">value to convert</param>
 		/// <returns>an Int32 representation of the flags</returns>
-		public static implicit operator int(BitFlags32 flags)
-		{
-			return flags._flags;
-		}
+		public static implicit operator int(BitFlags32 flags) { return flags._flags; }
 
 		/// <summary>
-		/// Implicit converstion operator from Int32 to BitFlags32
+		///   Implicit converstion operator from Int32 to BitFlags32
 		/// </summary>
 		/// <param name="flags">value to convert</param>
 		/// <returns>a BitFlags32</returns>
-		public static implicit operator BitFlags32(int flags)
-		{
-			return new BitFlags32(flags);
-		}
+		public static implicit operator BitFlags32(int flags) { return new BitFlags32(flags); }
 	}
 }

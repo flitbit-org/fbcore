@@ -1,8 +1,4 @@
-﻿using System;
-using System.Text;
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FlitBit.Core.Tests
 {
@@ -12,10 +8,8 @@ namespace FlitBit.Core.Tests
 		[TestMethod]
 		public void InternIt()
 		{
-			string it = "it".InternIt();
-			Assert.ReferenceEquals("it", it);
+			var it = "it".InternIt();
+			ReferenceEquals("it", it);
 		}
-
-
 	}
 }

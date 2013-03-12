@@ -1,5 +1,7 @@
 ﻿#region COPYRIGHT© 2009-2013 Phillip Clark. All rights reserved.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System.Collections.Generic;
@@ -11,12 +13,12 @@ using System.Xml.Linq;
 namespace FlitBit.Core.Xml
 {
 	/// <summary>
-	/// Static class for creating dynamic objects over XML
+	///   Static class for creating dynamic objects over XML
 	/// </summary>
 	public static class XDynamic
 	{
 		/// <summary>
-		/// Parses the input text and returns a dynamic object.
+		///   Parses the input text and returns a dynamic object.
 		/// </summary>
 		/// <param name="text">source xml text</param>
 		/// <param name="includeRootObject">whether or not the root object is included in the structure of the resulting dynamic</param>
@@ -40,17 +42,14 @@ namespace FlitBit.Core.Xml
 		}
 
 		/// <summary>
-		/// Parses the input text and returns a dynamic object.
+		///   Parses the input text and returns a dynamic object.
 		/// </summary>
 		/// <param name="text">source xml text</param>
 		/// <returns>a dynamic object shaped like the input xml</returns>
-		public static dynamic Parse(string text)
-		{
-			return Parse(text, false);
-		}
+		public static dynamic Parse(string text) { return Parse(text, false); }
 
 		/// <summary>
-		/// Creates an object over the XElement given.
+		///   Creates an object over the XElement given.
 		/// </summary>
 		/// <param name="elm">the source element</param>
 		/// <returns>an object shaped like the input xml</returns>
@@ -70,24 +69,33 @@ namespace FlitBit.Core.Xml
 					AddElementsToDictionary(expando, elm);
 					return expando;
 				}
-				else return elm.Value;
+				else
+				{
+					return elm.Value;
+				}
 			}
 			else
 			{
 				var expando = new ExpandoObject() as IDictionary<string, object>;
 				AddAttributesToDictionary(expando, elm);
-				if (elm.HasElements) AddElementsToDictionary(expando, elm);
-				else expando.Add("Value", elm.Value);
+				if (elm.HasElements)
+				{
+					AddElementsToDictionary(expando, elm);
+				}
+				else
+				{
+					expando.Add("Value", elm.Value);
+				}
 				return expando;
 			}
 		}
 
 		/// <summary>
-		/// Adds attributes from an element into the dictionary given.
+		///   Adds attributes from an element into the dictionary given.
 		/// </summary>
 		/// <param name="expando">target dictionary</param>
 		/// <param name="elm">source element</param>
-		private static void AddAttributesToDictionary(IDictionary<string, object> expando, XElement elm)
+		static void AddAttributesToDictionary(IDictionary<string, object> expando, XElement elm)
 		{
 			foreach (var a in elm.Attributes())
 			{
@@ -96,22 +104,26 @@ namespace FlitBit.Core.Xml
 		}
 
 		/// <summary>
-		/// Adds child elements from an element into the dictionary given.
+		///   Adds child elements from an element into the dictionary given.
 		/// </summary>
 		/// <param name="expando">target dictionary</param>
 		/// <param name="elm">source element</param>
-		private static void AddElementsToDictionary(IDictionary<string, object> expando, XElement elm)
+		static void AddElementsToDictionary(IDictionary<string, object> expando, XElement elm)
 		{
 			foreach (var gg in from e in elm.Elements()
-												 group e by e.Name.LocalName into g
-												 select g)
+												group e by e.Name.LocalName
+												into g
+												select g)
 			{
 				if (gg.Count() > 1)
 				{
 					expando.Add(gg.Key, new List<dynamic>(from item in gg
 																								select ToDynamic(item)));
 				}
-				else expando.Add(gg.Key, ToDynamic(gg.Single()));
+				else
+				{
+					expando.Add(gg.Key, ToDynamic(gg.Single()));
+				}
 			}
 		}
 	}

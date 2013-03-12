@@ -7,10 +7,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDescription("Contains core classes and utilities used by FlitBit Frameworks.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCulture("")]
-
 [assembly: ComVisible(false)]
-
-[assembly: NeutralResourcesLanguageAttribute("en")]
+[assembly: NeutralResourcesLanguage("en")]
 [assembly: CLSCompliant(true)]
-
 [assembly: Guid("40038407-5cfa-489f-bca3-239991293901")]

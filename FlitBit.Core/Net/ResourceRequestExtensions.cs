@@ -1,5 +1,7 @@
 ﻿#region COPYRIGHT© 2009-2013 Phillip Clark. All rights reserved.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
@@ -9,43 +11,39 @@ using System.IO;
 using System.Net;
 using System.Reflection;
 using System.Text;
+using System.Xml;
 using System.Xml.Linq;
 using FlitBit.Core.Parallel;
 using FlitBit.Core.Properties;
 using FlitBit.Core.Xml;
 using Newtonsoft.Json;
+using Formatting = Newtonsoft.Json.Formatting;
 
 namespace FlitBit.Core.Net
 {
-    using System.Xml;
-
-    using Formatting = Newtonsoft.Json.Formatting;
-
-    /// <summary>
-	/// Extensions for resource oriented HTTP requests.
+	/// <summary>
+	///   Extensions for resource oriented HTTP requests.
 	/// </summary>
 	public static class ResourceRequestExtensions
 	{
 		/// <summary>
-		/// String used as the Client in HTTP requests.
+		///   String used as the Client in HTTP requests.
 		/// </summary>
 		public static readonly string ResourceClientString = String
 			.Concat(Resources.ResourceClientName, Assembly.GetExecutingAssembly().GetName().Version.ToString());
 
-		static readonly string DefaultAcceptHeader = "application/json, text/json;q=0.9, application/xml;q=0.8, text/xml;q=0.7, text/plain";
+		static readonly string DefaultAcceptHeader =
+			"application/json, text/json;q=0.9, application/xml;q=0.8, text/xml;q=0.7, text/plain";
 
 		/// <summary>
-		/// Given a URI, makes a web request.
+		///   Given a URI, makes a web request.
 		/// </summary>
 		/// <param name="uri">the URI</param>
 		/// <returns>a web request</returns>
-		public static HttpWebRequest MakeResourceRequest(this Uri uri)
-		{
-			return MakeResourceRequest(uri, false);
-		}
+		public static HttpWebRequest MakeResourceRequest(this Uri uri) { return MakeResourceRequest(uri, false); }
 
 		/// <summary>
-		/// Given a URI, makes a web request.
+		///   Given a URI, makes a web request.
 		/// </summary>
 		/// <param name="uri">the URI</param>
 		/// <param name="keepAlive">indicates whether keepalive should be set for the connection</param>
@@ -53,12 +51,14 @@ namespace FlitBit.Core.Net
 		public static HttpWebRequest MakeResourceRequest(this Uri uri, bool keepAlive)
 		{
 			Contract.Requires<ArgumentNullException>(uri != null);
-			Contract.Requires<ArgumentException>(uri.Scheme != null && uri.Scheme.StartsWith("http"), "URI must be http(s) scheme");
+			Contract.Requires<ArgumentException>(uri.Scheme != null && uri.Scheme.StartsWith("http"),
+																					"URI must be http(s) scheme");
 			Contract.Ensures(Contract.Result<HttpWebRequest>() != null);
 
-			var req = (HttpWebRequest)WebRequest.Create(uri);
+			var req = (HttpWebRequest) WebRequest.Create(uri);
 			if (!keepAlive)
-			{ // Default to keepAlive == false
+			{
+				// Default to keepAlive == false
 				req.KeepAlive = false;
 			}
 			if (String.IsNullOrEmpty(req.UserAgent))
@@ -73,7 +73,7 @@ namespace FlitBit.Core.Net
 		}
 
 		/// <summary>
-		/// Adds HTTP Basic Auth to the request.
+		///   Adds HTTP Basic Auth to the request.
 		/// </summary>
 		/// <param name="req">the request</param>
 		/// <param name="username">a username</param>
@@ -90,17 +90,17 @@ namespace FlitBit.Core.Net
 
 			var authorization = String.Concat(username, ':', password);
 			req.Headers["Authorization"] =
-					String.Concat("Basic ", Convert.ToBase64String(Encoding.UTF8.GetBytes(authorization)));
+				String.Concat("Basic ", Convert.ToBase64String(Encoding.UTF8.GetBytes(authorization)));
 			return req;
 		}
 
 		/// <summary>
-		/// Performs an HTTP GET against a URI.
+		///   Performs an HTTP GET against a URI.
 		/// </summary>
 		/// <param name="uri">the uri</param>
 		/// <param name="responseHandler">a response handler that will read/interpret the response</param>
 		/// <returns>a completion</returns>
-		public static Completion<T> ParallelGet<T>(this Uri uri, Func<HttpWebResponse,T> responseHandler)
+		public static Completion<T> ParallelGet<T>(this Uri uri, Func<HttpWebResponse, T> responseHandler)
 		{
 			Contract.Requires<ArgumentNullException>(uri != null);
 			Contract.Ensures(Contract.Result<Completion<HttpWebResponse>>() != null);
@@ -110,12 +110,12 @@ namespace FlitBit.Core.Net
 		}
 
 		/// <summary>
-		/// Perfroms an HTTP GET.
+		///   Perfroms an HTTP GET.
 		/// </summary>
 		/// <param name="req">the web request on which to perform the GET.</param>
 		/// <param name="responseHandler">a response handler that will read/interpret the response</param>
 		/// <returns>a completion</returns>
-		public static Completion<T> ParallelGet<T>(this HttpWebRequest req, Func<HttpWebResponse,T> responseHandler)
+		public static Completion<T> ParallelGet<T>(this HttpWebRequest req, Func<HttpWebResponse, T> responseHandler)
 		{
 			Contract.Requires(req != null);
 			Contract.Ensures(Contract.Result<Completion<HttpWebResponse>>() != null);
@@ -124,17 +124,17 @@ namespace FlitBit.Core.Net
 		}
 
 		/// <summary>
-		/// Perfroms an HTTP PUT.
+		///   Perfroms an HTTP PUT.
 		/// </summary>
 		/// <param name="req">the web request on which to perform the PUT.</param>
 		/// <param name="postBody">array of bytes containing the post body</param>
 		/// <param name="contentType">indicates the post body's content type</param>
 		/// <param name="responseHandler">a response handler that will read/interpret the response</param>
 		/// <returns>a completion</returns>
-		public static Completion<T> ParallelPut<T>(this HttpWebRequest req, 
+		public static Completion<T> ParallelPut<T>(this HttpWebRequest req,
 			byte[] postBody,
 			string contentType,
-			Func<HttpWebResponse,T> responseHandler)
+			Func<HttpWebResponse, T> responseHandler)
 		{
 			Contract.Requires<ArgumentNullException>(req != null);
 			Contract.Requires<ArgumentNullException>(postBody != null);
@@ -146,7 +146,7 @@ namespace FlitBit.Core.Net
 		}
 
 		/// <summary>
-		/// Perfroms an HTTP POST.
+		///   Perfroms an HTTP POST.
 		/// </summary>
 		/// <param name="req">the web request on which to perform the POST.</param>
 		/// <param name="postBody">array of bytes containing the post body</param>
@@ -168,7 +168,7 @@ namespace FlitBit.Core.Net
 		}
 
 		/// <summary>
-		/// Perfroms an HTTP DELETE.
+		///   Perfroms an HTTP DELETE.
 		/// </summary>
 		/// <param name="req">the web request on which to perform the DELETE.</param>
 		/// <param name="responseHandler">a response handler that will read/interpret the response</param>
@@ -183,7 +183,7 @@ namespace FlitBit.Core.Net
 		}
 
 		/// <summary>
-		/// Performs an HTTP POST against a URI as JSON.
+		///   Performs an HTTP POST against a URI as JSON.
 		/// </summary>
 		/// <param name="req">the http request</param>
 		/// <param name="after">an action to be called upon completion</param>
@@ -191,178 +191,170 @@ namespace FlitBit.Core.Net
 		{
 			Contract.Requires(req != null);
 			Contract.Requires(after != null);
-					
+
 			ExecuteHttpVerb(req, "GET", after);
 		}
 
 		/// <summary>
-		/// Performs an HTTP POST against a URI as JSON.
+		///   Performs an HTTP POST against a URI as JSON.
 		/// </summary>
 		/// <typeparam name="B">body type B</typeparam>
 		/// <param name="req">the http request</param>
 		/// <param name="body">the post body (will be serialized as JSON)</param>
 		/// <param name="after">an action to be called upon completion</param>
-		public static void HttpPostJson<B>(this HttpWebRequest req, B body, Action<Exception, HttpWebResponse> after)
-		{
-			HttpPostJson(req, body, Encoding.UTF8, after);
-		}
+		public static void HttpPostJson<B>(this HttpWebRequest req, B body, Action<Exception, HttpWebResponse> after) { HttpPostJson(req, body, Encoding.UTF8, after); }
 
 		/// <summary>
-		/// Performs an HTTP POST against a URI as JSON.
+		///   Performs an HTTP POST against a URI as JSON.
 		/// </summary>
 		/// <typeparam name="B">body type B</typeparam>
 		/// <param name="req">the http request</param>
 		/// <param name="body">the post body (will be serialized as JSON)</param>
 		/// <param name="encoding">the content encoding</param>
 		/// <param name="after">an action to be called upon completion</param>
-		public static void HttpPostJson<B>(this HttpWebRequest req, B body, Encoding encoding, Action<Exception, HttpWebResponse> after)
+		public static void HttpPostJson<B>(this HttpWebRequest req, B body, Encoding encoding,
+			Action<Exception, HttpWebResponse> after)
 		{
 			Contract.Requires(req != null);
 			Contract.Requires(after != null);
 
-			Encoding lclEncoding = encoding ?? Encoding.UTF8;
+			var lclEncoding = encoding ?? Encoding.UTF8;
 
-			var bodyAsString = JsonConvert.SerializeObject(body, Formatting.None, new JsonSerializerSettings { MissingMemberHandling = MissingMemberHandling.Ignore });
+			var bodyAsString = JsonConvert.SerializeObject(body, Formatting.None,
+																										new JsonSerializerSettings {MissingMemberHandling = MissingMemberHandling.Ignore});
 			var buffer = lclEncoding.GetBytes(bodyAsString);
 
 			ExecuteHttpVerbWithPostBody(req, buffer, "application/json", "POST", after);
 		}
 
 		/// <summary>
-		/// Performs an HTTP PUT against a URI as JSON.
+		///   Performs an HTTP PUT against a URI as JSON.
 		/// </summary>
 		/// <typeparam name="B">body type B</typeparam>
 		/// <param name="req">the http request</param>
 		/// <param name="body">the post body (will be serialized as JSON)</param>
 		/// <param name="after">an action to be called upon completion</param>
-		public static void HttpPutJson<B>(this HttpWebRequest req, B body, Action<Exception, HttpWebResponse> after)
-		{
-			HttpPutJson(req, body, Encoding.UTF8, after);
-		}
+		public static void HttpPutJson<B>(this HttpWebRequest req, B body, Action<Exception, HttpWebResponse> after) { HttpPutJson(req, body, Encoding.UTF8, after); }
 
 		/// <summary>
-		/// Performs an HTTP PUT against a URI as JSON.
+		///   Performs an HTTP PUT against a URI as JSON.
 		/// </summary>
 		/// <typeparam name="B">body type B</typeparam>
 		/// <param name="req">the http request</param>
 		/// <param name="body">the post body (will be serialized as JSON)</param>
 		/// <param name="encoding">the content encoding</param>
 		/// <param name="after">an action to be called upon completion</param>
-		public static void HttpPutJson<B>(this HttpWebRequest req, B body, Encoding encoding, Action<Exception, HttpWebResponse> after)
+		public static void HttpPutJson<B>(this HttpWebRequest req, B body, Encoding encoding,
+			Action<Exception, HttpWebResponse> after)
 		{
 			Contract.Requires(req != null);
 			Contract.Requires(after != null);
 
-			Encoding lclEncoding = encoding ?? Encoding.UTF8;
+			var lclEncoding = encoding ?? Encoding.UTF8;
 
-			var bodyAsString = JsonConvert.SerializeObject(body, Formatting.None, new JsonSerializerSettings { MissingMemberHandling = MissingMemberHandling.Ignore });
+			var bodyAsString = JsonConvert.SerializeObject(body, Formatting.None,
+																										new JsonSerializerSettings {MissingMemberHandling = MissingMemberHandling.Ignore});
 			var buffer = lclEncoding.GetBytes(bodyAsString);
 
 			ExecuteHttpVerbWithPostBody(req, buffer, "application/json", "PUT", after);
 		}
 
-        /// <summary>Performs an HTTP PUT against a URI as text.</summary>
-        /// <param name="req">The request.</param>
-        /// <param name="body">The body.</param>
-        /// <param name="after">The continuation to be executed after.</param>
-        public static void HttpPutText(this HttpWebRequest req, string body, Action<Exception, HttpWebResponse> after)
-        {
-            HttpPutText(req, body, Encoding.UTF8, after);
-        }
+		/// <summary>Performs an HTTP PUT against a URI as text.</summary>
+		/// <param name="req">The request.</param>
+		/// <param name="body">The body.</param>
+		/// <param name="after">The continuation to be executed after.</param>
+		public static void HttpPutText(this HttpWebRequest req, string body, Action<Exception, HttpWebResponse> after) { HttpPutText(req, body, Encoding.UTF8, after); }
 
-	    /// <summary>Performs an HTTP PUT against a URI as text.</summary>
-	    /// <param name="req">The request.</param>
-	    /// <param name="body">The body.</param>
-	    /// <param name="encoding">The content encoding.</param>
-	    /// <param name="after">The continuation to be executed after.</param>
-	    public static void HttpPutText(this HttpWebRequest req, string body, Encoding encoding, Action<Exception, HttpWebResponse> after)
-        {
-            Encoding lclEncoding = encoding ?? Encoding.UTF8;
-            var buffer = lclEncoding.GetBytes(body);
-
-            ExecuteHttpVerbWithPostBody(req, buffer, "text/plain", "PUT", after);
-        }
-		
-		/// <summary>
-		/// Performs an HTTP POST against a URI as XML.
-		/// </summary>
-		/// <param name="req">
-		/// the http request
-		/// </param>
-		/// <param name="body">
-		/// the post body
-		/// </param>
-		/// <param name="after">
-		/// an action to be called upon completion
-		/// </param>
-		public static void HttpPostXml(this HttpWebRequest req, XmlDocument body, Action<Exception, HttpWebResponse> after)
+		/// <summary>Performs an HTTP PUT against a URI as text.</summary>
+		/// <param name="req">The request.</param>
+		/// <param name="body">The body.</param>
+		/// <param name="encoding">The content encoding.</param>
+		/// <param name="after">The continuation to be executed after.</param>
+		public static void HttpPutText(this HttpWebRequest req, string body, Encoding encoding,
+			Action<Exception, HttpWebResponse> after)
 		{
-			HttpPostXml(req, body, Encoding.UTF8, after);
+			var lclEncoding = encoding ?? Encoding.UTF8;
+			var buffer = lclEncoding.GetBytes(body);
+
+			ExecuteHttpVerbWithPostBody(req, buffer, "text/plain", "PUT", after);
 		}
 
 		/// <summary>
-		/// Performs an HTTP POST against a URI as XML.
+		///   Performs an HTTP POST against a URI as XML.
 		/// </summary>
 		/// <param name="req">
-		/// the http request
+		///   the http request
 		/// </param>
 		/// <param name="body">
-		/// the post body
-		/// </param>
-		/// <param name="encoding">
-		/// the content encoding
+		///   the post body
 		/// </param>
 		/// <param name="after">
-		/// an action to be called upon completion
+		///   an action to be called upon completion
 		/// </param>
-		public static void HttpPostXml(this HttpWebRequest req, XmlDocument body, Encoding encoding, Action<Exception, HttpWebResponse> after)
+		public static void HttpPostXml(this HttpWebRequest req, XmlDocument body, Action<Exception, HttpWebResponse> after) { HttpPostXml(req, body, Encoding.UTF8, after); }
+
+		/// <summary>
+		///   Performs an HTTP POST against a URI as XML.
+		/// </summary>
+		/// <param name="req">
+		///   the http request
+		/// </param>
+		/// <param name="body">
+		///   the post body
+		/// </param>
+		/// <param name="encoding">
+		///   the content encoding
+		/// </param>
+		/// <param name="after">
+		///   an action to be called upon completion
+		/// </param>
+		public static void HttpPostXml(this HttpWebRequest req, XmlDocument body, Encoding encoding,
+			Action<Exception, HttpWebResponse> after)
 		{
 			Contract.Requires(req != null);
 			Contract.Requires(body != null);
 			Contract.Requires(after != null);
 
-			Encoding enc = encoding ?? Encoding.UTF8;
+			var enc = encoding ?? Encoding.UTF8;
 
 			var bodyAsString = body.OuterXml;
 			var buffer = enc.GetBytes(bodyAsString);
-			
+
 			ExecuteHttpVerbWithPostBody(req, buffer, "application/xml", "POST", after);
 		}
 
 		/// <summary>
-		/// Performs an HTTP PUT against a URI as XML.
+		///   Performs an HTTP PUT against a URI as XML.
 		/// </summary>
 		/// <param name="req">the http request</param>
 		/// <param name="body">the post body</param>
 		/// <param name="after">an action to be called upon completion</param>
-		public static void HttpPutXml(this HttpWebRequest req, XElement body, Action<Exception, HttpWebResponse> after)
-		{
-			HttpPutXml(req, body, Encoding.UTF8, after);
-		}
+		public static void HttpPutXml(this HttpWebRequest req, XElement body, Action<Exception, HttpWebResponse> after) { HttpPutXml(req, body, Encoding.UTF8, after); }
 
 		/// <summary>
-		/// Performs an HTTP PUT against a URI as XML.
+		///   Performs an HTTP PUT against a URI as XML.
 		/// </summary>
 		/// <param name="req">the http request</param>
 		/// <param name="body">the post body</param>
 		/// <param name="encoding">the content encoding</param>
 		/// <param name="after">an action to be called upon completion</param>
-		public static void HttpPutXml(this HttpWebRequest req, XElement body, Encoding encoding, Action<Exception, HttpWebResponse> after)
+		public static void HttpPutXml(this HttpWebRequest req, XElement body, Encoding encoding,
+			Action<Exception, HttpWebResponse> after)
 		{
 			Contract.Requires(req != null);
 			Contract.Requires(body != null);
 			Contract.Requires(after != null);
-			
-			Encoding enc = encoding ?? Encoding.UTF8;
+
+			var enc = encoding ?? Encoding.UTF8;
 
 			var bodyAsString = body.ToString();
 			var buffer = enc.GetBytes(bodyAsString);
 
 			ExecuteHttpVerbWithPostBody(req, buffer, "application/xml", "PUT", after);
 		}
-				
+
 		/// <summary>
-		/// Gets the response body from a web response.
+		///   Gets the response body from a web response.
 		/// </summary>
 		/// <param name="response">the web response</param>
 		/// <returns>the full web response as text</returns>
@@ -377,7 +369,7 @@ namespace FlitBit.Core.Net
 		}
 
 		/// <summary>
-		/// Deserializes a response body as a dynamic object.
+		///   Deserializes a response body as a dynamic object.
 		/// </summary>
 		/// <param name="response">the web response</param>
 		/// <returns>a dynamic object over the response body</returns>
@@ -405,7 +397,7 @@ namespace FlitBit.Core.Net
 		}
 
 		/// <summary>
-		/// Deserializes a response to an object of type T.
+		///   Deserializes a response to an object of type T.
 		/// </summary>
 		/// <typeparam name="T">typeof T</typeparam>
 		/// <param name="response">the web resposne</param>
@@ -414,7 +406,7 @@ namespace FlitBit.Core.Net
 		{
 			Contract.Requires(response != null, "response cannot be null");
 
-			T data = default(T);
+			var data = default(T);
 			if (response.ContentType.Contains("/json"))
 			{
 				var body = response.GetResponseBodyAsString();
@@ -433,15 +425,15 @@ namespace FlitBit.Core.Net
 			}
 			return data;
 		}
-		
+
 		/// <summary>
-		/// Determines if an HTTP status code indicates succes (within the 200 range).
+		///   Determines if an HTTP status code indicates succes (within the 200 range).
 		/// </summary>
 		/// <param name="code"></param>
 		/// <returns></returns>
 		public static bool IsSuccess(this HttpStatusCode code)
 		{
-			var c = (int)code;
+			var c = (int) code;
 			return c >= 200 && c < 300;
 		}
 
@@ -449,7 +441,7 @@ namespace FlitBit.Core.Net
 		{
 			Contract.Requires<ArgumentNullException>(req != null);
 			Contract.Requires<ArgumentNullException>(after != null);
-			
+
 			WebResponse resp = null;
 			try
 			{
@@ -465,15 +457,19 @@ namespace FlitBit.Core.Net
 						after(wex, wex.Response as HttpWebResponse);
 					}
 				}
-				after(null, (HttpWebResponse)resp);
+				after(null, (HttpWebResponse) resp);
 			}
 			finally
 			{
-				if (resp != null) resp.Close();
+				if (resp != null)
+				{
+					resp.Close();
+				}
 			}
 		}
 
-		static void ExecuteHttpVerbWithPostBody(HttpWebRequest req, byte[] postBody, string contentType, string verb, Action<Exception, HttpWebResponse> after)
+		static void ExecuteHttpVerbWithPostBody(HttpWebRequest req, byte[] postBody, string contentType, string verb,
+			Action<Exception, HttpWebResponse> after)
 		{
 			Contract.Requires<ArgumentNullException>(req != null);
 			Contract.Requires<ArgumentNullException>(postBody != null);
@@ -487,7 +483,7 @@ namespace FlitBit.Core.Net
 				req.Method = verb;
 				req.ContentType = contentType;
 				req.ContentLength = postBody.Length;
-							
+
 				using (var postData = req.GetRequestStream())
 				{
 					postData.Write(postBody, 0, postBody.Length);
@@ -512,33 +508,37 @@ namespace FlitBit.Core.Net
 							after(wex, wex.Response as HttpWebResponse);
 						}
 					}
-					after(null, (HttpWebResponse)resp);
+					after(null, (HttpWebResponse) resp);
 				}
 				finally
 				{
-					if (resp != null) resp.Close();
+					if (resp != null)
+					{
+						resp.Close();
+					}
 				}
 			}
 		}
 
-		static Completion<T> ParallelExecuteHttpVerb<T>(this HttpWebRequest req, string httpVerb, Func<HttpWebResponse, T> responseHandler)
+		static Completion<T> ParallelExecuteHttpVerb<T>(this HttpWebRequest req, string httpVerb,
+			Func<HttpWebResponse, T> responseHandler)
 		{
 			Contract.Requires<ArgumentNullException>(req != null);
 			Contract.Ensures(Contract.Result<Completion<HttpWebResponse>>() != null);
-						
+
 			req.Method = httpVerb;
 
 			var completion = new Completion<T>(req);
 
 			req.BeginGetResponse(completion.MakeAsyncCallback(req,
-					(ar, rq) =>
-					{
-						using (var res = (HttpWebResponse)rq.EndGetResponse(ar))
-						{
-							return (responseHandler != null) ? responseHandler(res) : default(T);
-						}
-					}
-				), null);
+																												(ar, rq) =>
+																													{
+																														using (var res = (HttpWebResponse) rq.EndGetResponse(ar))
+																														{
+																															return (responseHandler != null) ? responseHandler(res) : default(T);
+																														}
+																													}
+														), null);
 
 			return completion;
 		}
@@ -567,17 +567,16 @@ namespace FlitBit.Core.Net
 			var completion = new Completion<T>(req);
 
 			req.BeginGetResponse(completion.MakeAsyncCallback(req,
-					(ar, rq) =>
-					{
-						using (var res = (HttpWebResponse)rq.EndGetResponse(ar))
-						{
-							return (responseHandler != null) ? responseHandler(res) : default(T);
-						}
-					}
-				), null);
+																												(ar, rq) =>
+																													{
+																														using (var res = (HttpWebResponse) rq.EndGetResponse(ar))
+																														{
+																															return (responseHandler != null) ? responseHandler(res) : default(T);
+																														}
+																													}
+														), null);
 
 			return completion;
 		}
-				
 	}
 }

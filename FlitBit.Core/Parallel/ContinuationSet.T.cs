@@ -5,132 +5,17 @@ using System.Threading;
 namespace FlitBit.Core.Parallel
 {
 	/// <summary>
-	/// A set of continuations, each signaled once.
+	///   A set of continuations, each signaled once.
 	/// </summary>
 	public class ContinuationSet<T>
 	{
+		readonly ContextFlow _context;
 		int _completed = 0;
+		ConcurrentQueue<ContinuationNotifier> _continuations = new ConcurrentQueue<ContinuationNotifier>();
 		Exception _fault;
 		T _res;
 
-		class ContinuationNotifier
-		{
-			int _continued = 0;
-			Delegate _delg;
-
-			public ContinuationNotifier(Delegate delg)
-			{
-				this._delg = delg;
-			}
-			public void ContinueWith(ContextFlow context, Exception e, T res)
-			{
-				if (Interlocked.CompareExchange(ref _continued, 1, 0) == 0)
-				{
-					ThreadPool.QueueUserWorkItem(unused =>
-					{
-						if (context != null) ContextFlow.Ambient.Push(context);
-						try
-						{
-							PerformContinuation(_delg, e, res);
-						}
-						finally
-						{
-							if (context != null) ContextFlow.Ambient.TryPop(context);
-						}
-					});
-				}
-			}
-			protected virtual void PerformContinuation(Delegate delg, Exception e, T res)
-			{
-				try
-				{
-					((Continuation<T>)delg)(e, res);
-				}
-				catch (Exception ee)
-				{
-					Parallel.Go.NotifyUncaughtException(delg.Target, ee);
-				}
-			}			
-		}
-		class ContinuationNotifierWithCompletion : ContinuationNotifier
-		{
-			Completion _comp;
-
-			public ContinuationNotifierWithCompletion(Continuation<T> delg, Completion comp)
-				: base(delg)
-			{
-				this._comp = comp;
-			}
-			protected override void PerformContinuation(Delegate delg, Exception e, T res)
-			{	
-				try
-				{
-					((Continuation<T>)delg)(e, res);
-					try
-					{
-						_comp.MarkCompleted();
-					}
-					catch (Exception ee)
-					{
-						Parallel.Go.NotifyUncaughtException(delg.Target, ee);
-					}
-				}
-				catch (Exception ee)
-				{
-					try
-					{
-						_comp.MarkFaulted(ee);
-					}
-					catch (Exception eee)
-					{
-						Parallel.Go.NotifyUncaughtException(delg.Target, eee);
-					}
-				}
-			}
-		}
-		class ContinuationNotifierWithCompletion<R> : ContinuationNotifier
-		{
-			Completion<R> _comp;
-
-			public ContinuationNotifierWithCompletion(ContinuationFunc<T, R> delg, Completion<R> comp)
-				: base(delg)
-			{
-				this._comp = comp;
-			}
-			protected override void PerformContinuation(Delegate delg, Exception e, T res)
-			{
-				try
-				{
-					R rr = (R)((ContinuationFunc<T, R>)delg)(e, res);
-					try
-					{
-						_comp.MarkCompleted(rr);
-					}
-					catch (Exception ee)
-					{
-						Parallel.Go.NotifyUncaughtException(delg.Target, ee);
-					}
-				}
-				catch (Exception ee)
-				{
-					try
-					{
-						_comp.MarkFaulted(ee);
-					}
-					catch (Exception eee)
-					{
-						Parallel.Go.NotifyUncaughtException(delg.Target, eee);
-					}
-				}
-			}
-		}
-		ConcurrentQueue<ContinuationNotifier> _continuations = new ConcurrentQueue<ContinuationNotifier>();
-		readonly ContextFlow _context;
-
-		internal ContinuationSet(ContextFlow context)
-		{
-			_context = context;
-		}
+		internal ContinuationSet(ContextFlow context) { _context = context; }
 
 		internal void Continue(Continuation<T> continuation)
 		{
@@ -149,7 +34,7 @@ namespace FlitBit.Core.Parallel
 
 		internal Completion ContinueWithCompletion(Continuation<T> continuation)
 		{
-			Completion waitable = new Completion(continuation.Target);
+			var waitable = new Completion(continuation.Target);
 			try
 			{
 				_continuations.Enqueue(new ContinuationNotifierWithCompletion(continuation, waitable));
@@ -166,7 +51,7 @@ namespace FlitBit.Core.Parallel
 
 		internal Completion<R> ContinueWithCompletion<R>(ContinuationFunc<T, R> continuation)
 		{
-			Completion<R> waitable = new Completion<R>(continuation.Target);
+			var waitable = new Completion<R>(continuation.Target);
 			try
 			{
 				_continuations.Enqueue(new ContinuationNotifierWithCompletion<R>(continuation, waitable));
@@ -197,6 +82,121 @@ namespace FlitBit.Core.Parallel
 			while (_continuations.TryDequeue(out notifier))
 			{
 				notifier.ContinueWith(_context, e, res);
+			}
+		}
+
+		class ContinuationNotifier
+		{
+			int _continued = 0;
+			Delegate _delg;
+
+			public ContinuationNotifier(Delegate delg) { this._delg = delg; }
+
+			public void ContinueWith(ContextFlow context, Exception e, T res)
+			{
+				if (Interlocked.CompareExchange(ref _continued, 1, 0) == 0)
+				{
+					ThreadPool.QueueUserWorkItem(unused =>
+						{
+							if (context != null)
+							{
+								ContextFlow.Ambient.Push(context);
+							}
+							try
+							{
+								PerformContinuation(_delg, e, res);
+							}
+							finally
+							{
+								if (context != null)
+								{
+									ContextFlow.Ambient.TryPop(context);
+								}
+							}
+						});
+				}
+			}
+
+			protected virtual void PerformContinuation(Delegate delg, Exception e, T res)
+			{
+				try
+				{
+					((Continuation<T>) delg)(e, res);
+				}
+				catch (Exception ee)
+				{
+					Go.NotifyUncaughtException(delg.Target, ee);
+				}
+			}
+		}
+
+		class ContinuationNotifierWithCompletion : ContinuationNotifier
+		{
+			Completion _comp;
+
+			public ContinuationNotifierWithCompletion(Continuation<T> delg, Completion comp)
+				: base(delg) { this._comp = comp; }
+
+			protected override void PerformContinuation(Delegate delg, Exception e, T res)
+			{
+				try
+				{
+					((Continuation<T>) delg)(e, res);
+					try
+					{
+						_comp.MarkCompleted();
+					}
+					catch (Exception ee)
+					{
+						Go.NotifyUncaughtException(delg.Target, ee);
+					}
+				}
+				catch (Exception ee)
+				{
+					try
+					{
+						_comp.MarkFaulted(ee);
+					}
+					catch (Exception eee)
+					{
+						Go.NotifyUncaughtException(delg.Target, eee);
+					}
+				}
+			}
+		}
+
+		class ContinuationNotifierWithCompletion<R> : ContinuationNotifier
+		{
+			Completion<R> _comp;
+
+			public ContinuationNotifierWithCompletion(ContinuationFunc<T, R> delg, Completion<R> comp)
+				: base(delg) { this._comp = comp; }
+
+			protected override void PerformContinuation(Delegate delg, Exception e, T res)
+			{
+				try
+				{
+					var rr = (R) ((ContinuationFunc<T, R>) delg)(e, res);
+					try
+					{
+						_comp.MarkCompleted(rr);
+					}
+					catch (Exception ee)
+					{
+						Go.NotifyUncaughtException(delg.Target, ee);
+					}
+				}
+				catch (Exception ee)
+				{
+					try
+					{
+						_comp.MarkFaulted(ee);
+					}
+					catch (Exception eee)
+					{
+						Go.NotifyUncaughtException(delg.Target, eee);
+					}
+				}
 			}
 		}
 	}

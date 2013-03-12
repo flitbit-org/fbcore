@@ -1,45 +1,25 @@
 ﻿#region COPYRIGHT© 2009-2013 Phillip Clark. All rights reserved.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Diagnostics.Contracts;
 
 namespace FlitBit.Core.Buffers
 {
-	class CRC
+	internal class CRC
 	{
 		internal const int CrcTableLength = 256;
 	}
 
 	/// <summary>
-	/// Utility class for generating CRC16 checksums.
+	///   Utility class for generating CRC16 checksums.
 	/// </summary>
 	public class Crc16
 	{
 		static readonly ushort[] __table = new ushort[CRC.CrcTableLength];
-
-		/// <summary>
-		/// Computes a checksum over an array of bytes.
-		/// </summary>
-		/// <param name="bytes">the bytes</param>
-		/// <returns>the checksum</returns>
-		[CLSCompliant(false)]
-		public ushort ComputeChecksum(byte[] bytes)
-		{
-			Contract.Requires<ArgumentNullException>(bytes != null);
-			ushort crc = 0;
-			var len = bytes.Length;
-			for (int i = 0; i < len; ++i)
-			{
-				byte index = (byte)(crc ^ bytes[i]);
-				crc = (ushort)((crc >> 8) ^ __table[index]);
-			}
-			return crc;
-		}
 
 		static Crc16()
 		{
@@ -54,7 +34,7 @@ namespace FlitBit.Core.Buffers
 				{
 					if (((value ^ temp) & 0x0001) != 0)
 					{
-						value = (ushort)((value >> 1) ^ poly);
+						value = (ushort) ((value >> 1) ^ poly);
 					}
 					else
 					{
@@ -65,65 +45,46 @@ namespace FlitBit.Core.Buffers
 				__table[i] = value;
 			}
 		}
+
+		/// <summary>
+		///   Computes a checksum over an array of bytes.
+		/// </summary>
+		/// <param name="bytes">the bytes</param>
+		/// <returns>the checksum</returns>
+		[CLSCompliant(false)]
+		public ushort ComputeChecksum(byte[] bytes)
+		{
+			Contract.Requires<ArgumentNullException>(bytes != null);
+			ushort crc = 0;
+			var len = bytes.Length;
+			for (var i = 0; i < len; ++i)
+			{
+				var index = (byte) (crc ^ bytes[i]);
+				crc = (ushort) ((crc >> 8) ^ __table[index]);
+			}
+			return crc;
+		}
 	}
 
 	/// <summary>
-	/// Utility class for generating CRC16 checksums.
+	///   Utility class for generating CRC16 checksums.
 	/// </summary>
 	public class Crc32
 	{
 		static readonly uint[] __table = new uint[CRC.CrcTableLength];
 
-		/// <summary>
-		/// Computes a checksum over an array of bytes.
-		/// </summary>
-		/// <param name="bytes">the bytes</param>
-		/// <returns>the checksum</returns>
-		[CLSCompliant(false)]
-		public uint ComputeChecksum(byte[] bytes)
-		{
-			Contract.Requires<ArgumentNullException>(bytes != null);
-			uint crc = 0xffffffff;
-			for (int i = 0; i < bytes.Length; ++i)
-			{
-				byte index = (byte)(((crc) & 0xff) ^ bytes[i]);
-				crc = (uint)((crc >> 8) ^ __table[index]);
-			}
-			return ~crc;
-		}
-
-		/// <summary>
-		/// Computes a checksum over an array of bytes beginning with the first and
-		/// continuing to length.
-		/// </summary>
-		/// <param name="bytes"></param>
-		/// <param name="first"></param>
-		/// <param name="length"></param>
-		/// <returns></returns>
-		[CLSCompliant(false)]
-		public uint ComputeChecksum(byte[] bytes, int first, int length)
-		{
-			uint crc = 0xffffffff;
-			for (int i = first; i < length; ++i)
-			{
-				byte index = (byte)(((crc) & 0xff) ^ bytes[i]);
-				crc = (uint)((crc >> 8) ^ __table[index]);
-			}
-			return ~crc;
-		}
-
 		static Crc32()
 		{
-			uint poly = 0xedb88320;
+			var poly = 0xedb88320;
 			uint temp = 0;
 			for (uint i = 0; i < CRC.CrcTableLength; ++i)
 			{
 				temp = i;
-				for (int j = 8; j > 0; --j)
+				for (var j = 8; j > 0; --j)
 				{
 					if ((temp & 1) == 1)
 					{
-						temp = (uint)((temp >> 1) ^ poly);
+						temp = (uint) ((temp >> 1) ^ poly);
 					}
 					else
 					{
@@ -133,29 +94,69 @@ namespace FlitBit.Core.Buffers
 				__table[i] = temp;
 			}
 		}
+
+		/// <summary>
+		///   Computes a checksum over an array of bytes.
+		/// </summary>
+		/// <param name="bytes">the bytes</param>
+		/// <returns>the checksum</returns>
+		[CLSCompliant(false)]
+		public uint ComputeChecksum(byte[] bytes)
+		{
+			Contract.Requires<ArgumentNullException>(bytes != null);
+			var crc = 0xffffffff;
+			for (var i = 0; i < bytes.Length; ++i)
+			{
+				var index = (byte) (((crc) & 0xff) ^ bytes[i]);
+				crc = (uint) ((crc >> 8) ^ __table[index]);
+			}
+			return ~crc;
+		}
+
+		/// <summary>
+		///   Computes a checksum over an array of bytes beginning with the first and
+		///   continuing to length.
+		/// </summary>
+		/// <param name="bytes"></param>
+		/// <param name="first"></param>
+		/// <param name="length"></param>
+		/// <returns></returns>
+		[CLSCompliant(false)]
+		public uint ComputeChecksum(byte[] bytes, int first, int length)
+		{
+			var crc = 0xffffffff;
+			for (var i = first; i < length; ++i)
+			{
+				var index = (byte) (((crc) & 0xff) ^ bytes[i]);
+				crc = (uint) ((crc >> 8) ^ __table[index]);
+			}
+			return ~crc;
+		}
 	}
 
 	/// <summary>
-	/// A few common initial CRC values
+	///   A few common initial CRC values
 	/// </summary>
 	public enum InitialCrcValue
 	{
 		/// <summary>
-		/// All zero.
+		///   All zero.
 		/// </summary>
 		Zeros = 0,
+
 		/// <summary>
-		/// Common initial value of 0x1D0F
+		///   Common initial value of 0x1D0F
 		/// </summary>
 		NonZero_x1D0F = 0x1d0f,
+
 		/// <summary>
-		/// Common initial value of 0xFFFF
+		///   Common initial value of 0xFFFF
 		/// </summary>
 		NonZero_xFFFF = 0xffff,
 	}
 
 	/// <summary>
-	/// Utility class for generating CRC16CITT checksums.
+	///   Utility class for generating CRC16CITT checksums.
 	/// </summary>
 	public class Crc16Ccitt
 	{
@@ -163,46 +164,19 @@ namespace FlitBit.Core.Buffers
 
 		readonly ushort _initialValue;
 
-		/// <summary>
-		/// Computes a checksum over an array of bytes.
-		/// </summary>
-		/// <param name="bytes">the bytes</param>
-		/// <returns>the checksum</returns>
-		[CLSCompliant(false)]
-		public ushort ComputeChecksum(byte[] bytes)
-		{
-			Contract.Requires<ArgumentNullException>(bytes != null);
-			ushort crc = this._initialValue;
-			var len = bytes.Length;
-			for (int i = 0; i < len; ++i)
-			{
-				crc = (ushort)((crc << 8) ^ __table[((crc >> 8) ^ (0xff & bytes[i]))]);
-			}
-			return crc;
-		}
-
-		/// <summary>
-		/// Creates a new instance.
-		/// </summary>
-		/// <param name="initialValue">which initial value the checksum should use</param>
-		public Crc16Ccitt(InitialCrcValue initialValue)
-		{
-			this._initialValue = (ushort)initialValue;
-		}
-
 		static Crc16Ccitt()
 		{
 			const ushort poly = 4129;
 			ushort temp, a;
-			for (int i = 0; i < CRC.CrcTableLength; ++i)
+			for (var i = 0; i < CRC.CrcTableLength; ++i)
 			{
 				temp = 0;
-				a = (ushort)(i << 8);
-				for (int j = 0; j < 8; ++j)
+				a = (ushort) (i << 8);
+				for (var j = 0; j < 8; ++j)
 				{
 					if (((temp ^ a) & 0x8000) != 0)
 					{
-						temp = (ushort)((temp << 1) ^ poly);
+						temp = (ushort) ((temp << 1) ^ poly);
 					}
 					else
 					{
@@ -212,6 +186,30 @@ namespace FlitBit.Core.Buffers
 				}
 				__table[i] = temp;
 			}
+		}
+
+		/// <summary>
+		///   Creates a new instance.
+		/// </summary>
+		/// <param name="initialValue">which initial value the checksum should use</param>
+		public Crc16Ccitt(InitialCrcValue initialValue) { this._initialValue = (ushort) initialValue; }
+
+		/// <summary>
+		///   Computes a checksum over an array of bytes.
+		/// </summary>
+		/// <param name="bytes">the bytes</param>
+		/// <returns>the checksum</returns>
+		[CLSCompliant(false)]
+		public ushort ComputeChecksum(byte[] bytes)
+		{
+			Contract.Requires<ArgumentNullException>(bytes != null);
+			var crc = this._initialValue;
+			var len = bytes.Length;
+			for (var i = 0; i < len; ++i)
+			{
+				crc = (ushort) ((crc << 8) ^ __table[((crc >> 8) ^ (0xff & bytes[i]))]);
+			}
+			return crc;
 		}
 	}
 }

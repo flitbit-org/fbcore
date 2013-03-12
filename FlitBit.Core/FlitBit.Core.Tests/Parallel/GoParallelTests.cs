@@ -13,20 +13,17 @@ namespace FlitBit.Core.Tests.Parallel
 		public void Parallel_ExecuteInParallel()
 		{
 			Exception caught = null;
-			bool completed = false;
+			var completed = false;
 
 			using (var completion = Go.ParallelWithCompletion(
-				() =>
-				{
-					Thread.Sleep(TimeSpan.FromSeconds(1));
-				}))
+																											 () => { Thread.Sleep(TimeSpan.FromSeconds(1)); }))
 			{
 				completion.Continue(
-					e =>
-					{
-						caught = e;
-						completed = true;
-					});
+													 e =>
+														 {
+															caught = e;
+															completed = true;
+														 });
 
 				Assert.IsFalse(completion.IsCompleted);
 				Assert.IsFalse(completion.IsFaulted);
@@ -46,21 +43,21 @@ namespace FlitBit.Core.Tests.Parallel
 		public void Parallel_ErrorPropagatesToErrorHandler()
 		{
 			Exception caught = null;
-			bool completed = false;
+			var completed = false;
 
 			using (var completion = Go.ParallelWithCompletion(
-				() =>
-				{
-					Thread.Sleep(TimeSpan.FromSeconds(0.1));
-					throw new InvalidOperationException("Kaboom!");
-				}))
+																											 () =>
+																												 {
+																													Thread.Sleep(TimeSpan.FromSeconds(0.1));
+																													throw new InvalidOperationException("Kaboom!");
+																												 }))
 			{
 				completion.Continue(
-					e =>
-					{
-						caught = e;
-						completed = true;
-					});
+													 e =>
+														 {
+															caught = e;
+															completed = true;
+														 });
 
 				// delay just long enough...
 				Thread.Sleep(TimeSpan.FromSeconds(0.3));
@@ -76,34 +73,31 @@ namespace FlitBit.Core.Tests.Parallel
 		{
 			Exception caught = null;
 			Exception uncaught = null;
-			bool completed = false;
+			var completed = false;
 
-			Go.OnUncaughtException += new EventHandler<UncaughtExceptionArgs>((sender, e) =>
-			{
-				uncaught = e.Error;
-			});
+			Go.OnUncaughtException += new EventHandler<UncaughtExceptionArgs>((sender, e) => { uncaught = e.Error; });
 
 			using (var completion = Go.ParallelWithCompletion(
-				() =>
-				{
-					Thread.Sleep(TimeSpan.FromSeconds(0.5));
-					throw new InvalidOperationException("Kaboom!");
-				}))
+																											 () =>
+																												 {
+																													Thread.Sleep(TimeSpan.FromSeconds(0.5));
+																													throw new InvalidOperationException("Kaboom!");
+																												 }))
 			{
 				completion.Continue(
-					e =>
-					{
-						caught = e;
-						completed = true;
-						throw new InvalidOperationException("Whammy!");
-					});
+													 e =>
+														 {
+															caught = e;
+															completed = true;
+															throw new InvalidOperationException("Whammy!");
+														 });
 
 				Assert.IsFalse(completion.IsCompleted);
 				Assert.IsFalse(completion.IsFaulted);
 
 				// delay just long enough...
 				Thread.Sleep(TimeSpan.FromSeconds(1));
-				
+
 				Assert.IsTrue(completion.IsCompleted);
 				Assert.IsTrue(completion.IsFaulted, "faulted due to the exception 'Kaboom!'");
 
@@ -119,10 +113,7 @@ namespace FlitBit.Core.Tests.Parallel
 		public void Parallel_ExecutionCanBeAwaited()
 		{
 			using (var completion = Go.ParallelWithCompletion(
-				() =>
-				{
-					Thread.Sleep(TimeSpan.FromSeconds(1));
-				}))
+																											 () => { Thread.Sleep(TimeSpan.FromSeconds(1)); }))
 			{
 				Assert.IsFalse(completion.IsCompleted);
 				Assert.IsFalse(completion.IsFaulted);
@@ -139,23 +130,23 @@ namespace FlitBit.Core.Tests.Parallel
 		public void Parallel_ExecuteFunctionInParallelAndGetResult()
 		{
 			Exception caught = null;
-			bool completed = false;
-			int handbackTotal = 0;
+			var completed = false;
+			var handbackTotal = 0;
 
 			using (var completion = Go.ParallelWithCompletion(
-				() =>
-				{
-					Thread.Sleep(TimeSpan.FromSeconds(1));
-					return new int[] { 1, 2, 3, 4, 5, 6, 7 }.Sum();
-				}))
+																											 () =>
+																												 {
+																													Thread.Sleep(TimeSpan.FromSeconds(1));
+																													return new int[] {1, 2, 3, 4, 5, 6, 7}.Sum();
+																												 }))
 			{
 				completion.Continue(
-					(e, total) =>
-					{
-						caught = e;
-						completed = true;
-						handbackTotal = total;
-					});
+													 (e, total) =>
+														 {
+															caught = e;
+															completed = true;
+															handbackTotal = total;
+														 });
 
 				// delay just long enough...
 				Thread.Sleep(TimeSpan.FromSeconds(1.2));
@@ -173,29 +164,23 @@ namespace FlitBit.Core.Tests.Parallel
 		public void Parallel_ExecuteInParallelObservedByContinuationAndObservedByEvent()
 		{
 			Exception caught = null;
-			bool completed = false;
-			bool observerCalled = false;
+			var completed = false;
+			var observerCalled = false;
 
 			using (var completion = Go.ParallelWithCompletion(
-				() =>
-				{
-					Thread.Sleep(TimeSpan.FromSeconds(1));
-				}))
+																											 () => { Thread.Sleep(TimeSpan.FromSeconds(1)); }))
 			{
 				completion.Continue(
-					e =>
-					{
-						caught = e;
-						completed = true;
-					});
+													 e =>
+														 {
+															caught = e;
+															completed = true;
+														 });
 
 				Assert.IsFalse(completion.IsCompleted);
 				Assert.IsFalse(completion.IsFaulted);
 
-				completion.Continue((e) =>
-				{
-					observerCalled = true;
-				});
+				completion.Continue((e) => { observerCalled = true; });
 
 				// delay just long enough...
 				Thread.Sleep(TimeSpan.FromSeconds(1.2));
@@ -206,8 +191,8 @@ namespace FlitBit.Core.Tests.Parallel
 				Assert.IsFalse(completion.IsFaulted);
 
 				Assert.IsNull(caught);
-				Assert.IsTrue(completed);				
-				Assert.IsTrue(observerCalled);				
+				Assert.IsTrue(completed);
+				Assert.IsTrue(observerCalled);
 			}
 		}
 	}

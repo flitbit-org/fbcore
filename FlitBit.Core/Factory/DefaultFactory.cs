@@ -5,24 +5,14 @@ using FlitBit.Core.Meta;
 namespace FlitBit.Core.Factory
 {
 	/// <summary>
-	/// Factory capable of constructing auto-implemented types.
+	///   Factory capable of constructing auto-implemented types.
 	/// </summary>
 	public sealed class DefaultFactory : IFactory
 	{
-		struct TypeRecord
-		{
-			public Type TargetType;
-			public Delegate Functor;
-
-			internal object CreateInstance()
-			{
-				return (TargetType == null) ? Functor.DynamicInvoke(null) : Activator.CreateInstance(TargetType);
-			}
-		}
 		ConcurrentDictionary<object, TypeRecord> _types = new ConcurrentDictionary<object, TypeRecord>();
 
 		/// <summary>
-		/// Creates a new instance of type T.
+		///   Creates a new instance of type T.
 		/// </summary>
 		/// <typeparam name="T">type T</typeparam>
 		/// <returns></returns>
@@ -32,19 +22,20 @@ namespace FlitBit.Core.Factory
 			TypeRecord rec;
 			if (this.CanConstruct<T>() && _types.TryGetValue(key, out rec))
 			{
-				return (T)rec.CreateInstance();
+				return (T) rec.CreateInstance();
 			}
-			throw new InvalidOperationException(String.Concat("No suitable implementation found: ", typeof(T).GetReadableFullName(), "."));
+			throw new InvalidOperationException(String.Concat("No suitable implementation found: ",
+																												typeof(T).GetReadableFullName(), "."));
 		}
-		
+
 		/// <summary>
-		/// Determins if the factory can construct instances of type T.
+		///   Determins if the factory can construct instances of type T.
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
 		public bool CanConstruct<T>()
 		{
-			bool res = false;
+			var res = false;
 			var type = typeof(T);
 			var key = type.GetKeyForType();
 			TypeRecord rec;
@@ -56,7 +47,7 @@ namespace FlitBit.Core.Factory
 			{
 				if (type.GetConstructor(Type.EmptyTypes) != null)
 				{
-					rec = new TypeRecord { TargetType = type };
+					rec = new TypeRecord {TargetType = type};
 					_types.TryAdd(key, rec);
 					return true;
 				}
@@ -67,15 +58,15 @@ namespace FlitBit.Core.Factory
 				foreach (AutoImplementedAttribute attr in type.GetCustomAttributes(typeof(AutoImplementedAttribute), false))
 				{
 					if (attr.GetImplementation<T>(this, (impl, functor) =>
-					{
-						if (impl == null || functor == null)
 						{
-							// use the implementation type if provided
-							rec = new TypeRecord { TargetType = impl, Functor = functor };
-							_types.TryAdd(key, rec);
-							gotImpl = true;
-						}
-					}) && gotImpl)
+							if (impl == null || functor == null)
+							{
+								// use the implementation type if provided
+								rec = new TypeRecord {TargetType = impl, Functor = functor};
+								_types.TryAdd(key, rec);
+								gotImpl = true;
+							}
+						}) && gotImpl)
 					{
 						return true;
 					}
@@ -85,7 +76,7 @@ namespace FlitBit.Core.Factory
 		}
 
 		/// <summary>
-		/// Gets the factory's implementation type for type T.
+		///   Gets the factory's implementation type for type T.
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
@@ -101,14 +92,22 @@ namespace FlitBit.Core.Factory
 		}
 
 		/// <summary>
-		/// Gets or sets the next factory when chained.
+		///   Gets or sets the next factory when chained.
 		/// </summary>
 		public IFactory Next { get; set; }
 
 		/// <summary>
-		/// This type sharable between threads as-is.
+		///   This type sharable between threads as-is.
 		/// </summary>
 		/// <returns></returns>
-		public object ParallelShare()	{ return this; }
+		public object ParallelShare() { return this; }
+
+		struct TypeRecord
+		{
+			public Delegate Functor;
+			public Type TargetType;
+
+			internal object CreateInstance() { return (TargetType == null) ? Functor.DynamicInvoke(null) : Activator.CreateInstance(TargetType); }
+		}
 	}
 }

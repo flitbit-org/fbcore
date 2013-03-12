@@ -1,5 +1,7 @@
 ﻿#region COPYRIGHT© 2009-2013 Phillip Clark. All rights reserved.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
@@ -20,13 +22,13 @@ using Newtonsoft.Json.Linq;
 namespace FlitBit.Core
 {
 	/// <summary>
-	/// Various extension methods.
+	///   Various extension methods.
 	/// </summary>
 	public static class Extensions
 	{
 		/// <summary>
-		/// Gets a readable full name. Since this method uses reflection it should be used
-		/// rarely. It was created to supply simpler type names when constructing error messages.
+		///   Gets a readable full name. Since this method uses reflection it should be used
+		///   rarely. It was created to supply simpler type names when constructing error messages.
 		/// </summary>
 		/// <param name="type">The type.</param>
 		/// <returns>A readable name such as My.Namespace.MyType&lt;string, int></returns>
@@ -35,8 +37,8 @@ namespace FlitBit.Core
 			Contract.Requires<ArgumentNullException>(type != null);
 
 			string result;
-			Type tt = (type.IsArray) ? type.GetElementType() : type;
-			string simpleName = tt.Name;
+			var tt = (type.IsArray) ? type.GetElementType() : type;
+			var simpleName = tt.Name;
 
 			Contract.Assume(simpleName != null);
 			Contract.Assert(simpleName.Length >= 0);
@@ -45,12 +47,16 @@ namespace FlitBit.Core
 			{
 				simpleName = simpleName.Substring(0, simpleName.IndexOf("`", StringComparison.InvariantCulture));
 				var args = tt.GetGenericArguments();
-				for (int i = 0; i < args.Length; i++)
+				for (var i = 0; i < args.Length; i++)
 				{
 					if (i == 0)
+					{
 						simpleName = String.Concat(simpleName, '<', args[i].GetReadableSimpleName());
+					}
 					else
+					{
 						simpleName = String.Concat(simpleName, ',', args[i].GetReadableSimpleName());
+					}
 				}
 				simpleName = String.Concat(simpleName, '>');
 			}
@@ -66,7 +72,7 @@ namespace FlitBit.Core
 		}
 
 		/// <summary>
-		/// Gets a readable simple name for a type.
+		///   Gets a readable simple name for a type.
 		/// </summary>
 		/// <param name="type">the type</param>
 		/// <returns>A readable name such as MyType&lt;string, int></returns>
@@ -74,18 +80,22 @@ namespace FlitBit.Core
 		{
 			Contract.Requires<ArgumentNullException>(type != null);
 
-			Type tt = (type.IsArray) ? type.GetElementType() : type;
-			string simpleName = tt.Name;
+			var tt = (type.IsArray) ? type.GetElementType() : type;
+			var simpleName = tt.Name;
 			if (simpleName.Contains('`'))
 			{
 				simpleName = simpleName.Substring(0, simpleName.IndexOf("`", StringComparison.InvariantCulture));
 				var args = tt.GetGenericArguments();
-				for (int i = 0; i < args.Length; i++)
+				for (var i = 0; i < args.Length; i++)
 				{
 					if (i == 0)
+					{
 						simpleName = String.Concat(simpleName, '<', args[i].GetReadableSimpleName());
+					}
 					else
+					{
 						simpleName = String.Concat(simpleName, ',', args[i].GetReadableSimpleName());
+					}
 				}
 				simpleName = String.Concat(simpleName, '>');
 			}
@@ -93,7 +103,7 @@ namespace FlitBit.Core
 		}
 
 		/// <summary>
-		/// Gets the fully qualified, human readable name for a delegate.
+		///   Gets the fully qualified, human readable name for a delegate.
 		/// </summary>
 		/// <param name="d"></param>
 		/// <returns></returns>
@@ -108,7 +118,7 @@ namespace FlitBit.Core
 		}
 
 		/// <summary>
-		/// Removes a string from the end of another string if present.
+		///   Removes a string from the end of another string if present.
 		/// </summary>
 		/// <param name="target">The target string.</param>
 		/// <param name="value">The value to remove.</param>
@@ -124,37 +134,43 @@ namespace FlitBit.Core
 		}
 
 		/// <summary>
-		/// Determines if the arrays are equal or if the items in two different arrays
-		/// are equal.
+		///   Determines if the arrays are equal or if the items in two different arrays
+		///   are equal.
 		/// </summary>
 		/// <typeparam name="T">Item type T</typeparam>
 		/// <param name="lhs">Left-hand comparand</param>
 		/// <param name="rhs">Right-hand comparand</param>
-		/// <returns><b>true</b> if the arrays are equal or if the items in the arrays are equal.</returns>
+		/// <returns>
+		///   <b>true</b> if the arrays are equal or if the items in the arrays are equal.
+		/// </returns>
 		public static bool EqualsOrItemsEqual<T>(this T[] lhs, T[] rhs)
 		{
-			bool result = Object.Equals(lhs, rhs);
+			var result = Equals(lhs, rhs);
 			if (result == false && lhs != null && rhs != null
 				&& lhs.LongLength == rhs.LongLength)
 			{
 				if (lhs.Length == 0)
-				{ // two empty arrays are equal.
+				{
+					// two empty arrays are equal.
 					result = true;
 				}
 				else
 				{
 					IEqualityComparer<T> comparer = EqualityComparer<T>.Default;
-					for (int i = 0; i < lhs.LongLength; i++)
+					for (var i = 0; i < lhs.LongLength; i++)
 					{
 						result = comparer.Equals(lhs[i], rhs[i]);
-						if (!result) break;
+						if (!result)
+						{
+							break;
+						}
 					}
 				}
 			}
 			return result;
 		}
 
-		private static string GetSHA1Hash(string value)
+		static string GetSHA1Hash(string value)
 		{
 			Contract.Requires<ArgumentNullException>(value != null);
 
@@ -168,7 +184,7 @@ namespace FlitBit.Core
 		}
 
 		/// <summary>
-		/// Produces a combined hashcode from the enumerated items.
+		///   Produces a combined hashcode from the enumerated items.
 		/// </summary>
 		/// <typeparam name="T">element type T</typeparam>
 		/// <param name="items">an enumerable</param>
@@ -176,24 +192,27 @@ namespace FlitBit.Core
 		/// <returns>the combined hashcode</returns>
 		public static int CalculateCombinedHashcode<T>(this IEnumerable<T> items, int seed)
 		{
-			if (items == null) return seed;
+			if (items == null)
+			{
+				return seed;
+			}
 
 			var comp = EqualityComparer<T>.Default;
 
-			int prime = Constants.NotSoRandomPrime;
-			int result = seed ^ (items.GetHashCode() * prime);
+			var prime = Constants.NotSoRandomPrime;
+			var result = seed ^ (items.GetHashCode()*prime);
 			foreach (var item in items)
 			{
 				if (!comp.Equals(default(T), item))
 				{
-					result ^= item.GetHashCode() * prime;
+					result ^= item.GetHashCode()*prime;
 				}
 			}
 			return result;
 		}
 
 		/// <summary>
-		/// Counts the number of bits turned on.
+		///   Counts the number of bits turned on.
 		/// </summary>
 		/// <param name="value">a value</param>
 		/// <returns>number of bits turned on</returns>
@@ -202,52 +221,57 @@ namespace FlitBit.Core
 		{
 			// http://en.wikipedia.org/wiki/Hamming_weight
 			uint c = 0;
-			value = value - ((value >> 1) & 0x55555555);                // reuse input as temporary
+			value = value - ((value >> 1) & 0x55555555); // reuse input as temporary
 			value = (value & 0x33333333) + ((value >> 2) & 0x33333333); // temp
-			c = ((value + (value >> 4) & 0xF0F0F0F) * 0x1010101) >> 24; // count
-			unchecked { return (int)c; }
+			c = ((value + (value >> 4) & 0xF0F0F0F)*0x1010101) >> 24; // count
+			unchecked
+			{
+				return (int) c;
+			}
 		}
 
 		/// <summary>
-		/// Counts the number of bits turned on.
+		///   Counts the number of bits turned on.
 		/// </summary>
 		/// <param name="value">a value</param>
 		/// <returns>number of bits turned on</returns>
 		public static int CountBitsInFlag(this int value)
 		{
 			// http://en.wikipedia.org/wiki/Hamming_weight
-			uint v = (uint)value;
+			var v = (uint) value;
 			uint c = 0;
 			v = v - ((v >> 1) & 0x55555555);
 			v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
-			c = ((v + (v >> 4) & 0xF0F0F0F) * 0x1010101) >> 24;
-			unchecked { return (int)c; }
+			c = ((v + (v >> 4) & 0xF0F0F0F)*0x1010101) >> 24;
+			unchecked
+			{
+				return (int) c;
+			}
 		}
 
 		/// <summary>
-		/// Gets a member from the expression given.
+		///   Gets a member from the expression given.
 		/// </summary>
 		/// <typeparam name="T">type T</typeparam>
 		/// <param name="expression">the expression</param>
 		/// <returns>the expression's target member</returns>
-		[SuppressMessage("Microsoft.Design", "CA1011")]
-		[SuppressMessage("Microsoft.Design", "CA1006")]
+		[SuppressMessage("Microsoft.Design", "CA1011"), SuppressMessage("Microsoft.Design", "CA1006")]
 		public static MemberInfo GetMemberFromExpression<T>(this Expression<Func<T, object>> expression)
 		{
 			Contract.Requires<ArgumentNullException>(expression != null);
 
 			if (expression.Body is MemberExpression)
 			{
-				MemberExpression memberExpression = (MemberExpression)expression.Body;
+				var memberExpression = (MemberExpression) expression.Body;
 				return memberExpression.Member;
 			}
 			else
 			{
-				UnaryExpression unaryExpression = (UnaryExpression)expression.Body;
+				var unaryExpression = (UnaryExpression) expression.Body;
 
 				if (unaryExpression.Operand is MemberExpression)
 				{
-					MemberExpression memberExpression = (MemberExpression)unaryExpression.Operand;
+					var memberExpression = (MemberExpression) unaryExpression.Operand;
 					return memberExpression.Member;
 				}
 			}
@@ -255,22 +279,25 @@ namespace FlitBit.Core
 		}
 
 		/// <summary>
-		/// Creates a dynamic object over the given JSON.
+		///   Creates a dynamic object over the given JSON.
 		/// </summary>
 		/// <param name="json">JSON input</param>
 		/// <returns>a dynamic object</returns>
 		public static dynamic JsonToDynamic(this string json)
 		{
-			if (String.IsNullOrWhiteSpace(json)) return null;
+			if (String.IsNullOrWhiteSpace(json))
+			{
+				return null;
+			}
 
-			object obj = Newtonsoft.Json.JsonConvert.DeserializeObject(json);
+			var obj = JsonConvert.DeserializeObject(json);
 			if (obj is string)
 			{
 				return obj as string;
 			}
 			else
 			{
-				return ConvertJson((JToken)obj);
+				return ConvertJson((JToken) obj);
 			}
 		}
 
@@ -278,38 +305,41 @@ namespace FlitBit.Core
 		{
 			if (token is JValue)
 			{
-				return ((JValue)token).Value;
+				return ((JValue) token).Value;
 			}
 			else if (token is JObject)
 			{
 				var expando = new ExpandoObject();
-				(from childToken in ((JToken)token) where childToken is JProperty select childToken as JProperty).ToList().ForEach(property =>
-				{
-					((IDictionary<string, object>)expando).Add(property.Name, ConvertJson(property.Value));
-				});
+				(from childToken in ((JToken) token) where childToken is JProperty select childToken as JProperty).ToList()
+																																																					.ForEach(
+																																																									 property =>
+																																																										 {
+																																																											((IDictionary<string, object>) expando).Add(property.Name,
+																																																																																	ConvertJson(property.Value));
+																																																										 });
 				return expando;
 			}
 			else if (token is JArray)
 			{
-				var types = ((JArray)token)
+				var types = ((JArray) token)
 					.Where(tk => tk.Type != JTokenType.Null)
 					.GroupBy(tk => tk.Type)
 					.Count();
 				if (types > 1)
 				{
-					return ConvertArrayContainingDissimilarTypes((JArray)token);
+					return ConvertArrayContainingDissimilarTypes((JArray) token);
 				}
 				else
 				{
-					return ConvertArrayContainingSimilarTypes((JArray)token);					
+					return ConvertArrayContainingSimilarTypes((JArray) token);
 				}
 			}
 			throw new ArgumentException(string.Format("Unknown token type '{0}'",
-				token.GetType()), "token"
+																								token.GetType()), "token"
 				);
 		}
 
-		private static dynamic ConvertArrayContainingSimilarTypes(JArray arr)
+		static dynamic ConvertArrayContainingSimilarTypes(JArray arr)
 		{
 			var first = arr.FirstOrDefault();
 			if (first == null)
@@ -352,16 +382,16 @@ namespace FlitBit.Core
 			throw new NotImplementedException();
 		}
 
-		private static dynamic ConvertArrayContainingDissimilarTypes(JArray arr)
+		static dynamic ConvertArrayContainingDissimilarTypes(JArray arr)
 		{
 			var items = new List<ExpandoObject>();
-			foreach (JToken item in arr)
-			{				
-				dynamic value = ConvertJson(item);
+			foreach (var item in arr)
+			{
+				var value = ConvertJson(item);
 				if (item is JValue)
 				{
 					var wrapper = new ExpandoObject();
-					((IDictionary<string, object>)wrapper).Add("Value", value);
+					((IDictionary<string, object>) wrapper).Add("Value", value);
 					value = wrapper;
 				}
 				items.Add(value);
@@ -369,10 +399,10 @@ namespace FlitBit.Core
 			return items;
 		}
 
-		private static dynamic ConvertArrayContainingObjects(JArray arr)
+		static dynamic ConvertArrayContainingObjects(JArray arr)
 		{
 			var items = new List<ExpandoObject>();
-			foreach (JToken item in arr)
+			foreach (var item in arr)
 			{
 				if (item.Type == JTokenType.Null)
 				{
@@ -384,37 +414,34 @@ namespace FlitBit.Core
 				}
 			}
 			return items;
-		}	
+		}
 
-		private static dynamic ConvertArrayContainingTypeof<T>(JArray arr)
+		static dynamic ConvertArrayContainingTypeof<T>(JArray arr)
 		{
 			var items = new List<T>();
-			foreach (JToken item in arr)
+			foreach (var item in arr)
 			{
-                if (item.Type == JTokenType.Null)
-                {
-                    items.Add(default(T));
-                }
-                else
-                {
-                    items.Add(item.Value<T>());
-                }
+				if (item.Type == JTokenType.Null)
+				{
+					items.Add(default(T));
+				}
+				else
+				{
+					items.Add(item.Value<T>());
+				}
 			}
 			return items;
-		}	
-
-		/// <summary>
-		/// Converts the source object to JSON
-		/// </summary>
-		/// <param name="source">the source</param>
-		/// <returns>the JSON representation of the source</returns>
-		public static string ToJson(this object source)
-		{
-			return JsonConvert.SerializeObject(source, Formatting.Indented, new IsoDateTimeConverter());
 		}
 
 		/// <summary>
-		/// Double quotes the given string, delimiting inner quotes.
+		///   Converts the source object to JSON
+		/// </summary>
+		/// <param name="source">the source</param>
+		/// <returns>the JSON representation of the source</returns>
+		public static string ToJson(this object source) { return JsonConvert.SerializeObject(source, Formatting.Indented, new IsoDateTimeConverter()); }
+
+		/// <summary>
+		///   Double quotes the given string, delimiting inner quotes.
 		/// </summary>
 		/// <param name="source"></param>
 		/// <returns></returns>
@@ -426,14 +453,14 @@ namespace FlitBit.Core
 		}
 
 		/// <summary>
-		/// Converts an enumerable to a readonly collection.
+		///   Converts an enumerable to a readonly collection.
 		/// </summary>
 		/// <typeparam name="T">type T</typeparam>
 		/// <param name="collection">the collection</param>
 		/// <returns>returns a read-only collection</returns>
 		public static ReadOnlyCollection<T> ToReadOnly<T>(this IEnumerable<T> collection)
 		{
-			ReadOnlyCollection<T> roc = collection as ReadOnlyCollection<T>;
+			var roc = collection as ReadOnlyCollection<T>;
 			if (roc == null)
 			{
 				if (collection == null)
@@ -453,7 +480,7 @@ namespace FlitBit.Core
 		}
 
 		/// <summary>
-		/// Formats an exception for output into the log.
+		///   Formats an exception for output into the log.
 		/// </summary>
 		/// <param name="ex">the exception</param>
 		/// <returns>a string representation of the exception</returns>
@@ -467,7 +494,7 @@ namespace FlitBit.Core
 		}
 
 		/// <summary>
-		/// Formats an exception for output into the log.
+		///   Formats an exception for output into the log.
 		/// </summary>
 		/// <param name="ex">the exception</param>
 		/// <param name="exposeStackTrace">indicates whether stack trace should be exposed in the output</param>
@@ -476,23 +503,22 @@ namespace FlitBit.Core
 		{
 			Contract.Requires<ArgumentNullException>(ex != null);
 			var builder = new StringBuilder(400)
-					.Append(ex.GetType().FullName).Append(": ").Append(ex.Message);
+				.Append(ex.GetType().FullName).Append(": ").Append(ex.Message);
 			var e = ex.InnerException;
 			var indent = 1;
 			while (e != null)
 			{
 				builder.Append(Environment.NewLine).Append(new String('\t', indent++)).Append("InnerException >")
-						.Append(e.GetType().FullName).Append(": ").Append(e.Message);
+							.Append(e.GetType().FullName).Append(": ").Append(e.Message);
 
 				e = e.InnerException;
 			}
 			if (exposeStackTrace)
 			{
 				builder.Append(Environment.NewLine).Append(new String('\t', indent++)).Append("\t StackTrace >>")
-					.Append(ex.StackTrace);
+							.Append(ex.StackTrace);
 			}
 			return builder.ToString();
 		}
 	}
-
 }

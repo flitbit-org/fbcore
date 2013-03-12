@@ -1,5 +1,7 @@
 ﻿#region COPYRIGHT© 2009-2013 Phillip Clark. All rights reserved.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
@@ -11,12 +13,12 @@ using System.Threading;
 namespace FlitBit.Core
 {
 	/// <summary>
-	/// Utility class containing utility functions and extensions.
+	///   Utility class containing utility functions and extensions.
 	/// </summary>
 	public static class Util
 	{
 		/// <summary>
-		/// Gets an SHA1 hashcode for the value given, using the default UTF8 encoding.
+		///   Gets an SHA1 hashcode for the value given, using the default UTF8 encoding.
 		/// </summary>
 		/// <param name="value"></param>
 		/// <returns></returns>
@@ -29,7 +31,7 @@ namespace FlitBit.Core
 		}
 
 		/// <summary>
-		/// Gets an SHA1 hashcode for the value given.
+		///   Gets an SHA1 hashcode for the value given.
 		/// </summary>
 		/// <param name="value"></param>
 		/// <param name="enc"></param>
@@ -48,7 +50,7 @@ namespace FlitBit.Core
 		}
 
 		/// <summary>
-		/// Gets an SHA1 hashcode for the value given and converts it to Base64, using the default UTF8 encoding.
+		///   Gets an SHA1 hashcode for the value given and converts it to Base64, using the default UTF8 encoding.
 		/// </summary>
 		/// <param name="value"></param>
 		/// <returns></returns>
@@ -61,7 +63,7 @@ namespace FlitBit.Core
 		}
 
 		/// <summary>
-		/// Gets an SHA1 hashcode for the value given and converts it to Base64.
+		///   Gets an SHA1 hashcode for the value given and converts it to Base64.
 		/// </summary>
 		/// <param name="value"></param>
 		/// <param name="enc"></param>
@@ -76,11 +78,13 @@ namespace FlitBit.Core
 		}
 
 		/// <summary>
-		/// Disposes an instance if it is disposable and sets the reference variable to null.
+		///   Disposes an instance if it is disposable and sets the reference variable to null.
 		/// </summary>
 		/// <typeparam name="T">typeof item T</typeparam>
 		/// <param name="item">reference to an item to be disposed.</param>
-		/// <returns><em>true</em> if the item is disposed as a result of the call; otherwise <em>false</em>.</returns>
+		/// <returns>
+		///   <em>true</em> if the item is disposed as a result of the call; otherwise <em>false</em>.
+		/// </returns>
 		public static bool Dispose<T>(ref T item)
 			where T : class
 		{
@@ -95,15 +99,15 @@ namespace FlitBit.Core
 					// Catches cases where clients use the parallel features without
 					// appropriate `using` clause/scope. Chained completions without
 					// a cleanup pipe require this catch:
-					if (!((IInterrogateDisposable)disposable).IsDisposed)
+					if (!((IInterrogateDisposable) disposable).IsDisposed)
 					{
-						((IDisposable)disposable).Dispose();
+						((IDisposable) disposable).Dispose();
 						return true;
 					}
 				}
 				else if (disposable is IDisposable)
 				{
-					((IDisposable)disposable).Dispose();
+					((IDisposable) disposable).Dispose();
 					return true;
 				}
 			}
@@ -111,7 +115,7 @@ namespace FlitBit.Core
 		}
 
 		/// <summary>
-		/// Interns a string if it is not already interned.
+		///   Interns a string if it is not already interned.
 		/// </summary>
 		/// <param name="value">the target string</param>
 		/// <returns>the value string interned</returns>
@@ -128,7 +132,7 @@ namespace FlitBit.Core
 		}
 
 		/// <summary>
-		/// Interns a string if it is not already interned.
+		///   Interns a string if it is not already interned.
 		/// </summary>
 		/// <param name="value">the target string</param>
 		/// <returns>the value string interned</returns>
@@ -145,7 +149,7 @@ namespace FlitBit.Core
 		}
 
 		/// <summary>
-		/// Initializes a referenced variable if it is not already initialized.
+		///   Initializes a referenced variable if it is not already initialized.
 		/// </summary>
 		/// <typeparam name="T">variable type T</typeparam>
 		/// <param name="variable">reference to the variable being initialized</param>
@@ -158,7 +162,8 @@ namespace FlitBit.Core
 			if (variable == null)
 			{
 				lock (lck)
-				{ // double-check the lock in case we're in a race...
+				{
+					// double-check the lock in case we're in a race...
 					if (variable == null)
 					{
 						variable = new T();
@@ -169,8 +174,8 @@ namespace FlitBit.Core
 		}
 
 		/// <summary>
-		/// Initializes a referenced variable if it is not already initialized. Uses
-		/// the <paramref name="factory"/> to create the instance if necessary.
+		///   Initializes a referenced variable if it is not already initialized. Uses
+		///   the <paramref name="factory" /> to create the instance if necessary.
 		/// </summary>
 		/// <typeparam name="T">variable type T</typeparam>
 		/// <param name="variable">reference to the variable being initialized</param>
@@ -186,7 +191,8 @@ namespace FlitBit.Core
 			if (variable == null)
 			{
 				lock (lck)
-				{ // double-check the lock in case we're in a race...
+				{
+					// double-check the lock in case we're in a race...
 					if (variable == null)
 					{
 						variable = factory();
@@ -197,8 +203,8 @@ namespace FlitBit.Core
 		}
 
 		/// <summary>
-		/// Initializes a variable if it doesn't already have a value. This method is
-		/// thread-safe and non-blocking.
+		///   Initializes a variable if it doesn't already have a value. This method is
+		///   thread-safe and non-blocking.
 		/// </summary>
 		/// <typeparam name="T">type T</typeparam>
 		/// <param name="value">reference to the value</param>
@@ -211,7 +217,7 @@ namespace FlitBit.Core
 
 			// treat the reference as volatile...
 			Thread.MemoryBarrier();
-			T currentValue = value;
+			var currentValue = value;
 			Thread.MemoryBarrier();
 
 			if (currentValue != null)
@@ -221,7 +227,7 @@ namespace FlitBit.Core
 
 			T instanceCreatedByOtherThread = null;
 			var isDisposable = typeof(IDisposable).IsAssignableFrom(typeof(T));
-			T ourNewInstance = factory();
+			var ourNewInstance = factory();
 			try
 			{
 				instanceCreatedByOtherThread = Interlocked.CompareExchange(ref value, ourNewInstance, null);
@@ -231,14 +237,14 @@ namespace FlitBit.Core
 			{
 				if (instanceCreatedByOtherThread != null && isDisposable)
 				{
-					((IDisposable)ourNewInstance).Dispose();
+					((IDisposable) ourNewInstance).Dispose();
 				}
 			}
 		}
 
 		/// <summary>
-		/// Initializes a variable if it doesn't already have a value. This method is
-		/// thread-safe and non-blocking.
+		///   Initializes a variable if it doesn't already have a value. This method is
+		///   thread-safe and non-blocking.
 		/// </summary>
 		/// <typeparam name="T">type T</typeparam>
 		public static T NonBlockingLazyInitializeVolatile<T>(ref T variable)
@@ -246,7 +252,7 @@ namespace FlitBit.Core
 		{
 			// treat the reference as volatile...
 			Thread.MemoryBarrier();
-			T currentValue = variable;
+			var currentValue = variable;
 			Thread.MemoryBarrier();
 
 			if (currentValue != null)
@@ -256,7 +262,7 @@ namespace FlitBit.Core
 
 			T instanceCreatedByOtherThread = null;
 			var isDisposable = typeof(IDisposable).IsAssignableFrom(typeof(T));
-			T ourNewInstance = new T();
+			var ourNewInstance = new T();
 			try
 			{
 				instanceCreatedByOtherThread = Interlocked.CompareExchange(ref variable, ourNewInstance, null);
@@ -266,13 +272,13 @@ namespace FlitBit.Core
 			{
 				if (instanceCreatedByOtherThread != null && isDisposable)
 				{
-					((IDisposable)ourNewInstance).Dispose();
+					((IDisposable) ourNewInstance).Dispose();
 				}
 			}
 		}
 
 		/// <summary>
-		/// Reads the referenced value after synchronizing all processors.
+		///   Reads the referenced value after synchronizing all processors.
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="reference"></param>
@@ -280,14 +286,14 @@ namespace FlitBit.Core
 		public static T VolatileRead<T>(ref T reference)
 		{
 			Thread.MemoryBarrier();
-			T result = reference;
+			var result = reference;
 			Thread.MemoryBarrier();
 
 			return result;
 		}
 
 		/// <summary>
-		/// Writes a value to a reference and synchronizing all processors.
+		///   Writes a value to a reference and synchronizing all processors.
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="reference"></param>
@@ -300,5 +306,4 @@ namespace FlitBit.Core
 			Thread.MemoryBarrier();
 		}
 	}
-
 }
