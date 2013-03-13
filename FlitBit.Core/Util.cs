@@ -18,6 +18,48 @@ namespace FlitBit.Core
 	public static class Util
 	{
 		/// <summary>
+		///   Disposes an instance if it is disposable and sets the reference variable to null.
+		/// </summary>
+		/// <typeparam name="T">typeof item T</typeparam>
+		/// <param name="item">reference to an item to be disposed.</param>
+		/// <returns>
+		///   <em>true</em> if the item is disposed as a result of the call; otherwise <em>false</em>.
+		/// </returns>
+		public static bool Dispose<T>(ref T item)
+			where T : class
+		{
+			Thread.MemoryBarrier();
+			var disposable = item;
+			Thread.MemoryBarrier();
+
+			if (Interlocked.CompareExchange(ref item, default(T), disposable) == disposable)
+			{
+				var interrogateDisposable = disposable as IInterrogateDisposable;
+				if (interrogateDisposable != null)
+				{
+					// Catches cases where clients use the parallel features without
+					// appropriate `using` clause/scope. Chained completions without
+					// a cleanup pipe require this catch:
+					if (!interrogateDisposable.IsDisposed)
+					{
+						interrogateDisposable.Dispose();
+						return true;
+					}
+				}
+				else
+				{
+					var disp = disposable as IDisposable;
+					if (disp != null)
+					{
+						disp.Dispose();
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
+		/// <summary>
 		///   Gets an SHA1 hashcode for the value given, using the default UTF8 encoding.
 		/// </summary>
 		/// <param name="value"></param>
@@ -75,60 +117,6 @@ namespace FlitBit.Core
 			Contract.Ensures(Contract.Result<string>() != null);
 
 			return Convert.ToBase64String(GetSHA1Hash(value, enc));
-		}
-
-		/// <summary>
-		///   Disposes an instance if it is disposable and sets the reference variable to null.
-		/// </summary>
-		/// <typeparam name="T">typeof item T</typeparam>
-		/// <param name="item">reference to an item to be disposed.</param>
-		/// <returns>
-		///   <em>true</em> if the item is disposed as a result of the call; otherwise <em>false</em>.
-		/// </returns>
-		public static bool Dispose<T>(ref T item)
-			where T : class
-		{
-			Thread.MemoryBarrier();
-			var disposable = item;
-			Thread.MemoryBarrier();
-
-			if (Interlocked.CompareExchange(ref item, default(T), disposable) == disposable)
-			{
-				if (disposable is IInterrogateDisposable)
-				{
-					// Catches cases where clients use the parallel features without
-					// appropriate `using` clause/scope. Chained completions without
-					// a cleanup pipe require this catch:
-					if (!((IInterrogateDisposable) disposable).IsDisposed)
-					{
-						((IDisposable) disposable).Dispose();
-						return true;
-					}
-				}
-				else if (disposable is IDisposable)
-				{
-					((IDisposable) disposable).Dispose();
-					return true;
-				}
-			}
-			return false;
-		}
-
-		/// <summary>
-		///   Interns a string if it is not already interned.
-		/// </summary>
-		/// <param name="value">the target string</param>
-		/// <returns>the value string interned</returns>
-		internal static object MakeReliableLockFromString(this string value)
-		{
-			Contract.Requires<ArgumentNullException>(value != null);
-			Contract.Ensures(Contract.Result<object>() != null);
-
-			if (String.IsInterned(value) == null)
-			{
-				return String.Intern(value);
-			}
-			return value;
 		}
 
 		/// <summary>
@@ -231,7 +219,7 @@ namespace FlitBit.Core
 			try
 			{
 				instanceCreatedByOtherThread = Interlocked.CompareExchange(ref value, ourNewInstance, null);
-				return (instanceCreatedByOtherThread != null) ? instanceCreatedByOtherThread : ourNewInstance;
+				return instanceCreatedByOtherThread ?? ourNewInstance;
 			}
 			finally
 			{
@@ -266,7 +254,7 @@ namespace FlitBit.Core
 			try
 			{
 				instanceCreatedByOtherThread = Interlocked.CompareExchange(ref variable, ourNewInstance, null);
-				return (instanceCreatedByOtherThread != null) ? instanceCreatedByOtherThread : ourNewInstance;
+				return instanceCreatedByOtherThread ?? ourNewInstance;
 			}
 			finally
 			{
@@ -278,7 +266,7 @@ namespace FlitBit.Core
 		}
 
 		/// <summary>
-		///   Reads the referenced value after synchronizing all processors.
+		///   Reads the referenced value within a full-fence.
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="reference"></param>
@@ -293,17 +281,34 @@ namespace FlitBit.Core
 		}
 
 		/// <summary>
-		///   Writes a value to a reference and synchronizing all processors.
+		///   Writes a value to a reference within a full-fence.
 		/// </summary>
 		/// <typeparam name="T"></typeparam>
 		/// <param name="reference"></param>
 		/// <param name="value"></param>
 		/// <returns></returns>
-		public static void VolatileWrite<T>(ref T reference, T value)
+		public static void VolatileWrite<T>(out T reference, T value)
 		{
 			Thread.MemoryBarrier();
 			reference = value;
 			Thread.MemoryBarrier();
+		}
+
+		/// <summary>
+		///   Interns a string if it is not already interned.
+		/// </summary>
+		/// <param name="value">the target string</param>
+		/// <returns>the value string interned</returns>
+		internal static object MakeReliableLockFromString(this string value)
+		{
+			Contract.Requires<ArgumentNullException>(value != null);
+			Contract.Ensures(Contract.Result<object>() != null);
+
+			if (String.IsInterned(value) == null)
+			{
+				return String.Intern(value);
+			}
+			return value;
 		}
 	}
 }

@@ -15,10 +15,10 @@ namespace FlitBit.Core.Buffers
 	internal struct Int32SingleUnion
 	{
 		[FieldOffset(0)]
-		int i;
+		readonly float f;
 
 		[FieldOffset(0)]
-		float f;
+		readonly int i;
 
 		/// <summary>
 		///   Creates an instance initialized with the given integer.

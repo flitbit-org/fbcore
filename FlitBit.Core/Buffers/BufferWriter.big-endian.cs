@@ -62,7 +62,7 @@ namespace FlitBit.Core.Buffers
 				buffer[offset + 3] = (byte) ((value >> 24) & 0xFF);
 				buffer[offset + 2] = (byte) ((value >> 16) & 0xFF);
 				buffer[offset + 1] = (byte) ((value >> 8) & 0xFF);
-				buffer[offset] = (byte) (byte) (value & 0xFF);
+				buffer[offset] = (byte) (value & 0xFF);
 			}
 			offset += sizeof(UInt32);
 			return sizeof(UInt32);

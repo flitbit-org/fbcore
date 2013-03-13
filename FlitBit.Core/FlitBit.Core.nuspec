@@ -3,14 +3,14 @@
   <metadata>
     <id>$id$</id>
     <version>$version$</version>
-    <title>$title$</title>
-    <authors>Phillip Clark</authors>
+    <title>FlitBit Frameworks Core</title>
+    <authors>Phillip Clark, Montane Hamilton</authors>
     <owners>$author$</owners>
     <licenseUrl>http://fbcore.codeplex.com/license</licenseUrl>
     <projectUrl>http://fbcore.codeplex.com/</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Core classes and utilities used by the FlitBit Frameworks.</description>
-    <releaseNotes>Re-signed the assembly.</releaseNotes>
+    <releaseNotes>Breaking change. See the release notes on codeplex.</releaseNotes>
     <copyright>Copyright 2013</copyright>
   </metadata>
 </package>

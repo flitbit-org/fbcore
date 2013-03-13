@@ -19,8 +19,8 @@ namespace FlitBit.Core.Collections
 		/// <summary>
 		///   Reliably sets the value for a key in the concurrent dictionary.
 		/// </summary>
-		/// <typeparam name="K">key type K</typeparam>
-		/// <typeparam name="V">value type V</typeparam>
+		/// <typeparam name="TKey">key type K</typeparam>
+		/// <typeparam name="TValue">value type V</typeparam>
 		/// <param name="dictionary">the dictionary</param>
 		/// <param name="key">the key</param>
 		/// <param name="value">the value</param>
@@ -36,18 +36,19 @@ namespace FlitBit.Core.Collections
 		///   The result indicates the value that was replaced at the time the the operation
 		///   succeeded.
 		/// </remarks>
-		public static V ReliableSetValue<K, V>(this ConcurrentDictionary<K, V> dictionary, K key, V value)
+		public static TValue ReliableSetValue<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary, TKey key,
+			TValue value)
 		{
 			while (!dictionary.TryAdd(key, value))
 			{
-				V current;
+				TValue current;
 				if (dictionary.TryGetValue(key, out current)
 					&& dictionary.TryUpdate(key, value, current))
 				{
 					return current;
 				}
 			}
-			return default(V);
+			return default(TValue);
 		}
 
 		/// <summary>

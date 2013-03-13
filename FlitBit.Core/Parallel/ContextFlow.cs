@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text;
 using System.Threading;
 
 namespace FlitBit.Core.Parallel
@@ -11,9 +12,9 @@ namespace FlitBit.Core.Parallel
 	/// </summary>
 	public sealed class ContextFlow : Disposable
 	{
+		readonly ConcurrentDictionary<Type, Stack<Forker>> _stacks = new ConcurrentDictionary<Type, Stack<Forker>>();
 		List<IDisposable> _cleanup;
 		int _disposers = 1; // always an implicit disposer.
-		ConcurrentDictionary<Type, Stack<Forker>> _stacks = new ConcurrentDictionary<Type, Stack<Forker>>();
 
 		ContextFlow(ContextFlow other)
 		{
@@ -22,6 +23,138 @@ namespace FlitBit.Core.Parallel
 		}
 
 		ContextFlow() { Ambient.Push(this); }
+
+		/// <summary>
+		///   Performs the disposal.
+		/// </summary>
+		/// <param name="disposing">indicates whether the context is disposing</param>
+		/// <returns>
+		///   <em>true</em> if disposed as a result of the call; otherwise <em>false</em>
+		/// </returns>
+		protected override bool PerformDispose(bool disposing)
+		{
+			if (disposing && Interlocked.Decrement(ref _disposers) > 0)
+			{
+				return false;
+			}
+			if (disposing && !Ambient.TryPop(this))
+			{
+				const string message = "Context disposed out of order. Thar be shenanigans in the disposery!";
+				try
+				{
+					if (LogSink.ShouldTrace(this, TraceEventType.Error))
+					{
+						var cstack = CreationStack;
+						if (cstack != null)
+						{
+							var builder = new StringBuilder(2000);
+							builder.Append(Environment.NewLine).Append(">> Creation stack... ");
+							foreach (var frame in CreationStack)
+							{
+								var method = frame.GetMethod();
+								builder.Append(Environment.NewLine)
+											.Append("\t >> ")
+											.Append(method.DeclaringType.GetReadableSimpleName()).Append(".").Append(method.Name);
+							}
+							builder.Append(Environment.NewLine).Append(">> Disposal stack... ");
+							var stackFrames = new StackTrace().GetFrames();
+							if (stackFrames != null)
+							{
+								foreach (var frame in stackFrames)
+								{
+									var method = frame.GetMethod();
+									builder.Append(Environment.NewLine)
+												.Append("\t >> ")
+												.Append(method.DeclaringType.GetReadableSimpleName()).Append(".").Append(method.Name);
+								}
+							}
+
+							LogSink.OnTraceEvent(this, TraceEventType.Error, String.Concat(message, builder));
+						}
+						else
+						{
+							LogSink.OnTraceEvent(this, TraceEventType.Error, message);
+						}
+					}
+				}
+// ReSharper disable EmptyGeneralCatchClause
+				catch
+// ReSharper restore EmptyGeneralCatchClause
+				{
+					/* purposely eating exceptions in finalizer */
+				}
+			}
+			if (disposing)
+			{
+				if (_cleanup != null)
+				{
+					foreach (var d in _cleanup)
+					{
+						var dd = d;
+						Util.Dispose(ref dd);
+					}
+				}
+			}
+			return true;
+		}
+
+		internal void Cleanup(object fork)
+		{
+			if (fork is IDisposable)
+			{
+				var list = Util.NonBlockingLazyInitializeVolatile(ref _cleanup);
+				list.Add(fork as IDisposable);
+			}
+		}
+
+		internal ContextFlow ForkContext(ContextFlow fork)
+		{
+			if (IsDisposed)
+			{
+				throw new ObjectDisposedException(typeof(ContextFlow).FullName);
+			}
+
+			Interlocked.Increment(ref _disposers);
+			foreach (var it in _stacks)
+			{
+				if (it.Value.Count > 0)
+				{
+					it.Value.Peek().Fork(fork);
+				}
+			}
+			return this;
+		}
+
+		void PerformPush<T>(T ambient)
+			where T : IParallelShared
+		{
+			var stack = _stacks.GetOrAdd(typeof(T), t => new Stack<Forker>());
+			stack.Push(new Forker<T>(ambient));
+		}
+
+		bool PerformTryPeek<T>(out T ambient)
+			where T : IParallelShared
+		{
+			Stack<Forker> stack;
+			if (_stacks.TryGetValue(typeof(T), out stack) && stack.Count > 0)
+			{
+				ambient = (T) stack.Peek().Item;
+				return true;
+			}
+			ambient = default(T);
+			return false;
+		}
+
+		bool PerformTryPop<T>(T comparand)
+			where T : IParallelShared
+		{
+			Stack<Forker> stack;
+			if (_stacks.TryGetValue(typeof(T), out stack) && stack.Count > 0)
+			{
+				return ReferenceEquals(comparand, stack.Pop().Item);
+			}
+			return false;
+		}
 
 		/// <summary>
 		///   Gets the current "ambient" context.
@@ -33,16 +166,6 @@ namespace FlitBit.Core.Parallel
 				ContextFlow ambient;
 				return (Ambient.TryPeek(out ambient)) ? ambient : default(ContextFlow);
 			}
-		}
-
-		/// <summary>
-		///   Prepares a copy of the context for use in thread-pool and background threads.
-		/// </summary>
-		/// <returns>an instance suitable for use as a background thread's ambient context</returns>
-		public static ContextFlow ForkAmbient()
-		{
-			ContextFlow ambient;
-			return (Ambient.TryPeek(out ambient)) ? new ContextFlow(ambient) : default(ContextFlow);
 		}
 
 		/// <summary>
@@ -61,59 +184,13 @@ namespace FlitBit.Core.Parallel
 		}
 
 		/// <summary>
-		///   Performs the disposal.
+		///   Prepares a copy of the context for use in thread-pool and background threads.
 		/// </summary>
-		/// <param name="disposing">indicates whether the context is disposing</param>
-		/// <returns>
-		///   <em>true</em> if disposed as a result of the call; otherwise <em>false</em>
-		/// </returns>
-		protected override bool PerformDispose(bool disposing)
+		/// <returns>an instance suitable for use as a background thread's ambient context</returns>
+		public static ContextFlow ForkAmbient()
 		{
-			if (disposing && Interlocked.Decrement(ref _disposers) > 0)
-			{
-				return false;
-			}
-			if (disposing && !Ambient.TryPop(this))
-			{
-				var message = "Context disposed out of order. Thar be shenanigans in the disposery!";
-				try
-				{
-					OnTraceEvent(TraceEventType.Warning, message);
-				}
-				catch (Exception)
-				{
-				}
-			}
-			if (disposing)
-			{
-				if (_cleanup != null)
-				{
-					foreach (var d in _cleanup)
-					{
-						var dd = d;
-						Util.Dispose(ref dd);
-					}
-				}
-			}
-			return true;
-		}
-
-		ContextFlow ForkContext(ContextFlow fork)
-		{
-			if (IsDisposed)
-			{
-				throw new ObjectDisposedException(typeof(ContextFlow).FullName);
-			}
-
-			Interlocked.Increment(ref _disposers);
-			foreach (var it in _stacks)
-			{
-				if (it.Value.Count > 0)
-				{
-					it.Value.Peek().Fork(fork);
-				}
-			}
-			return this;
+			ContextFlow ambient;
+			return (Ambient.TryPeek(out ambient)) ? new ContextFlow(ambient) : default(ContextFlow);
 		}
 
 		/// <summary>
@@ -129,14 +206,7 @@ namespace FlitBit.Core.Parallel
 			{
 				context = new ContextFlow();
 			}
-			context.PerformPush<T>(ambient);
-		}
-
-		void PerformPush<T>(T ambient)
-			where T : IParallelShared
-		{
-			var stack = _stacks.GetOrAdd(typeof(T), t => new Stack<Forker>());
-			stack.Push(new Forker<T>(ambient));
+			context.PerformPush(ambient);
 		}
 
 		/// <summary>
@@ -152,19 +222,6 @@ namespace FlitBit.Core.Parallel
 			if (Ambient.TryPeek(out context))
 			{
 				return context.PerformTryPeek(out ambient);
-			}
-			ambient = default(T);
-			return false;
-		}
-
-		bool PerformTryPeek<T>(out T ambient)
-			where T : IParallelShared
-		{
-			Stack<Forker> stack;
-			if (_stacks.TryGetValue(typeof(T), out stack) && stack.Count > 0)
-			{
-				ambient = (T) stack.Peek().Item;
-				return true;
 			}
 			ambient = default(T);
 			return false;
@@ -187,30 +244,20 @@ namespace FlitBit.Core.Parallel
 			return false;
 		}
 
-		bool PerformTryPop<T>(T comparand)
-			where T : IParallelShared
-		{
-			Stack<Forker> stack;
-			if (_stacks.TryGetValue(typeof(T), out stack) && stack.Count > 0)
-			{
-				return ReferenceEquals(comparand, stack.Pop().Item);
-			}
-			return false;
-		}
-
-		internal void Cleanup(object fork)
-		{
-			if (fork is IDisposable)
-			{
-				var list = Util.NonBlockingLazyInitializeVolatile(ref _cleanup);
-				list.Add(fork as IDisposable);
-			}
-		}
-
 		internal static class Ambient
 		{
 			[ThreadStatic]
 			static Stack<ContextFlow> __stack;
+
+			internal static ContextFlow Push(ContextFlow ambient)
+			{
+				if (__stack == null)
+				{
+					__stack = new Stack<ContextFlow>();
+				}
+				__stack.Push(ambient);
+				return ambient;
+			}
 
 			internal static bool TryPeek(out ContextFlow ambient)
 			{
@@ -236,21 +283,12 @@ namespace FlitBit.Core.Parallel
 				}
 				return false;
 			}
-
-			internal static ContextFlow Push(ContextFlow ambient)
-			{
-				if (__stack == null)
-				{
-					__stack = new Stack<ContextFlow>();
-				}
-				__stack.Push(ambient);
-				return ambient;
-			}
 		}
 
 		abstract class Forker
 		{
 			public object Item;
+
 			public abstract void Fork(ContextFlow context);
 		}
 
@@ -263,7 +301,7 @@ namespace FlitBit.Core.Parallel
 			{
 				var fork = (T) ((T) Item).ParallelShare();
 				context.Cleanup(fork);
-				context.PerformPush<T>(fork);
+				context.PerformPush(fork);
 			}
 		}
 	}

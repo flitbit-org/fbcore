@@ -32,13 +32,13 @@ namespace FlitBit.Core.Xml
 			if (includeRootObject)
 			{
 				var expando = new ExpandoObject() as IDictionary<string, object>;
-				expando.Add(xml.Root.Name.LocalName, ToDynamic(xml.Root));
+				if (xml.Root != null)
+				{
+					expando.Add(xml.Root.Name.LocalName, ToDynamic(xml.Root));
+				}
 				return expando;
 			}
-			else
-			{
-				return ToDynamic(xml.Root);
-			}
+			return ToDynamic(xml.Root);
 		}
 
 		/// <summary>
@@ -55,39 +55,34 @@ namespace FlitBit.Core.Xml
 		/// <returns>an object shaped like the input xml</returns>
 		public static object ToDynamic(XElement elm)
 		{
+			ExpandoObject expando;
 			if (elm.IsEmpty)
 			{
-				var expando = new ExpandoObject() as IDictionary<string, object>;
+				expando = new ExpandoObject();
 				AddAttributesToDictionary(expando, elm);
 				return expando;
 			}
-			else if (!elm.HasAttributes)
+			if (!elm.HasAttributes)
 			{
 				if (elm.HasElements)
 				{
-					var expando = new ExpandoObject() as IDictionary<string, object>;
+					expando = new ExpandoObject();
 					AddElementsToDictionary(expando, elm);
 					return expando;
 				}
-				else
-				{
-					return elm.Value;
-				}
+				return elm.Value;
+			}
+			expando = new ExpandoObject();
+			AddAttributesToDictionary(expando, elm);
+			if (elm.HasElements)
+			{
+				AddElementsToDictionary(expando, elm);
 			}
 			else
 			{
-				var expando = new ExpandoObject() as IDictionary<string, object>;
-				AddAttributesToDictionary(expando, elm);
-				if (elm.HasElements)
-				{
-					AddElementsToDictionary(expando, elm);
-				}
-				else
-				{
-					expando.Add("Value", elm.Value);
-				}
-				return expando;
+				(expando as IDictionary<string, object>).Add("Value", elm.Value);
 			}
+			return expando;
 		}
 
 		/// <summary>

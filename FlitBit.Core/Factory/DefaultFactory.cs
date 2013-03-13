@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using FlitBit.Core.Meta;
 
 namespace FlitBit.Core.Factory
@@ -9,7 +10,9 @@ namespace FlitBit.Core.Factory
 	/// </summary>
 	public sealed class DefaultFactory : IFactory
 	{
-		ConcurrentDictionary<object, TypeRecord> _types = new ConcurrentDictionary<object, TypeRecord>();
+		readonly ConcurrentDictionary<object, TypeRecord> _types = new ConcurrentDictionary<object, TypeRecord>();
+
+		#region IFactory Members
 
 		/// <summary>
 		///   Creates a new instance of type T.
@@ -35,7 +38,6 @@ namespace FlitBit.Core.Factory
 		/// <returns></returns>
 		public bool CanConstruct<T>()
 		{
-			var res = false;
 			var type = typeof(T);
 			var key = type.GetKeyForType();
 			TypeRecord rec;
@@ -55,24 +57,20 @@ namespace FlitBit.Core.Factory
 			else
 			{
 				var gotImpl = false;
-				foreach (AutoImplementedAttribute attr in type.GetCustomAttributes(typeof(AutoImplementedAttribute), false))
-				{
-					if (attr.GetImplementation<T>(this, (impl, functor) =>
-						{
-							if (impl == null || functor == null)
-							{
-								// use the implementation type if provided
-								rec = new TypeRecord {TargetType = impl, Functor = functor};
-								_types.TryAdd(key, rec);
-								gotImpl = true;
-							}
-						}) && gotImpl)
-					{
-						return true;
-					}
-				}
+				return type.GetCustomAttributes(typeof(AutoImplementedAttribute), false)
+									.Cast<AutoImplementedAttribute>()
+									.Any(attr => attr.GetImplementation<T>(this, (impl, functor) =>
+									{
+										if (impl == null || functor == null)
+										{
+											// use the implementation type if provided
+											rec = new TypeRecord {TargetType = impl, Functor = functor};
+											this._types.TryAdd(key, rec);
+											gotImpl = true;
+										}
+									}) && gotImpl);
 			}
-			return res;
+			return false;
 		}
 
 		/// <summary>
@@ -101,6 +99,8 @@ namespace FlitBit.Core.Factory
 		/// </summary>
 		/// <returns></returns>
 		public object ParallelShare() { return this; }
+
+		#endregion
 
 		struct TypeRecord
 		{

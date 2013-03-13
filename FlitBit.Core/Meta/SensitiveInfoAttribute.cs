@@ -20,7 +20,7 @@ namespace FlitBit.Core.Meta
 		/// <summary>
 		///   Indicates the information is personally identifiable information.
 		/// </summary>
-		PII = 1 << 2 | NoLog,
+		PersonallyIdentifying = 1 << 2 | NoLog,
 	}
 
 	/// <summary>

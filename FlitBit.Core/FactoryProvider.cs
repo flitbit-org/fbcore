@@ -10,19 +10,19 @@ namespace FlitBit.Core
 		static IFactoryProvider __provider;
 
 		/// <summary>
-		///   Gets and sets the global factory.
-		/// </summary>
-		public static IFactory Factory
-		{
-			get { return Current.GetFactory(); }
-		}
-
-		/// <summary>
 		///   Gets the current factory provider.
 		/// </summary>
 		public static IFactoryProvider Current
 		{
 			get { return Util.NonBlockingLazyInitializeVolatile(ref __provider, () => new DefaultFactoryProvider()); }
+		}
+
+		/// <summary>
+		///   Gets and sets the global factory.
+		/// </summary>
+		public static IFactory Factory
+		{
+			get { return Current.GetFactory(); }
 		}
 
 		/// <summary>

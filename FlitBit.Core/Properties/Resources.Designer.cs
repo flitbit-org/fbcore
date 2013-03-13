@@ -88,6 +88,15 @@ namespace FlitBit.Core.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to index must be zero or greater but less than count.
+        /// </summary>
+        internal static string Err_index_out_of_range {
+            get {
+                return ResourceManager.GetString("Err_index_out_of_range", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to reactor has stopped and cannot perform the operation.
         /// </summary>
         internal static string Err_ReactorStopped {

@@ -12,8 +12,7 @@ namespace FlitBit.Core.Parallel
 		/// <summary>
 		///   Creates a new instance.
 		/// </summary>
-		public ParallelException()
-			: base() { }
+		public ParallelException() { }
 
 		/// <summary>
 		///   Creates a new instance.
@@ -48,8 +47,7 @@ namespace FlitBit.Core.Parallel
 		/// <summary>
 		///   Creates a new instance.
 		/// </summary>
-		public ParallelTimeoutException()
-			: base() { }
+		public ParallelTimeoutException() { }
 
 		/// <summary>
 		///   Creates a new instance.

@@ -7,6 +7,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 
 namespace FlitBit.Core.Collections
 {
@@ -15,7 +16,7 @@ namespace FlitBit.Core.Collections
 	/// </summary>
 	public class EnumerableKeyValuePairs : IEnumerable<KeyValuePair>
 	{
-		KeyValuePair[] _kvps;
+		readonly KeyValuePair[] _kvps;
 
 		/// <summary>
 		///   Creates a new instance from an input string.
@@ -25,10 +26,7 @@ namespace FlitBit.Core.Collections
 		/// <param name="kvpSep">The character that separates keys from values</param>
 		public EnumerableKeyValuePairs(string input, char pairSep, char kvpSep)
 		{
-			if (input == null)
-			{
-				throw new ArgumentNullException("input");
-			}
+			Contract.Requires<ArgumentNullException>(input != null);
 
 			var items = new List<KeyValuePair>();
 			foreach (var s in input.Split(pairSep))
@@ -42,18 +40,18 @@ namespace FlitBit.Core.Collections
 			_kvps = items.ToArray();
 		}
 
+		#region IEnumerable<KeyValuePair> Members
+
 		/// <summary>
 		///   Gets the enumerator.
 		/// </summary>
 		/// <returns></returns>
-		public IEnumerator<KeyValuePair> GetEnumerator()
-		{
-			foreach (var kvp in _kvps)
-			{
-				yield return kvp;
-			}
+		public IEnumerator<KeyValuePair> GetEnumerator() {
+			return ((IEnumerable<KeyValuePair>) this._kvps).GetEnumerator();
 		}
 
 		IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
+
+		#endregion
 	}
 }

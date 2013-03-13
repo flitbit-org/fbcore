@@ -10,8 +10,8 @@ namespace FlitBit.Core.Parallel
 	/// <typeparam name="T">variable type T</typeparam>
 	public sealed class Future<T> : Disposable, IFuture<T>
 	{
-		const int StatusWaiting = 0;
 		const int StatusCompleted = 1;
+		const int StatusWaiting = 0;
 
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		readonly Object _sync = new Object();
@@ -54,13 +54,31 @@ namespace FlitBit.Core.Parallel
 					{
 						if (_waitable == null)
 						{
-							Util.VolatileWrite(ref _waitable, new ManualResetEventSlim(this.IsCompleted));
+// ReSharper disable PossibleMultipleWriteAccessInDoubleCheckLocking
+							Util.VolatileWrite(out _waitable, new ManualResetEventSlim(this.IsCompleted));
+// ReSharper restore PossibleMultipleWriteAccessInDoubleCheckLocking
 						}
 					}
 				}
 				return _waitable;
 			}
 		}
+
+		/// <summary>
+		///   Disposes the future and it's wait handle.
+		/// </summary>
+		/// <param name="disposing">indicates whether the object is disposing</param>
+		/// <returns>if disposing, returns true if the disposal should continue.</returns>
+		protected override bool PerformDispose(bool disposing)
+		{
+			if (disposing)
+			{
+				Util.Dispose(ref _waitable);
+			}
+			return disposing;
+		}
+
+		#region IFuture<T> Members
 
 		/// <summary>
 		///   Gets the future's synchronization object.
@@ -207,10 +225,7 @@ namespace FlitBit.Core.Parallel
 			{
 				return TryGetValue(TimeSpan.FromMilliseconds(millisecondsTimeout), out value);
 			}
-			else
-			{
-				return TryGetValue(out value);
-			}
+			return TryGetValue(out value);
 		}
 
 		/// <summary>
@@ -270,14 +285,14 @@ namespace FlitBit.Core.Parallel
 			{
 				return AwaitValue(TimeSpan.FromMilliseconds(millisecondsTimeout));
 			}
-			else if (this.IsCompleted)
+			if (this.IsCompleted)
 			{
 				if (this.IsFaulted)
 				{
 					throw new ParallelException("Background thread faulted.", this.Exception);
 				}
 
-				return Util.VolatileRead(ref _value);
+				return Util.VolatileRead(ref this._value);
 			}
 
 			throw new TimeoutException();
@@ -313,18 +328,6 @@ namespace FlitBit.Core.Parallel
 			get { return Waitable.WaitHandle; }
 		}
 
-		/// <summary>
-		///   Disposes the future and it's wait handle.
-		/// </summary>
-		/// <param name="disposing">indicates whether the object is disposing</param>
-		/// <returns>if disposing, returns true if the disposal should continue.</returns>
-		protected override bool PerformDispose(bool disposing)
-		{
-			if (disposing)
-			{
-				Util.Dispose(ref _waitable);
-			}
-			return disposing;
-		}
+		#endregion
 	}
 }

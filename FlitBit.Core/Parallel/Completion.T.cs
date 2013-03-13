@@ -28,9 +28,6 @@ namespace FlitBit.Core.Parallel
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		Future<T> _future = new Future<T>();
 
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		Object _target;
-
 		/// <summary>
 		///   Constructs a new instance.
 		/// </summary>
@@ -48,13 +45,21 @@ namespace FlitBit.Core.Parallel
 		/// <param name="value">the completion value</param>
 		public Completion(Object target, bool completed, T value)
 		{
-			_target = target;
+			Target = target;
 			if (completed)
 			{
 				_future.MarkCompleted(value);
 			}
 			_context = ContextFlow.ForkAmbient();
 			_continuations = new ContinuationSet<T>(_context);
+		}
+
+		/// <summary>
+		///   Gets the exception that caused the fault.
+		/// </summary>
+		public Exception Exception
+		{
+			get { return _future.Exception; }
 		}
 
 		/// <summary>
@@ -74,12 +79,9 @@ namespace FlitBit.Core.Parallel
 		}
 
 		/// <summary>
-		///   Gets the exception that caused the fault.
+		///   The completion's target object if given when the completion was created.
 		/// </summary>
-		public Exception Exception
-		{
-			get { return _future.Exception; }
-		}
+		public Object Target { get; private set; }
 
 		/// <summary>
 		///   Gets a wait handle for the completion.
@@ -93,115 +95,6 @@ namespace FlitBit.Core.Parallel
 
 				return _future.WaitHandle;
 			}
-		}
-
-		/// <summary>
-		///   Marks the completion.
-		/// </summary>
-		/// <param name="value">the completion value</param>
-		public void MarkCompleted(T value)
-		{
-			Contract.Requires<ObjectDisposedException>(!IsDisposed);
-			_future.MarkCompleted(value);
-			_continuations.NotifyCompletion(null, value);
-		}
-
-		/// <summary>
-		///   Marks the completion.
-		/// </summary>
-		/// <param name="fault"></param>
-		public void MarkFaulted(Exception fault)
-		{
-			Contract.Requires<ObjectDisposedException>(!IsDisposed);
-			_future.MarkFaulted(fault);
-			_continuations.NotifyCompletion(fault, default(T));
-		}
-
-		/// <summary>
-		///   Waits (blocks the current thread) until the value is present or the timeout is exceeded.
-		/// </summary>
-		/// <param name="timeout">A timespan representing the timeout period.</param>
-		/// <returns>The future's value.</returns>
-		public bool Wait(TimeSpan timeout) { return _future.Wait(timeout); }
-
-		/// <summary>
-		///   Gets an async result for .NET framework synchronization.
-		/// </summary>
-		/// <returns></returns>
-		public AsyncResult ToAsyncResult()
-		{
-			Contract.Requires<ObjectDisposedException>(!IsDisposed);
-			return ToAsyncResult(null, null, null);
-		}
-
-		/// <summary>
-		///   Gets an async result for .NET framework synchronization.
-		/// </summary>
-		/// <param name="asyncCallback"></param>
-		/// <param name="asyncHandback"></param>
-		/// <returns></returns>
-		public AsyncResult ToAsyncResult(AsyncCallback asyncCallback, Object asyncHandback)
-		{
-			Contract.Requires<ObjectDisposedException>(!IsDisposed);
-			return ToAsyncResult(asyncCallback, asyncHandback, null);
-		}
-
-		/// <summary>
-		///   Gets an async result for .NET framework synchronization.
-		/// </summary>
-		/// <param name="asyncCallback"></param>
-		/// <param name="asyncHandback"></param>
-		/// <param name="asyncState"></param>
-		/// <returns></returns>
-		public AsyncResult ToAsyncResult(AsyncCallback asyncCallback, Object asyncHandback, Object asyncState)
-		{
-			Contract.Requires<ObjectDisposedException>(!IsDisposed);
-			if (_asyncResult == null)
-			{
-				lock (_future.SyncObject)
-				{
-					if (_asyncResult == null)
-					{
-						_asyncResult = new AsyncResult(asyncCallback, asyncHandback, asyncState);
-						this.Continue((e, res) =>
-							{
-								if (e != null)
-								{
-									_asyncResult.MarkException(e, false);
-								}
-								else
-								{
-									_asyncResult.MarkCompleted(false);
-								}
-							});
-					}
-				}
-			}
-			return _asyncResult;
-		}
-
-		/// <summary>
-		///   Makes an AsyncCallback delegate that produces the completion.
-		/// </summary>
-		/// <typeparam name="H">handback type H</typeparam>
-		/// <param name="handback">the handback</param>
-		/// <param name="handler">a handler that produces the completion</param>
-		/// <returns>An AsyncCallback.</returns>
-		public AsyncCallback MakeAsyncCallback<H>(H handback, Func<IAsyncResult, H, T> handler)
-		{
-			Contract.Requires<ObjectDisposedException>(!IsDisposed);
-
-			return new AsyncCallback(ar =>
-				{
-					try
-					{
-						MarkCompleted(handler(ar, handback));
-					}
-					catch (Exception e)
-					{
-						MarkFaulted(e);
-					}
-				});
 		}
 
 		/// <summary>
@@ -266,15 +159,127 @@ namespace FlitBit.Core.Parallel
 		/// <summary>
 		///   Schedules a function to execute when another completion succeeds.
 		/// </summary>
-		/// <typeparam name="R">result type R</typeparam>
+		/// <typeparam name="TResult">result type R</typeparam>
 		/// <param name="continuation">a function to run when the completion succeeds</param>
 		/// <returns>a completion for the success function</returns>
-		public Completion<R> ContinueWithCompletion<R>(ContinuationFunc<T, R> continuation)
+		public Completion<TResult> ContinueWithCompletion<TResult>(ContinuationFunc<T, TResult> continuation)
 		{
 			Contract.Requires<ArgumentNullException>(continuation != null);
-			Contract.Ensures(Contract.Result<Completion<R>>() != null);
+			Contract.Ensures(Contract.Result<Completion<TResult>>() != null);
 			return _continuations.ContinueWithCompletion(continuation);
 		}
+
+		/// <summary>
+		///   Makes an AsyncCallback delegate that produces the completion.
+		/// </summary>
+		/// <typeparam name="THandback">handback type H</typeparam>
+		/// <param name="handback">the handback</param>
+		/// <param name="handler">a handler that produces the completion</param>
+		/// <returns>An AsyncCallback.</returns>
+		public AsyncCallback MakeAsyncCallback<THandback>(THandback handback, Func<IAsyncResult, THandback, T> handler)
+		{
+			Contract.Requires<ObjectDisposedException>(!IsDisposed);
+
+			return ar =>
+			{
+				try
+				{
+					MarkCompleted(handler(ar, handback));
+				}
+				catch (Exception e)
+				{
+					MarkFaulted(e);
+				}
+			};
+		}
+
+		/// <summary>
+		///   Marks the completion.
+		/// </summary>
+		/// <param name="value">the completion value</param>
+		public void MarkCompleted(T value)
+		{
+			Contract.Requires<ObjectDisposedException>(!IsDisposed);
+			_future.MarkCompleted(value);
+			_continuations.NotifyCompletion(null, value);
+		}
+
+		/// <summary>
+		///   Marks the completion.
+		/// </summary>
+		/// <param name="fault"></param>
+		public void MarkFaulted(Exception fault)
+		{
+			Contract.Requires<ObjectDisposedException>(!IsDisposed);
+			_future.MarkFaulted(fault);
+			_continuations.NotifyCompletion(fault, default(T));
+		}
+
+		/// <summary>
+		///   Gets an async result for .NET framework synchronization.
+		/// </summary>
+		/// <returns></returns>
+		public AsyncResult ToAsyncResult()
+		{
+			Contract.Requires<ObjectDisposedException>(!IsDisposed);
+			return ToAsyncResult(null, null, null);
+		}
+
+		/// <summary>
+		///   Gets an async result for .NET framework synchronization.
+		/// </summary>
+		/// <param name="asyncCallback"></param>
+		/// <param name="asyncHandback"></param>
+		/// <returns></returns>
+		public AsyncResult ToAsyncResult(AsyncCallback asyncCallback, Object asyncHandback)
+		{
+			Contract.Requires<ObjectDisposedException>(!IsDisposed);
+			return ToAsyncResult(asyncCallback, asyncHandback, null);
+		}
+
+		/// <summary>
+		///   Gets an async result for .NET framework synchronization.
+		/// </summary>
+		/// <param name="asyncCallback"></param>
+		/// <param name="asyncHandback"></param>
+		/// <param name="asyncState"></param>
+		/// <returns></returns>
+		public AsyncResult ToAsyncResult(AsyncCallback asyncCallback, Object asyncHandback, Object asyncState)
+		{
+			Contract.Requires<ObjectDisposedException>(!IsDisposed);
+			if (_asyncResult == null)
+			{
+				lock (_future.SyncObject)
+				{
+					if (_asyncResult == null)
+					{
+						var ar = new AsyncResult(asyncCallback, asyncHandback, asyncState);
+// ReSharper disable PossibleMultipleWriteAccessInDoubleCheckLocking
+						Util.VolatileWrite(out _asyncResult, ar);
+// ReSharper restore PossibleMultipleWriteAccessInDoubleCheckLocking
+						this.Continue((e, res) =>
+						{
+							if (e != null)
+							{
+								ar.MarkException(e, false);
+							}
+							else
+							{
+								ar.MarkCompleted(false);
+							}
+						});
+					}
+				}
+			}
+			return _asyncResult;
+		}
+
+		/// <summary>
+		///   Waits (blocks the current thread) until the value is present or the timeout is exceeded.
+		/// </summary>
+		/// <param name="timeout">A timespan representing the timeout period.</param>
+		/// <returns>The future's value.</returns>
+		public bool Wait(TimeSpan timeout) { return _future.Wait(timeout); }
 
 		/// <summary>
 		///   Performs dispose on the completion.

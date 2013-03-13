@@ -35,25 +35,9 @@ namespace FlitBit.Core.Configuration
 			, string clearElmName
 			, string removeElmName)
 		{
-			base.AddElementName = addElmName;
-			base.ClearElementName = clearElmName;
-			base.RemoveElementName = removeElmName;
-		}
-
-		/// <summary>
-		///   CollectionType
-		/// </summary>
-		public override ConfigurationElementCollectionType CollectionType
-		{
-			get { return ConfigurationElementCollectionType.AddRemoveClearMap; }
-		}
-
-		/// <summary>
-		///   Number of elements.
-		/// </summary>
-		public new int Count
-		{
-			get { return base.Count; }
+			AddElementName = addElmName;
+			ClearElementName = clearElmName;
+			RemoveElementName = removeElmName;
 		}
 
 		/// <summary>
@@ -89,16 +73,19 @@ namespace FlitBit.Core.Configuration
 		}
 
 		/// <summary>
-		///   Gets the enumerator.
+		///   CollectionType
 		/// </summary>
-		/// <returns>an enumerator</returns>
-		public new IEnumerator<TElement> GetEnumerator()
+		public override ConfigurationElementCollectionType CollectionType
 		{
-			var e = base.GetEnumerator();
-			while (e.MoveNext())
-			{
-				yield return (TElement) e.Current;
-			}
+			get { return ConfigurationElementCollectionType.AddRemoveClearMap; }
+		}
+
+		/// <summary>
+		///   Number of elements.
+		/// </summary>
+		public new int Count
+		{
+			get { return base.Count; }
 		}
 
 		/// <summary>
@@ -150,6 +137,13 @@ namespace FlitBit.Core.Configuration
 		public void RemoveAt(int index) { BaseRemoveAt(index); }
 
 		/// <summary>
+		///   Abstract method; gets the element's key.
+		/// </summary>
+		/// <param name="element">the element</param>
+		/// <returns>the element's key</returns>
+		protected abstract TKey PerformGetElementKey(TElement element);
+
+		/// <summary>
 		///   Creates a new element of type TElement.
 		/// </summary>
 		/// <returns></returns>
@@ -165,15 +159,24 @@ namespace FlitBit.Core.Configuration
 			Contract.Assert(element != null);
 
 			var result = PerformGetElementKey((TElement) element);
-			Contract.Assume(result != null);
 			return result;
 		}
 
+		#region IEnumerable<TElement> Members
+
 		/// <summary>
-		///   Abstract method; gets the element's key.
+		///   Gets the enumerator.
 		/// </summary>
-		/// <param name="element">the element</param>
-		/// <returns>the element's key</returns>
-		protected abstract TKey PerformGetElementKey(TElement element);
+		/// <returns>an enumerator</returns>
+		public new IEnumerator<TElement> GetEnumerator()
+		{
+			var e = base.GetEnumerator();
+			while (e.MoveNext())
+			{
+				yield return (TElement) e.Current;
+			}
+		}
+
+		#endregion
 	}
 }

@@ -16,37 +16,21 @@ using FlitBit.Core.Properties;
 namespace FlitBit.Core
 {
 	/// <summary>
-	///   Provides information about cleanup scope events.
-	/// </summary>
-	public sealed class CleanupScopeItemEventArgs : EventArgs
-	{
-		/// <summary>
-		///   Creates a new instance.
-		/// </summary>
-		/// <param name="item">the item that caused the event</param>
-		public CleanupScopeItemEventArgs(object item) { Item = item; }
-
-		/// <summary>
-		///   The item that caused the event.
-		/// </summary>
-		public object Item { get; private set; }
-	}
-
-	/// <summary>
 	///   Utility class for collecting actions and disposable items for cleanup. Actions and
 	///   disposable items, at dispose time, are either disposed (IDisposables)
 	///   or invoked (Actions) in the reverse order in which they are added to the scope.
 	/// </summary>
-	public partial class CleanupScope : Disposable, ICleanupScope
+	public class CleanupScope : Disposable, ICleanupScope
 	{
 		readonly bool _independent;
 		readonly ConcurrentStack<StackItem> _items = new ConcurrentStack<StackItem>();
+		readonly object _ownerNotifier;
+
 		int _disposers = 1;
 
 		EventHandler<CleanupScopeItemEventArgs> _itemAdded;
 		EventHandler<CleanupScopeItemEventArgs> _itemDisposed;
 		// Reference counts disposing threads. We always have one.
-		object _ownerNotifier;
 
 		/// <summary>
 		///   Creates a new scope.
@@ -129,77 +113,6 @@ namespace FlitBit.Core
 			: this(false, actions) { }
 
 		/// <summary>
-		///   Gets the current "ambient" cleanup scope. This is the nearest
-		///   cleanup scope in the call stack.
-		/// </summary>
-		public static ICleanupScope Current
-		{
-			get
-			{
-				ICleanupScope ambient;
-				return (ContextFlow.TryPeek<ICleanupScope>(out ambient)) ? ambient : default(ICleanupScope);
-			}
-		}
-
-		/// <summary>
-		///   Adds a disposable item to the cleanup scope. Actions and disposable items are collected
-		///   and at cleanup whill be either disposed (IDisposables) or invoked (Actions) in the reverse
-		///   order in which they are added.
-		/// </summary>
-		/// <typeparam name="T">Type of the item being added; ensures IDisposable by inference.</typeparam>
-		/// <param name="item">An item to be disposed when the scope is cleaned up.</param>
-		/// <returns>Returns the item given.</returns>
-		public T Add<T>(T item)
-			where T : IDisposable
-		{
-			if (item == null)
-			{
-				throw new ArgumentNullException("item");
-			}
-			if (IsDisposed)
-			{
-				throw new ObjectDisposedException(typeof(CleanupScope).FullName);
-			}
-
-			_items.Push(new StackItem(item));
-			return item;
-		}
-
-		/// <summary>
-		///   Adds an action to the cleanup scope. Actions and IDisposables collected in the same queue and
-		///   are either disposed (IDisposables) or invoked (Actions) in the reverse order in which they are
-		///   added.
-		/// </summary>
-		/// <param name="action">An action to be performed when the scope is cleaned up.</param>
-		public void AddAction(Action action)
-		{
-			if (action == null)
-			{
-				throw new ArgumentNullException("action");
-			}
-			if (IsDisposed)
-			{
-				throw new ObjectDisposedException(typeof(CleanupScope).FullName);
-			}
-
-			_items.Push(new StackItem(action));
-		}
-
-		object IParallelShared.ParallelShare() { return ShareScope(); }
-
-		/// <summary>
-		///   Shares the ambient scope if it exists; otherwise, creates a new scope.
-		/// </summary>
-		/// <returns>a cleanup scope</returns>
-		public static ICleanupScope NewOrSharedScope()
-		{
-			ICleanupScope ambient;
-			return (ContextFlow.TryPeek<ICleanupScope>(out ambient))
-				? (ICleanupScope) ambient.ParallelShare()
-				: new CleanupScope();
-		}
-
-		/// <summary>
 		///   Shares the scope. Callers must guarantee that there is a matching call to Dispose
 		///   for every call to share. Preferrably by wrapping it in a using clause.
 		/// </summary>
@@ -213,24 +126,6 @@ namespace FlitBit.Core
 
 			Interlocked.Increment(ref _disposers);
 			return this;
-		}
-
-		/// <summary>
-		///   Event fired when items are added to he scope.
-		/// </summary>
-		public event EventHandler<CleanupScopeItemEventArgs> ItemAdded
-		{
-			add { _itemAdded += value; }
-			remove { _itemAdded -= value; }
-		}
-
-		/// <summary>
-		///   Event fired when items are disposed by the scope.
-		/// </summary>
-		public event EventHandler<CleanupScopeItemEventArgs> ItemDisposed
-		{
-			add { _itemDisposed += value; }
-			remove { _itemDisposed -= value; }
 		}
 
 		/// <summary>
@@ -250,14 +145,17 @@ namespace FlitBit.Core
 			{
 				// Notify the caller that they are calling dispose out of order.
 				// This never happens if the caller uses a 'using' 
-				var message =
+				const string message =
 					"Cleanup scope disposed out of order. To eliminate this possibility always wrap the scope in a 'using clause'.";
 				try
 				{
-					OnTraceEvent(TraceEventType.Warning, message);
+					LogSink.OnTraceEvent(this, TraceEventType.Warning, message);
 				}
-				catch (Exception)
+					// ReSharper disable EmptyGeneralCatchClause
+				catch
+					// ReSharper restore EmptyGeneralCatchClause
 				{
+					/* safety net, intentionally eat the since we might be in GC thread */
 				}
 			}
 			if (disposing)
@@ -279,21 +177,21 @@ namespace FlitBit.Core
 					}
 					catch (Exception e)
 					{
-						if (disposing)
-						{
-							throw;
-						}
-
 						// We may be in the GC, trace as a warning and eat any exception
 						// thrown by trace logic...
 						try
 						{
-							Trace.TraceWarning(String.Concat(Resources.Warn_ErrorWhileDisposingCleanupScope,
-																							": ", (item.Disposable == null) ? item.Action.GetFullName() : item.Disposable.GetType().FullName,
-																							"; ", e.FormatForLogging())
+							LogSink.OnTraceEvent(this, TraceEventType.Warning, String.Concat(Resources.Warn_ErrorWhileDisposingCleanupScope,
+																																							": ",
+																																							(item.Disposable == null)
+																																								? item.Action.GetFullName()
+																																								: item.Disposable.GetType().FullName,
+																																							"; ", e.FormatForLogging())
 								);
 						}
-						catch (Exception)
+// ReSharper disable EmptyGeneralCatchClause
+						catch
+// ReSharper restore EmptyGeneralCatchClause
 						{
 							/* safety net, intentionally eat the since we might be in GC thread */
 						}
@@ -317,14 +215,16 @@ namespace FlitBit.Core
 			if (_itemDisposed != null)
 			{
 				var sender = _ownerNotifier ?? this;
-				object args = new object[] {sender, new CleanupScopeItemEventArgs(item)};
+				object args = new[] {sender, new CleanupScopeItemEventArgs(item)};
 				foreach (var handler in _itemDisposed.GetInvocationList())
 				{
 					try
 					{
 						handler.DynamicInvoke(args);
 					}
-					catch (Exception)
+// ReSharper disable EmptyGeneralCatchClause
+					catch
+// ReSharper restore EmptyGeneralCatchClause
 					{
 						/* Ouch!, we're in the GC - nothing to do here. */
 					}
@@ -332,11 +232,92 @@ namespace FlitBit.Core
 			}
 		}
 
+		/// <summary>
+		///   Event fired when items are added to he scope.
+		/// </summary>
+		public event EventHandler<CleanupScopeItemEventArgs> ItemAdded
+		{
+			add { _itemAdded += value; }
+// ReSharper disable DelegateSubtraction
+			remove { _itemAdded -= value; }
+// ReSharper restore DelegateSubtraction
+		}
+
+		/// <summary>
+		///   Event fired when items are disposed by the scope.
+		/// </summary>
+		public event EventHandler<CleanupScopeItemEventArgs> ItemDisposed
+		{
+			add { _itemDisposed += value; }
+// ReSharper disable DelegateSubtraction
+			remove { _itemDisposed -= value; }
+// ReSharper restore DelegateSubtraction
+		}
+
+		#region ICleanupScope Members
+
+		/// <summary>
+		///   Adds a disposable item to the cleanup scope. Actions and disposable items are collected
+		///   and at cleanup whill be either disposed (IDisposables) or invoked (Actions) in the reverse
+		///   order in which they are added.
+		/// </summary>
+		/// <typeparam name="T">Type of the item being added; ensures IDisposable by inference.</typeparam>
+		/// <param name="item">An item to be disposed when the scope is cleaned up.</param>
+		/// <returns>Returns the item given.</returns>
+		public T Add<T>(T item)
+			where T : class, IDisposable
+		{
+			_items.Push(new StackItem(item));
+			NotifyItemAdded(item);
+			return item;
+		}
+
+		/// <summary>
+		///   Adds an action to the cleanup scope. Actions and IDisposables collected in the same queue and
+		///   are either disposed (IDisposables) or invoked (Actions) in the reverse order in which they are
+		///   added.
+		/// </summary>
+		/// <param name="action">An action to be performed when the scope is cleaned up.</param>
+		public void AddAction(Action action)
+		{
+			_items.Push(new StackItem(action));
+			NotifyItemAdded(action);
+		}
+
+		object IParallelShared.ParallelShare() { return ShareScope(); }
+
+		#endregion
+
+		/// <summary>
+		///   Gets the current "ambient" cleanup scope. This is the nearest
+		///   cleanup scope in the call stack.
+		/// </summary>
+		public static ICleanupScope Current
+		{
+			get
+			{
+				ICleanupScope ambient;
+				return (ContextFlow.TryPeek(out ambient)) ? ambient : default(ICleanupScope);
+			}
+		}
+
+		/// <summary>
+		///   Shares the ambient scope if it exists; otherwise, creates a new scope.
+		/// </summary>
+		/// <returns>a cleanup scope</returns>
+		public static ICleanupScope NewOrSharedScope()
+		{
+			ICleanupScope ambient;
+			return (ContextFlow.TryPeek(out ambient))
+				? (ICleanupScope) ambient.ParallelShare()
+				: new CleanupScope();
+		}
+
 		[StructLayout(LayoutKind.Sequential)]
 		struct StackItem
 		{
-			public Action Action;
-			public IDisposable Disposable;
+			public readonly Action Action;
+			public readonly IDisposable Disposable;
 
 			public StackItem(IDisposable d)
 			{

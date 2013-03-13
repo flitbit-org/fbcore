@@ -6,12 +6,13 @@ namespace FlitBit.Core.Tests
 	internal class MyDispsable : Disposable
 	{
 		int _disposals;
-		public Action<bool> OnDispose { get; set; }
 
 		public int Disposals
 		{
 			get { return _disposals; }
 		}
+
+		public Action<bool> OnDispose { get; set; }
 
 		protected override bool PerformDispose(bool disposing)
 		{
@@ -28,12 +29,13 @@ namespace FlitBit.Core.Tests
 	internal class MyDispsableRequiresTwo : Disposable
 	{
 		int _disposals;
-		public Action<bool> OnDispose { get; set; }
 
 		public int Disposals
 		{
 			get { return _disposals; }
 		}
+
+		public Action<bool> OnDispose { get; set; }
 
 		protected override bool PerformDispose(bool disposing)
 		{
@@ -54,12 +56,12 @@ namespace FlitBit.Core.Tests
 		{
 			var numberOfCalls = 0;
 			var my = new MyDispsable();
-			my.OnDispose = (isDisposing) =>
-				{
-					numberOfCalls++;
-					Assert.IsTrue(isDisposing);
-					Assert.IsFalse(my.IsDisposed);
-				};
+			my.OnDispose = isDisposing =>
+			{
+				numberOfCalls++;
+				Assert.IsTrue(isDisposing);
+				Assert.IsFalse(my.IsDisposed);
+			};
 
 			Assert.IsFalse(my.IsDisposed, "shouldn't be disposed yet");
 			my.Dispose();
@@ -68,8 +70,7 @@ namespace FlitBit.Core.Tests
 				my.Dispose();
 			}
 			catch (ObjectDisposedException)
-			{
-			}
+			{}
 			Assert.IsTrue(my.IsDisposed, "should be disposed");
 			Assert.AreEqual(1, numberOfCalls, "Disposable should have only been called once");
 			Assert.AreEqual(1, my.Disposals);
@@ -80,12 +81,12 @@ namespace FlitBit.Core.Tests
 		{
 			var numberOfCalls = 0;
 			var my = new MyDispsableRequiresTwo();
-			my.OnDispose = (isDisposing) =>
-				{
-					numberOfCalls++;
-					Assert.IsTrue(isDisposing);
-					Assert.IsFalse(my.IsDisposed);
-				};
+			my.OnDispose = isDisposing =>
+			{
+				numberOfCalls++;
+				Assert.IsTrue(isDisposing);
+				Assert.IsFalse(my.IsDisposed);
+			};
 
 			Assert.IsFalse(my.IsDisposed, "shouldn't be disposed yet");
 			my.Dispose();

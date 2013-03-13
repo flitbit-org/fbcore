@@ -7,13 +7,6 @@ namespace FlitBit.Core.Tests.Parallel
 	public class ContextFlowTests
 	{
 		[TestMethod]
-		public void ContextFlow_EmptyContextWhenNoContext()
-		{
-			var ambient = ContextFlow.ForkAmbient();
-			Assert.IsNull(ambient);
-		}
-
-		[TestMethod]
 		public void ContextFlow_ContextWhenNonEmptyContext()
 		{
 			using (var scope = CleanupScope.NewOrSharedScope())
@@ -30,15 +23,22 @@ namespace FlitBit.Core.Tests.Parallel
 		}
 
 		[TestMethod]
+		public void ContextFlow_EmptyContextWhenNoContext()
+		{
+			var ambient = ContextFlow.ForkAmbient();
+			Assert.IsNull(ambient);
+		}
+
+		[TestMethod]
 		public void ContextFlow_FlowsWithParallelContinuations()
 		{
 			ICleanupScope capturedScope = null;
 			Continuation it =
 				(e) =>
-					{
-						Assert.AreEqual(capturedScope, CleanupScope.Current);
-						Assert.IsFalse(capturedScope.IsDisposed);
-					};
+				{
+					Assert.AreEqual(capturedScope, CleanupScope.Current);
+					Assert.IsFalse(capturedScope.IsDisposed);
+				};
 
 			// Scopes participate in context flow...
 			using (var scope = CleanupScope.NewOrSharedScope())

@@ -29,6 +29,6 @@ namespace FlitBit.Core.Net
 		/// <summary>
 		///   Indicates NTLM authentication (Windows specific).
 		/// </summary>
-		NTLM = 3,
+		Ntlm = 3,
 	}
 }

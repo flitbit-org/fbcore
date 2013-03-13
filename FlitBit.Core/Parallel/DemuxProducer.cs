@@ -29,37 +29,40 @@ namespace FlitBit.Core.Parallel
 	/// <summary>
 	///   Produces a result type R, given an argument type A, demultiplexing concurrent requests.
 	/// </summary>
-	/// <typeparam name="A">argument type A</typeparam>
-	/// <typeparam name="R">result type R</typeparam>
-	public abstract class DemuxProducer<A, R>
+	/// <typeparam name="TArgs">argument type A</typeparam>
+	/// <typeparam name="TResult">result type R</typeparam>
+	public abstract class DemuxProducer<TArgs, TResult>
 	{
-		readonly ConcurrentDictionary<A, Completion<Tuple<DemuxResultKind, R>>> _concurrentActiviy =
-			new ConcurrentDictionary<A, Completion<Tuple<DemuxResultKind, R>>>();
-
-		/// <summary>
-		///   Creates a new instance.
-		/// </summary>
-		public DemuxProducer() { }
+		readonly ConcurrentDictionary<TArgs, Completion<Tuple<DemuxResultKind, TResult>>> _concurrentActiviy =
+			new ConcurrentDictionary<TArgs, Completion<Tuple<DemuxResultKind, TResult>>>();
 
 		/// <summary>
 		///   Tries to demux a completion result.
 		/// </summary>
 		/// <param name="args"></param>
 		/// <param name="consumer">A continuation called upon completion.</param>
-		public void TryConsume(A args, Continuation<Tuple<DemuxResultKind, R>> consumer)
+		public void TryConsume(TArgs args, Continuation<Tuple<DemuxResultKind, TResult>> consumer)
 		{
 			Contract.Requires<ArgumentNullException>(consumer != null);
 			DemuxTryConsume(args, consumer);
 		}
 
-		void DemuxTryConsume(A args, Continuation<Tuple<DemuxResultKind, R>> continuation)
+		/// <summary>
+		///   Produces the requested result.
+		/// </summary>
+		/// <param name="arg"></param>
+		/// <param name="value"></param>
+		/// <returns></returns>
+		protected abstract bool ProduceResult(TArgs arg, out TResult value);
+
+		void DemuxTryConsume(TArgs args, Continuation<Tuple<DemuxResultKind, TResult>> continuation)
 		{
-			Completion<Tuple<DemuxResultKind, R>> completion = null, capture = null;
-			completion = _concurrentActiviy.GetOrAdd(args, a =>
-				{
-					capture = new Completion<Tuple<DemuxResultKind, R>>(this);
-					return capture;
-				});
+			Completion<Tuple<DemuxResultKind, TResult>> capture = null;
+			var completion = this._concurrentActiviy.GetOrAdd(args, a =>
+			{
+				capture = new Completion<Tuple<DemuxResultKind, TResult>>(this);
+				return capture;
+			});
 
 			if (ReferenceEquals(capture, completion))
 			{
@@ -71,14 +74,13 @@ namespace FlitBit.Core.Parallel
 			}
 		}
 
-		void PerformDemuxOriginatorLogic(A args, Completion<Tuple<DemuxResultKind, R>> completion,
-			Continuation<Tuple<DemuxResultKind, R>> continuation)
+		void PerformDemuxOriginatorLogic(TArgs args, Completion<Tuple<DemuxResultKind, TResult>> completion,
+			Continuation<Tuple<DemuxResultKind, TResult>> continuation)
 		{
-			var res = default(Tuple<DemuxResultKind, R>);
 			try
 			{
 				bool valueProduced;
-				R value;
+				TResult value;
 				try
 				{
 					valueProduced = ProduceResult(args, out value);
@@ -86,35 +88,27 @@ namespace FlitBit.Core.Parallel
 				catch (Exception e)
 				{
 					completion.MarkFaulted(e);
-					continuation(e, res);
+					continuation(e, null);
 					return;
 				}
 				if (valueProduced)
 				{
-					completion.MarkCompleted(new Tuple<DemuxResultKind, R>(DemuxResultKind.Observed, value));
-					continuation(null, new Tuple<DemuxResultKind, R>(DemuxResultKind.Originated, value));
+					completion.MarkCompleted(new Tuple<DemuxResultKind, TResult>(DemuxResultKind.Observed, value));
+					continuation(null, new Tuple<DemuxResultKind, TResult>(DemuxResultKind.Originated, value));
 				}
 				else
 				{
-					res = new Tuple<DemuxResultKind, R>(DemuxResultKind.None, default(R));
-					completion.MarkCompleted(new Tuple<DemuxResultKind, R>(DemuxResultKind.Observed, value));
+					var res = new Tuple<DemuxResultKind, TResult>(DemuxResultKind.None, default(TResult));
+					completion.MarkCompleted(new Tuple<DemuxResultKind, TResult>(DemuxResultKind.Observed, value));
 					continuation(null, res);
 				}
 			}
 			finally
 			{
-				Completion<Tuple<DemuxResultKind, R>> unused;
+				Completion<Tuple<DemuxResultKind, TResult>> unused;
 				_concurrentActiviy.TryRemove(args, out unused);
 				completion.Dispose();
 			}
 		}
-
-		/// <summary>
-		///   Produces the requested result.
-		/// </summary>
-		/// <param name="arg"></param>
-		/// <param name="value"></param>
-		/// <returns></returns>
-		protected abstract bool ProduceResult(A arg, out R value);
 	}
 }

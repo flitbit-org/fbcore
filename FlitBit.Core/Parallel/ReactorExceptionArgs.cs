@@ -21,13 +21,13 @@ namespace FlitBit.Core.Parallel
 		public ReactorExceptionArgs(Exception err) { UncaughtException = err; }
 
 		/// <summary>
-		///   The uncaught exception.
-		/// </summary>
-		public Exception UncaughtException { get; private set; }
-
-		/// <summary>
 		///   Whether the exception should be rethrown.
 		/// </summary>
 		public bool Rethrow { get; set; }
+
+		/// <summary>
+		///   The uncaught exception.
+		/// </summary>
+		public Exception UncaughtException { get; private set; }
 	}
 }

@@ -15,8 +15,8 @@ namespace FlitBit.Core.Collections
 	{
 		static readonly int CHashCodeSeed = typeof(KeyValuePair).AssemblyQualifiedName.GetHashCode();
 
-		string _key;
-		string _value;
+		readonly string _key;
+		readonly string _value;
 
 		/// <summary>
 		///   Creates a new instance.
@@ -46,6 +46,85 @@ namespace FlitBit.Core.Collections
 		}
 
 		/// <summary>
+		///   Determines if the pair is equal to another object.
+		/// </summary>
+		/// <param name="obj">the other object</param>
+		/// <returns>
+		///   <em>true</em> if equal; otherwise <em>false</em>
+		/// </returns>
+		public override bool Equals(object obj)
+		{
+			return obj is KeyValuePair
+				&& Equals((KeyValuePair) obj);
+		}
+
+		/// <summary>
+		///   Calculates the pair's hashcode.
+		/// </summary>
+		/// <returns></returns>
+		public override int GetHashCode()
+		{
+			const int prime = Constants.NotSoRandomPrime; // a random prime
+
+			var result = CHashCodeSeed * prime;
+			if (_key != null)
+			{
+				result ^= prime * _key.GetHashCode();
+			}
+			if (_value != null)
+			{
+				result ^= prime * _value.GetHashCode();
+			}
+			return result;
+		}
+
+		/// <summary>
+		///   Converts the pair to a string representation.
+		/// </summary>
+		/// <returns></returns>
+		public override string ToString() { return ToString('='); }
+
+		/// <summary>
+		///   Determines if the pair is equal to another.
+		/// </summary>
+		/// <param name="other">the other</param>
+		/// <returns>
+		///   <em>true</em> if equal; otherwise <em>false</em>
+		/// </returns>
+		public bool Equals(KeyValuePair other)
+		{
+			return String.Equals(_key, other._key)
+				&& String.Equals(_value, other._value);
+		}
+
+		/// <summary>
+		///   Converts the pair to a string representation using the given separator.
+		/// </summary>
+		/// <param name="sep">a separator character</param>
+		/// <returns></returns>
+		public string ToString(char sep) { return String.Concat(_key, sep, _value); }
+
+		/// <summary>
+		///   Determines if two pairs are equal.
+		/// </summary>
+		/// <param name="lhs">left hand operand</param>
+		/// <param name="rhs">right hand operand</param>
+		/// <returns>
+		///   <em>true</em> if equal; otherwise <em>false</em>
+		/// </returns>
+		public static bool operator ==(KeyValuePair lhs, KeyValuePair rhs) { return lhs.Equals(rhs); }
+
+		/// <summary>
+		///   Determines if two pairs are unequal.
+		/// </summary>
+		/// <param name="lhs">left hand operand</param>
+		/// <param name="rhs">right hand operand</param>
+		/// <returns>
+		///   <em>true</em> if unequal; otherwise <em>false</em>
+		/// </returns>
+		public static bool operator !=(KeyValuePair lhs, KeyValuePair rhs) { return !lhs.Equals(rhs); }
+
+		/// <summary>
 		///   Tries to parse a key-value-pair from an input string.
 		/// </summary>
 		/// <param name="input">the input</param>
@@ -56,11 +135,14 @@ namespace FlitBit.Core.Collections
 		/// </returns>
 		internal static bool TryParse(string input, string sep, out KeyValuePair kvp)
 		{
-			var i = input.IndexOf(sep);
-			if (i >= 0)
+			if (input != null)
 			{
-				kvp = new KeyValuePair(input.Substring(0, i), input.Substring(i + sep.Length));
-				return true;
+				var i = input.IndexOf(sep, StringComparison.Ordinal);
+				if (i >= 0)
+				{
+					kvp = new KeyValuePair(input.Substring(0, i), input.Substring(i + sep.Length));
+					return true;
+				}
 			}
 
 			kvp = default(KeyValuePair);
@@ -88,84 +170,5 @@ namespace FlitBit.Core.Collections
 			kvp = default(KeyValuePair);
 			return false;
 		}
-
-		/// <summary>
-		///   Determines if the pair is equal to another.
-		/// </summary>
-		/// <param name="other">the other</param>
-		/// <returns>
-		///   <em>true</em> if equal; otherwise <em>false</em>
-		/// </returns>
-		public bool Equals(KeyValuePair other)
-		{
-			return String.Equals(_key, other._key)
-				&& String.Equals(_value, other._value);
-		}
-
-		/// <summary>
-		///   Determines if the pair is equal to another object.
-		/// </summary>
-		/// <param name="obj">the other object</param>
-		/// <returns>
-		///   <em>true</em> if equal; otherwise <em>false</em>
-		/// </returns>
-		public override bool Equals(object obj)
-		{
-			return obj is KeyValuePair
-				&& Equals((KeyValuePair) obj);
-		}
-
-		/// <summary>
-		///   Converts the pair to a string representation.
-		/// </summary>
-		/// <returns></returns>
-		public override string ToString() { return ToString('='); }
-
-		/// <summary>
-		///   Converts the pair to a string representation using the given separator.
-		/// </summary>
-		/// <param name="sep">a separator character</param>
-		/// <returns></returns>
-		public string ToString(char sep) { return String.Concat(_key, sep, _value); }
-
-		/// <summary>
-		///   Calculates the pair's hashcode.
-		/// </summary>
-		/// <returns></returns>
-		public override int GetHashCode()
-		{
-			var prime = Constants.NotSoRandomPrime; // a random prime
-
-			var result = CHashCodeSeed*prime;
-			if (_key != null)
-			{
-				result ^= prime*_key.GetHashCode();
-			}
-			if (_value != null)
-			{
-				result ^= prime*_value.GetHashCode();
-			}
-			return result;
-		}
-
-		/// <summary>
-		///   Determines if two pairs are equal.
-		/// </summary>
-		/// <param name="lhs">left hand operand</param>
-		/// <param name="rhs">right hand operand</param>
-		/// <returns>
-		///   <em>true</em> if equal; otherwise <em>false</em>
-		/// </returns>
-		public static bool operator ==(KeyValuePair lhs, KeyValuePair rhs) { return lhs.Equals(rhs); }
-
-		/// <summary>
-		///   Determines if two pairs are unequal.
-		/// </summary>
-		/// <param name="lhs">left hand operand</param>
-		/// <param name="rhs">right hand operand</param>
-		/// <returns>
-		///   <em>true</em> if unequal; otherwise <em>false</em>
-		/// </returns>
-		public static bool operator !=(KeyValuePair lhs, KeyValuePair rhs) { return !lhs.Equals(rhs); }
 	}
 }

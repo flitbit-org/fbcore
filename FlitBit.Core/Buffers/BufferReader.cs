@@ -33,6 +33,8 @@ namespace FlitBit.Core.Buffers
 			Encoding = enc;
 		}
 
+		#region IBufferReader Members
+
 		/// <summary>
 		///   Gets the reader's encoding. This is the encoding used to read string data from the buffer.
 		/// </summary>
@@ -268,6 +270,8 @@ namespace FlitBit.Core.Buffers
 			return (bytesConsumed > 0) ? value : default(T);
 		}
 
+		#endregion
+
 		/// <summary>
 		///   Creates the default buffer reader.
 		/// </summary>
@@ -278,7 +282,7 @@ namespace FlitBit.Core.Buffers
 		public static IBufferReader Create()
 		{
 			return (BitConverter.IsLittleEndian)
-				? (IBufferReader) new LittleEndianBufferReader()
+				? new LittleEndianBufferReader()
 				: (IBufferReader) new BigEndianBufferReader();
 		}
 
@@ -293,7 +297,7 @@ namespace FlitBit.Core.Buffers
 		public static IBufferReader Create(Encoding enc)
 		{
 			return (BitConverter.IsLittleEndian)
-				? (IBufferReader) new LittleEndianBufferReader(enc)
+				? new LittleEndianBufferReader(enc)
 				: (IBufferReader) new BigEndianBufferReader(enc);
 		}
 	}

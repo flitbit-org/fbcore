@@ -10,7 +10,7 @@ using System.Collections.Specialized;
 using System.Diagnostics.Contracts;
 using System.Linq;
 
-namespace FlitBit.Core
+namespace FlitBit.Core.Collections
 {
 	/// <summary>
 	///   Contains extensions for NameValueCollection
@@ -32,7 +32,7 @@ namespace FlitBit.Core
 			Contract.Requires(name.Length > 0);
 
 			var values = nvc.GetValues(name);
-			if (values.Length > 0)
+			if (values != null && values.Length > 0)
 			{
 				return (T) Convert.ChangeType(values[0], typeof(T));
 			}
@@ -55,7 +55,7 @@ namespace FlitBit.Core
 			Contract.Requires(name.Length > 0);
 
 			var values = nvc.GetValues(name);
-			if (transform != null && values.Length > 0)
+			if (values != null && transform != null && values.Length > 0)
 			{
 				return transform(values[0]);
 			}
@@ -76,8 +76,15 @@ namespace FlitBit.Core
 			Contract.Requires(name != null);
 			Contract.Requires(name.Length > 0);
 
-			return nvc.GetValues(name)
-								.Select(v => (T) Convert.ChangeType(v, typeof(T)));
+			if (nvc != null)
+			{
+				var values = nvc.GetValues(name);
+				if (values != null && values.Any())
+				{
+					return values.Select(v => Convert.ChangeType(v, typeof(T))).Cast<T>();
+				}
+			}
+			return Enumerable.Empty<T>();
 		}
 
 		/// <summary>
@@ -95,8 +102,15 @@ namespace FlitBit.Core
 			Contract.Requires(name != null);
 			Contract.Requires(name.Length > 0);
 
-			return nvc.GetValues(name)
-								.Select(transform);
+			if (nvc != null)
+			{
+				var values = nvc.GetValues(name);
+				if (values != null && values.Any())
+				{
+					return values.Select(transform);
+				}
+			}
+			return Enumerable.Empty<T>();
 		}
 	}
 }

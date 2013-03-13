@@ -11,7 +11,7 @@ namespace FlitBit.Core.Tests.Xml
 		[TestMethod]
 		public void XDynamic_CanParseXmlResultingInDynamic()
 		{
-			var source = @"<People>
+			const string source = @"<People>
 	<Person id='1347'><Name>Gilbert Aldibrand</Name></Person>
 	<Person id='1828'><Name>Gertrude Schmidt</Name></Person>
 	<Person id='2994'><Name>Wilbur Brandoff</Name></Person>

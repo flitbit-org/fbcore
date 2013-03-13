@@ -15,21 +15,7 @@ namespace FlitBit.Core
 	/// </summary>
 	public static class TypeLocks
 	{
-		static ConcurrentDictionary<string, object> __safeLocks = new ConcurrentDictionary<string, object>();
-
-		/// <summary>
-		///   Gets a lock for a type suitable for synchronizing activity on the type
-		///   without blocking other activity in the VM.
-		/// </summary>
-		/// <param name="type"></param>
-		/// <returns></returns>
-		public static object GetLockForType(this Type type)
-		{
-			Contract.Requires<ArgumentNullException>(type != null);
-			Contract.Ensures(Contract.Result<object>() != null);
-
-			return GetKeyForType(type);
-		}
+		static readonly ConcurrentDictionary<string, object> SafeLocks = new ConcurrentDictionary<string, object>();
 
 		/// <summary>
 		///   Gets a key for a type suitable for representing the type as a hashtable
@@ -43,8 +29,22 @@ namespace FlitBit.Core
 			Contract.Ensures(Contract.Result<object>() != null);
 			Contract.Assume(type.AssemblyQualifiedName != null);
 
-			var key = Util.InternIt(type.AssemblyQualifiedName);
-			return __safeLocks.GetOrAdd(key, k => new Object());
+			var key = type.AssemblyQualifiedName.InternIt();
+			return SafeLocks.GetOrAdd(key, k => new Object());
+		}
+
+		/// <summary>
+		///   Gets a lock for a type suitable for synchronizing activity on the type
+		///   without blocking other activity in the VM.
+		/// </summary>
+		/// <param name="type"></param>
+		/// <returns></returns>
+		public static object GetLockForType(this Type type)
+		{
+			Contract.Requires<ArgumentNullException>(type != null);
+			Contract.Ensures(Contract.Result<object>() != null);
+
+			return GetKeyForType(type);
 		}
 	}
 }

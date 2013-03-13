@@ -32,6 +32,8 @@ namespace FlitBit.Core.Buffers
 			this.Encoding = enc;
 		}
 
+		#region IBufferWriter Members
+
 		/// <summary>
 		///   Gets the encoding used when writing string data.
 		/// </summary>
@@ -158,10 +160,12 @@ namespace FlitBit.Core.Buffers
 		public int Write(byte[] buffer, ref int offset, decimal value)
 		{
 			var written = 0;
+// ReSharper disable LoopCanBeConvertedToQuery
 			foreach (var b in Decimal.GetBits(value))
 			{
 				written += Write(buffer, ref offset, b);
 			}
+// ReSharper restore LoopCanBeConvertedToQuery
 			return written;
 		}
 
@@ -330,6 +334,8 @@ namespace FlitBit.Core.Buffers
 		[CLSCompliant(false)]
 		public int WriteReflectedObject<T>(byte[] buffer, ref int offset, IBufferReflector<T> reflector, T value) { return reflector.WriteToBuffer(this, buffer, ref offset, value); }
 
+		#endregion
+
 		/// <summary>
 		///   Creates the default buffer writer.
 		/// </summary>
@@ -341,7 +347,7 @@ namespace FlitBit.Core.Buffers
 		public static IBufferWriter Create()
 		{
 			return (BitConverter.IsLittleEndian)
-				? (IBufferWriter) new LittleEndianBufferWriter()
+				? new LittleEndianBufferWriter()
 				: (IBufferWriter) new BigEndianBufferWriter();
 		}
 
@@ -357,7 +363,7 @@ namespace FlitBit.Core.Buffers
 		public static IBufferWriter Create(Encoding enc)
 		{
 			return (BitConverter.IsLittleEndian)
-				? (IBufferWriter) new LittleEndianBufferWriter(enc)
+				? new LittleEndianBufferWriter(enc)
 				: (IBufferWriter) new BigEndianBufferWriter(enc);
 		}
 	}

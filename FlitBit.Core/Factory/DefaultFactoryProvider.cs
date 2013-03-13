@@ -2,8 +2,12 @@
 {
 	internal sealed class DefaultFactoryProvider : IFactoryProvider
 	{
-		IFactory _factory = new DefaultFactory();
+		readonly IFactory _factory = new DefaultFactory();
+
+		#region IFactoryProvider Members
 
 		public IFactory GetFactory() { return _factory; }
+
+		#endregion
 	}
 }
