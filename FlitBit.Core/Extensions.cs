@@ -13,7 +13,6 @@ using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Security.Cryptography;
 using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -27,110 +26,81 @@ namespace FlitBit.Core
 	public static class Extensions
 	{
 		/// <summary>
-		///   Gets a readable full name. Since this method uses reflection it should be used
-		///   rarely. It was created to supply simpler type names when constructing error messages.
+		///   Produces a combined hashcode from the enumerated items.
 		/// </summary>
-		/// <param name="type">The type.</param>
-		/// <returns>A readable name such as My.Namespace.MyType&lt;string, int></returns>
-		public static string GetReadableFullName(this Type type)
+		/// <typeparam name="T">element type T</typeparam>
+		/// <param name="items">an enumerable</param>
+		/// <param name="seed">the hash seed (starting value)</param>
+		/// <returns>the combined hashcode</returns>
+		public static int CalculateCombinedHashcode<T>(this IEnumerable<T> items, int seed)
 		{
-			Contract.Requires<ArgumentNullException>(type != null);
-
-			string result;
-			var tt = (type.IsArray) ? type.GetElementType() : type;
-			var simpleName = tt.Name;
-
-			Contract.Assume(simpleName != null);
-			Contract.Assert(simpleName.Length >= 0);
-
-			if (simpleName.Contains('`'))
+			if (items == null)
 			{
-				simpleName = simpleName.Substring(0, simpleName.IndexOf("`", StringComparison.InvariantCulture));
-				var args = tt.GetGenericArguments();
-				for (var i = 0; i < args.Length; i++)
+				return seed;
+			}
+
+			var comp = EqualityComparer<T>.Default;
+
+			const int prime = Constants.NotSoRandomPrime;
+			var result = seed ^ (items.GetHashCode() * prime);
+// ReSharper disable LoopCanBeConvertedToQuery
+			foreach (var item in items)
+			{
+				if (!comp.Equals(default(T), item))
 				{
-					if (i == 0)
-					{
-						simpleName = String.Concat(simpleName, '<', args[i].GetReadableSimpleName());
-					}
-					else
-					{
-						simpleName = String.Concat(simpleName, ',', args[i].GetReadableSimpleName());
-					}
+					result ^= item.GetHashCode() * prime;
 				}
-				simpleName = String.Concat(simpleName, '>');
 			}
-			if (tt.IsNested)
-			{
-				result = String.Concat(tt.DeclaringType.GetReadableFullName(), "+", simpleName);
-			}
-			else
-			{
-				result = String.Concat(tt.Namespace, ".", simpleName);
-			}
+// ReSharper restore LoopCanBeConvertedToQuery
 			return result;
 		}
 
 		/// <summary>
-		///   Gets a readable simple name for a type.
+		///   Counts the number of bits turned on.
 		/// </summary>
-		/// <param name="type">the type</param>
-		/// <returns>A readable name such as MyType&lt;string, int></returns>
-		public static string GetReadableSimpleName(this Type type)
+		/// <param name="value">a value</param>
+		/// <returns>number of bits turned on</returns>
+		[CLSCompliant(false)]
+		public static int CountBitsInFlag(this uint value)
 		{
-			Contract.Requires<ArgumentNullException>(type != null);
-
-			var tt = (type.IsArray) ? type.GetElementType() : type;
-			var simpleName = tt.Name;
-			if (simpleName.Contains('`'))
+			// http://en.wikipedia.org/wiki/Hamming_weight
+			value = value - ((value >> 1) & 0x55555555); // reuse input as temporary
+			value = (value & 0x33333333) + ((value >> 2) & 0x33333333); // temp
+			var c = ((value + (value >> 4) & 0xF0F0F0F) * 0x1010101) >> 24;
+			unchecked
 			{
-				simpleName = simpleName.Substring(0, simpleName.IndexOf("`", StringComparison.InvariantCulture));
-				var args = tt.GetGenericArguments();
-				for (var i = 0; i < args.Length; i++)
-				{
-					if (i == 0)
-					{
-						simpleName = String.Concat(simpleName, '<', args[i].GetReadableSimpleName());
-					}
-					else
-					{
-						simpleName = String.Concat(simpleName, ',', args[i].GetReadableSimpleName());
-					}
-				}
-				simpleName = String.Concat(simpleName, '>');
+				return (int) c;
 			}
-			return simpleName;
 		}
 
 		/// <summary>
-		///   Gets the fully qualified, human readable name for a delegate.
+		///   Counts the number of bits turned on.
 		/// </summary>
-		/// <param name="d"></param>
+		/// <param name="value">a value</param>
+		/// <returns>number of bits turned on</returns>
+		public static int CountBitsInFlag(this int value)
+		{
+			// http://en.wikipedia.org/wiki/Hamming_weight
+			var v = (uint) value;
+			v = v - ((v >> 1) & 0x55555555);
+			v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
+			var c = ((v + (v >> 4) & 0xF0F0F0F) * 0x1010101) >> 24;
+			unchecked
+			{
+				return (int) c;
+			}
+		}
+
+		/// <summary>
+		///   Double quotes the given string, delimiting inner quotes.
+		/// </summary>
+		/// <param name="source"></param>
 		/// <returns></returns>
-		public static string GetFullName(this Delegate d)
+		public static string DoubleQuote(this string source)
 		{
-			Contract.Requires<ArgumentNullException>(d != null);
-			Contract.Requires<ArgumentException>(d.Method != null);
-			Contract.Requires<ArgumentException>(d.Target != null);
-
-			var type = d.Method.DeclaringType;
-			return String.Concat(type.GetReadableFullName(), ".", d.Method.Name, "()");
-		}
-
-		/// <summary>
-		///   Removes a string from the end of another string if present.
-		/// </summary>
-		/// <param name="target">The target string.</param>
-		/// <param name="value">The value to remove.</param>
-		/// <returns>the target string with the value removed</returns>
-		public static string RemoveTrailing(this string target, string value)
-		{
-			if (!String.IsNullOrEmpty(target) && !String.IsNullOrEmpty(value)
-				&& target.EndsWith(value))
-			{
-				return target.Substring(0, target.Length - value.Length);
-			}
-			return target;
+			return (String.IsNullOrEmpty(source))
+				? "\"\""
+				: String.Concat("\"", source.Replace("\"", "\\\""), "\"");
 		}
 
 		/// <summary>
@@ -170,83 +140,61 @@ namespace FlitBit.Core
 			return result;
 		}
 
-		static string GetSHA1Hash(string value)
+		/// <summary>
+		///   Formats an exception for output into the log.
+		/// </summary>
+		/// <param name="ex">the exception</param>
+		/// <returns>a string representation of the exception</returns>
+		public static string FormatForLogging(this Exception ex)
 		{
-			Contract.Requires<ArgumentNullException>(value != null);
-
-			using (var provider = new SHA1CryptoServiceProvider())
-			{
-				var buffer = Encoding.UTF8.GetBytes(value);
-				var hash = provider.ComputeHash(buffer, 0, buffer.Length);
-				Contract.Assert(hash != null);
-				return Convert.ToBase64String(hash);
-			}
+#if DEBUG
+			return FormatForLogging(ex, true);
+#else
+			return FormatForLogging(ex, false);
+#endif
 		}
 
 		/// <summary>
-		///   Produces a combined hashcode from the enumerated items.
+		///   Formats an exception for output into the log.
 		/// </summary>
-		/// <typeparam name="T">element type T</typeparam>
-		/// <param name="items">an enumerable</param>
-		/// <param name="seed">the hash seed (starting value)</param>
-		/// <returns>the combined hashcode</returns>
-		public static int CalculateCombinedHashcode<T>(this IEnumerable<T> items, int seed)
+		/// <param name="ex">the exception</param>
+		/// <param name="exposeStackTrace">indicates whether stack trace should be exposed in the output</param>
+		/// <returns>a string representation of the exception</returns>
+		public static string FormatForLogging(this Exception ex, bool exposeStackTrace)
 		{
-			if (items == null)
+			Contract.Requires<ArgumentNullException>(ex != null);
+			var builder = new StringBuilder(400)
+				.Append(ex.GetType().FullName).Append(": ").Append(ex.Message);
+			var e = ex.InnerException;
+			var indent = 1;
+			while (e != null)
 			{
-				return seed;
+				builder.Append(Environment.NewLine).Append(new String('\t', indent++)).Append("InnerException >")
+							.Append(e.GetType().FullName).Append(": ").Append(e.Message);
+
+				e = e.InnerException;
 			}
-
-			var comp = EqualityComparer<T>.Default;
-
-			var prime = Constants.NotSoRandomPrime;
-			var result = seed ^ (items.GetHashCode()*prime);
-			foreach (var item in items)
+			if (exposeStackTrace)
 			{
-				if (!comp.Equals(default(T), item))
-				{
-					result ^= item.GetHashCode()*prime;
-				}
+				builder.Append(Environment.NewLine).Append(new String('\t', indent)).Append("\t StackTrace >>")
+							.Append(ex.StackTrace);
 			}
-			return result;
+			return builder.ToString();
 		}
 
 		/// <summary>
-		///   Counts the number of bits turned on.
+		///   Gets the fully qualified, human readable name for a delegate.
 		/// </summary>
-		/// <param name="value">a value</param>
-		/// <returns>number of bits turned on</returns>
-		[CLSCompliant(false)]
-		public static int CountBitsInFlag(this uint value)
+		/// <param name="d"></param>
+		/// <returns></returns>
+		public static string GetFullName(this Delegate d)
 		{
-			// http://en.wikipedia.org/wiki/Hamming_weight
-			uint c = 0;
-			value = value - ((value >> 1) & 0x55555555); // reuse input as temporary
-			value = (value & 0x33333333) + ((value >> 2) & 0x33333333); // temp
-			c = ((value + (value >> 4) & 0xF0F0F0F)*0x1010101) >> 24; // count
-			unchecked
-			{
-				return (int) c;
-			}
-		}
+			Contract.Requires<ArgumentNullException>(d != null);
+			Contract.Requires<ArgumentException>(d.Method != null);
+			Contract.Requires<ArgumentException>(d.Target != null);
 
-		/// <summary>
-		///   Counts the number of bits turned on.
-		/// </summary>
-		/// <param name="value">a value</param>
-		/// <returns>number of bits turned on</returns>
-		public static int CountBitsInFlag(this int value)
-		{
-			// http://en.wikipedia.org/wiki/Hamming_weight
-			var v = (uint) value;
-			uint c = 0;
-			v = v - ((v >> 1) & 0x55555555);
-			v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
-			c = ((v + (v >> 4) & 0xF0F0F0F)*0x1010101) >> 24;
-			unchecked
-			{
-				return (int) c;
-			}
+			var type = d.Method.DeclaringType;
+			return String.Concat(type.GetReadableFullName(), ".", d.Method.Name, "()");
 		}
 
 		/// <summary>
@@ -260,22 +208,76 @@ namespace FlitBit.Core
 		{
 			Contract.Requires<ArgumentNullException>(expression != null);
 
-			if (expression.Body is MemberExpression)
+			var body = expression.Body as MemberExpression;
+			if (body != null)
 			{
-				var memberExpression = (MemberExpression) expression.Body;
+				var memberExpression = body;
 				return memberExpression.Member;
 			}
-			else
-			{
-				var unaryExpression = (UnaryExpression) expression.Body;
+			var unaryExpression = (UnaryExpression) expression.Body;
 
-				if (unaryExpression.Operand is MemberExpression)
-				{
-					var memberExpression = (MemberExpression) unaryExpression.Operand;
-					return memberExpression.Member;
-				}
+			var operand = unaryExpression.Operand as MemberExpression;
+			if (operand != null)
+			{
+				var memberExpression = operand;
+				return memberExpression.Member;
 			}
 			return null;
+		}
+
+		/// <summary>
+		///   Gets a readable full name. Since this method uses reflection it should be used
+		///   rarely. It was created to supply simpler type names when constructing error messages.
+		/// </summary>
+		/// <param name="type">The type.</param>
+		/// <returns>A readable name such as My.Namespace.MyType&lt;string, int></returns>
+		public static string GetReadableFullName(this Type type)
+		{
+			Contract.Requires<ArgumentNullException>(type != null);
+
+			var tt = (type.IsArray) ? type.GetElementType() : type;
+			var simpleName = tt.Name;
+
+			Contract.Assume(simpleName != null);
+			Contract.Assert(simpleName.Length >= 0);
+
+			if (simpleName.Contains('`'))
+			{
+				simpleName = simpleName.Substring(0, simpleName.IndexOf("`", StringComparison.InvariantCulture));
+				var args = tt.GetGenericArguments();
+				for (var i = 0; i < args.Length; i++)
+				{
+					simpleName = String.Concat(simpleName, i == 0 ? '<' : ',', args[i].GetReadableSimpleName());
+				}
+				simpleName = String.Concat(simpleName, '>');
+			}
+			return tt.IsNested
+				? String.Concat(tt.DeclaringType.GetReadableFullName(), "+", simpleName)
+				: String.Concat(tt.Namespace, ".", simpleName);
+		}
+
+		/// <summary>
+		///   Gets a readable simple name for a type.
+		/// </summary>
+		/// <param name="type">the type</param>
+		/// <returns>A readable name such as MyType&lt;string, int></returns>
+		public static string GetReadableSimpleName(this Type type)
+		{
+			Contract.Requires<ArgumentNullException>(type != null);
+
+			var tt = (type.IsArray) ? type.GetElementType() : type;
+			var simpleName = tt.Name;
+			if (simpleName.Contains('`'))
+			{
+				simpleName = simpleName.Substring(0, simpleName.IndexOf("`", StringComparison.InvariantCulture));
+				var args = tt.GetGenericArguments();
+				for (var i = 0; i < args.Length; i++)
+				{
+					simpleName = String.Concat(simpleName, i == 0 ? '<' : ',', args[i].GetReadableSimpleName());
+				}
+				simpleName = String.Concat(simpleName, '>');
+			}
+			return simpleName;
 		}
 
 		/// <summary>
@@ -295,49 +297,77 @@ namespace FlitBit.Core
 			{
 				return obj as string;
 			}
-			else
-			{
-				return ConvertJson((JToken) obj);
-			}
+			return ConvertJson((JToken) obj);
 		}
 
-		static dynamic ConvertJson(JToken token)
+		/// <summary>
+		///   Removes a string from the end of another string if present.
+		/// </summary>
+		/// <param name="target">The target string.</param>
+		/// <param name="value">The value to remove.</param>
+		/// <returns>the target string with the value removed</returns>
+		public static string RemoveTrailing(this string target, string value)
 		{
-			if (token is JValue)
+			if (!String.IsNullOrEmpty(target) && !String.IsNullOrEmpty(value)
+				&& target.EndsWith(value))
 			{
-				return ((JValue) token).Value;
+				return target.Substring(0, target.Length - value.Length);
 			}
-			else if (token is JObject)
+			return target;
+		}
+
+		/// <summary>
+		///   Converts the source object to JSON
+		/// </summary>
+		/// <param name="source">the source</param>
+		/// <returns>the JSON representation of the source</returns>
+		public static string ToJson(this object source) { return JsonConvert.SerializeObject(source, Formatting.Indented, new IsoDateTimeConverter()); }
+
+		/// <summary>
+		///   Converts an enumerable to a readonly collection.
+		/// </summary>
+		/// <typeparam name="T">type T</typeparam>
+		/// <param name="collection">the collection</param>
+		/// <returns>returns a read-only collection</returns>
+		public static ReadOnlyCollection<T> ToReadOnly<T>(this IEnumerable<T> collection)
+		{
+			var roc = collection as ReadOnlyCollection<T>;
+			if (roc == null)
 			{
-				var expando = new ExpandoObject();
-				(from childToken in ((JToken) token) where childToken is JProperty select childToken as JProperty).ToList()
-																																																					.ForEach(
-																																																									 property =>
-																																																										 {
-																																																											((IDictionary<string, object>) expando).Add(property.Name,
-																																																																																	ConvertJson(property.Value));
-																																																										 });
-				return expando;
-			}
-			else if (token is JArray)
-			{
-				var types = ((JArray) token)
-					.Where(tk => tk.Type != JTokenType.Null)
-					.GroupBy(tk => tk.Type)
-					.Count();
-				if (types > 1)
+				if (collection == null)
 				{
-					return ConvertArrayContainingDissimilarTypes((JArray) token);
+					roc = new List<T>(Enumerable.Empty<T>()).AsReadOnly();
+				}
+				else if (collection is List<T>)
+				{
+					roc = (collection as List<T>).AsReadOnly();
 				}
 				else
 				{
-					return ConvertArrayContainingSimilarTypes((JArray) token);
+					roc = new List<T>(collection).AsReadOnly();
 				}
 			}
-			throw new ArgumentException(string.Format("Unknown token type '{0}'",
-																								token.GetType()), "token"
-				);
+			return roc;
 		}
+
+		static dynamic ConvertArrayContainingDissimilarTypes(IEnumerable<JToken> arr)
+		{
+			var items = new List<ExpandoObject>();
+			foreach (var item in arr)
+			{
+				var value = ConvertJson(item);
+				if (item is JValue)
+				{
+					var wrapper = new ExpandoObject();
+					((IDictionary<string, object>) wrapper).Add("Value", value);
+					value = wrapper;
+				}
+				items.Add(value);
+			}
+			return items;
+		}
+
+		static dynamic ConvertArrayContainingObjects(IEnumerable<JToken> arr) { return arr.Select(item => item.Type == JTokenType.Null ? null : ConvertJson(item)).Cast<ExpandoObject>().ToList(); }
 
 		static dynamic ConvertArrayContainingSimilarTypes(JArray arr)
 		{
@@ -376,149 +406,45 @@ namespace FlitBit.Core
 					break;
 				case JTokenType.Uri:
 					break;
-				default:
-					break;
 			}
 			throw new NotImplementedException();
 		}
 
-		static dynamic ConvertArrayContainingDissimilarTypes(JArray arr)
+		static dynamic ConvertArrayContainingTypeof<T>(IEnumerable<JToken> arr) { return arr.Select(item => item.Type == JTokenType.Null ? default(T) : item.Value<T>()).ToList(); }
+
+		static dynamic ConvertJson(IEnumerable<JToken> token)
 		{
-			var items = new List<ExpandoObject>();
-			foreach (var item in arr)
+			var value = token as JValue;
+			if (value != null)
 			{
-				var value = ConvertJson(item);
-				if (item is JValue)
-				{
-					var wrapper = new ExpandoObject();
-					((IDictionary<string, object>) wrapper).Add("Value", value);
-					value = wrapper;
-				}
-				items.Add(value);
+				return value.Value;
 			}
-			return items;
-		}
-
-		static dynamic ConvertArrayContainingObjects(JArray arr)
-		{
-			var items = new List<ExpandoObject>();
-			foreach (var item in arr)
+			if (token is JObject)
 			{
-				if (item.Type == JTokenType.Null)
-				{
-					items.Add(null);
-				}
-				else
-				{
-					items.Add(ConvertJson(item));
-				}
+				var expando = new ExpandoObject();
+				(from childToken in token where childToken is JProperty select childToken as JProperty).ToList()
+																																															.ForEach(
+																																																			 property =>
+																																																				((IDictionary<string, object>) expando).Add(property.Name,
+																																																																										ConvertJson(property.Value)));
+				return expando;
 			}
-			return items;
-		}
-
-		static dynamic ConvertArrayContainingTypeof<T>(JArray arr)
-		{
-			var items = new List<T>();
-			foreach (var item in arr)
+			var arr = token as JArray;
+			if (arr != null)
 			{
-				if (item.Type == JTokenType.Null)
+				var types = arr
+					.Where(tk => tk.Type != JTokenType.Null)
+					.GroupBy(tk => tk.Type)
+					.Count();
+				if (types > 1)
 				{
-					items.Add(default(T));
+					return ConvertArrayContainingDissimilarTypes(arr);
 				}
-				else
-				{
-					items.Add(item.Value<T>());
-				}
+				return ConvertArrayContainingSimilarTypes(arr);
 			}
-			return items;
-		}
-
-		/// <summary>
-		///   Converts the source object to JSON
-		/// </summary>
-		/// <param name="source">the source</param>
-		/// <returns>the JSON representation of the source</returns>
-		public static string ToJson(this object source) { return JsonConvert.SerializeObject(source, Formatting.Indented, new IsoDateTimeConverter()); }
-
-		/// <summary>
-		///   Double quotes the given string, delimiting inner quotes.
-		/// </summary>
-		/// <param name="source"></param>
-		/// <returns></returns>
-		public static string DoubleQuote(this string source)
-		{
-			return (String.IsNullOrEmpty(source))
-				? "\"\""
-				: String.Concat("\"", source.Replace("\"", "\\\""), "\"");
-		}
-
-		/// <summary>
-		///   Converts an enumerable to a readonly collection.
-		/// </summary>
-		/// <typeparam name="T">type T</typeparam>
-		/// <param name="collection">the collection</param>
-		/// <returns>returns a read-only collection</returns>
-		public static ReadOnlyCollection<T> ToReadOnly<T>(this IEnumerable<T> collection)
-		{
-			var roc = collection as ReadOnlyCollection<T>;
-			if (roc == null)
-			{
-				if (collection == null)
-				{
-					roc = new List<T>(Enumerable.Empty<T>()).AsReadOnly();
-				}
-				else if (collection is List<T>)
-				{
-					roc = (collection as List<T>).AsReadOnly();
-				}
-				else
-				{
-					roc = new List<T>(collection).AsReadOnly();
-				}
-			}
-			return roc;
-		}
-
-		/// <summary>
-		///   Formats an exception for output into the log.
-		/// </summary>
-		/// <param name="ex">the exception</param>
-		/// <returns>a string representation of the exception</returns>
-		public static string FormatForLogging(this Exception ex)
-		{
-#if DEBUG
-			return FormatForLogging(ex, true);
-#else
-			return FormatForLogging(ex, false);
-#endif
-		}
-
-		/// <summary>
-		///   Formats an exception for output into the log.
-		/// </summary>
-		/// <param name="ex">the exception</param>
-		/// <param name="exposeStackTrace">indicates whether stack trace should be exposed in the output</param>
-		/// <returns>a string representation of the exception</returns>
-		public static string FormatForLogging(this Exception ex, bool exposeStackTrace)
-		{
-			Contract.Requires<ArgumentNullException>(ex != null);
-			var builder = new StringBuilder(400)
-				.Append(ex.GetType().FullName).Append(": ").Append(ex.Message);
-			var e = ex.InnerException;
-			var indent = 1;
-			while (e != null)
-			{
-				builder.Append(Environment.NewLine).Append(new String('\t', indent++)).Append("InnerException >")
-							.Append(e.GetType().FullName).Append(": ").Append(e.Message);
-
-				e = e.InnerException;
-			}
-			if (exposeStackTrace)
-			{
-				builder.Append(Environment.NewLine).Append(new String('\t', indent++)).Append("\t StackTrace >>")
-							.Append(ex.StackTrace);
-			}
-			return builder.ToString();
+			throw new ArgumentException(string.Format("Unknown token type '{0}'",
+																								token.GetType()), "token"
+				);
 		}
 	}
 }

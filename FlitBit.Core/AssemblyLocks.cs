@@ -16,21 +16,7 @@ namespace FlitBit.Core
 	/// </summary>
 	public static class AssemblyLocks
 	{
-		static ConcurrentDictionary<string, object> __safeLocks = new ConcurrentDictionary<string, object>();
-
-		/// <summary>
-		///   Gets a lock for an assembly suitable for synchronizing activity
-		///   on the assembly without blocking other activity in the VM.
-		/// </summary>
-		/// <param name="assembly">the assembly</param>
-		/// <returns>an object suitable for locking activity against the assembly</returns>
-		public static object GetLockForAssembly(this Assembly assembly)
-		{
-			Contract.Requires<ArgumentNullException>(assembly != null);
-			Contract.Ensures(Contract.Result<object>() != null);
-
-			return GetKeyForAssembly(assembly);
-		}
+		static readonly ConcurrentDictionary<string, object> SafeLocks = new ConcurrentDictionary<string, object>();
 
 		/// <summary>
 		///   Gets a key for an assembly suitable for representing the assembly
@@ -44,9 +30,23 @@ namespace FlitBit.Core
 			Contract.Requires<ArgumentNullException>(assembly != null);
 			Contract.Ensures(Contract.Result<object>() != null);
 
-			var key = Util.InternIt(assembly.FullName);
-			var safeKey = __safeLocks.GetOrAdd(key, k => new Object());
+			var key = assembly.FullName.InternIt();
+			var safeKey = SafeLocks.GetOrAdd(key, k => new Object());
 			return safeKey;
+		}
+
+		/// <summary>
+		///   Gets a lock for an assembly suitable for synchronizing activity
+		///   on the assembly without blocking other activity in the VM.
+		/// </summary>
+		/// <param name="assembly">the assembly</param>
+		/// <returns>an object suitable for locking activity against the assembly</returns>
+		public static object GetLockForAssembly(this Assembly assembly)
+		{
+			Contract.Requires<ArgumentNullException>(assembly != null);
+			Contract.Ensures(Contract.Result<object>() != null);
+
+			return GetKeyForAssembly(assembly);
 		}
 	}
 }

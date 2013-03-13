@@ -6,6 +6,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Text;
 
 namespace FlitBit.Core
 {
@@ -29,13 +30,32 @@ namespace FlitBit.Core
 		/// <summary>
 		///   Creates a new instance.
 		/// </summary>
-		public Disposable() { this.CreationStack = new StackTrace().GetFrames(); }
+		protected Disposable()
+			: this(true) { }
+#else
+	/// <summary>
+	///   Creates a new instance.
+	/// </summary>
+		protected Disposable() : this(false)
+		{																
+		}																
+#endif
 
 		/// <summary>
-		///   Exposes the call stack at the time of creation (DEBUG).
+		///   Creates a new instance.
 		/// </summary>
-		public StackFrame[] CreationStack { get; private set; }
-#endif
+		protected Disposable(bool captureStack)
+		{
+			if (captureStack)
+			{
+				this.CreationStack = new StackTrace().GetFrames();
+			}
+		}
+
+		/// <summary>
+		///   Exposes the call stack at the time of creation if the subtype indicated that it should be captured.
+		/// </summary>
+		protected StackFrame[] CreationStack { get; private set; }
 
 		/// <summary>
 		///   Finalizes the instance.
@@ -69,9 +89,48 @@ namespace FlitBit.Core
 				{
 					if (!_disposal.TrySpinWaitForState(DisposalState.Incomplete, state => state == DisposalState.Disposed))
 					{
-						if (ShouldTrace(TraceEventType.Error))
+						try
 						{
-							OnTraceEvent(TraceEventType.Error, "Disposed object disposed again.");
+							if (LogSink.ShouldTrace(this, TraceEventType.Error))
+							{
+								var cstack = CreationStack;
+								if (cstack != null)
+								{
+									var builder = new StringBuilder(2000);
+									builder.Append(Environment.NewLine).Append(">> Creation stack... ");
+									foreach (var frame in CreationStack)
+									{
+										var method = frame.GetMethod();
+										builder.Append(Environment.NewLine)
+													.Append("\t >> ")
+													.Append(method.DeclaringType.GetReadableSimpleName()).Append(".").Append(method.Name);
+									}
+									builder.Append(Environment.NewLine).Append(">> Disposal stack... ");
+									var stackFrames = new StackTrace().GetFrames();
+									if (stackFrames != null)
+									{
+										foreach (var frame in stackFrames)
+										{
+											var method = frame.GetMethod();
+											builder.Append(Environment.NewLine)
+														.Append("\t >> ")
+														.Append(method.DeclaringType.GetReadableSimpleName()).Append(".").Append(method.Name);
+										}
+									}
+
+									LogSink.OnTraceEvent(this, TraceEventType.Error, String.Concat("Disposed object disposed again.", builder));
+								}
+								else
+								{
+									LogSink.OnTraceEvent(this, TraceEventType.Error, "Disposed object disposed again.");
+								}
+							}
+						}
+// ReSharper disable EmptyGeneralCatchClause
+						catch
+// ReSharper restore EmptyGeneralCatchClause
+						{
+							/* purposely eating exceptions in finalizer */
 						}
 						return false;
 					}
@@ -93,43 +152,6 @@ namespace FlitBit.Core
 				}
 			}
 			return false;
-		}
-
-		/// <summary>
-		///   Checks whether the class should trace events of <paramref name="eventType" />.
-		/// </summary>
-		/// <param name="eventType">an event type</param>
-		/// <returns>
-		///   <em>true</em> if the event type should be traced; otherwise <em>false</em>.
-		/// </returns>
-		protected virtual bool ShouldTrace(TraceEventType eventType) { return false; }
-
-		/// <summary>
-		///   Trace event sink. Should be specialized by subclasses to record trace events.
-		/// </summary>
-		/// <param name="eventType">an event type</param>
-		/// <param name="message">a trace message</param>
-		protected virtual void OnTraceEvent(TraceEventType eventType, string message)
-		{
-#if DEBUG
-			if (eventType <= TraceEventType.Warning)
-			{
-				Console.WriteLine(String.Concat(GetType().GetReadableFullName(), ": ", eventType));
-				Console.WriteLine(message);
-				Console.WriteLine(">> Creation stack... ");
-				foreach (var frame in CreationStack)
-				{
-					var method = frame.GetMethod();
-					Console.WriteLine(String.Concat("\t >> ", method.DeclaringType.GetReadableSimpleName(), ".", method.Name));
-				}
-				Console.WriteLine(">> Disposal stack... ");
-				foreach (var frame in new StackTrace().GetFrames())
-				{
-					var method = frame.GetMethod();
-					Console.WriteLine(String.Concat("\t >> ", method.DeclaringType.GetReadableSimpleName(), ".", method.Name));
-				}
-			}
-#endif
 		}
 
 		/// <summary>

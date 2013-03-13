@@ -23,17 +23,6 @@ namespace FlitBit.Core.Parallel
 		/// <summary>
 		///   Creates a new instance.
 		/// </summary>
-		internal AsyncResult(IFuture<bool> future)
-			: this(null, null, null)
-		{
-			Contract.Requires<ArgumentNullException>(future != null);
-			_future = future;
-			this.CompletedSynchronously = future.IsCompleted;
-		}
-
-		/// <summary>
-		///   Creates a new instance.
-		/// </summary>
 		public AsyncResult()
 			: this(null, null, null) { }
 
@@ -59,52 +48,21 @@ namespace FlitBit.Core.Parallel
 			this.AsyncState = asyncState;
 		}
 
-		#region IAsyncResult implementation
-
 		/// <summary>
-		///   Gets the task's asynchronous state.
+		///   Creates a new instance.
 		/// </summary>
-		public Object AsyncState { get; private set; }
+		internal AsyncResult(IFuture<bool> future)
+			: this(null, null, null)
+		{
+			Contract.Requires<ArgumentNullException>(future != null);
+			_future = future;
+			this.CompletedSynchronously = future.IsCompleted;
+		}
 
 		/// <summary>
-		///  Gets the handback object given at the asynchronous operations begin.
+		///   Gets the handback object given at the asynchronous operations begin.
 		/// </summary>
 		public Object AsyncHandback { get; private set; }
-
-		/// <summary>
-		///   Indicates whether the task completed synchronously.
-		/// </summary>
-		public bool CompletedSynchronously { get; private set; }
-
-		/// <summary>
-		///   Gets the task's wait handle.
-		/// </summary>
-		public WaitHandle AsyncWaitHandle
-		{
-			get { return _future.WaitHandle; }
-		}
-
-		/// <summary>
-		///   Gets a value indicating whether the asynchronous operation has completed.
-		/// </summary>
-		public bool IsCompleted
-		{
-			get { return _future.IsCompleted; }
-		}
-
-		#endregion
-
-		/// <summary>
-		///   Indicates whether the asynchronous operation resulted in a fault.
-		/// </summary>
-		public bool IsFaulted
-		{
-			get
-			{
-				Contract.Requires<ObjectDisposedException>(!IsDisposed);
-				return _future.IsFaulted;
-			}
-		}
 
 		/// <summary>
 		///   Gets the exception that caused the fault.
@@ -118,35 +76,15 @@ namespace FlitBit.Core.Parallel
 			}
 		}
 
-		internal void MarkCompleted(bool completedSynchronously)
+		/// <summary>
+		///   Indicates whether the asynchronous operation resulted in a fault.
+		/// </summary>
+		public bool IsFaulted
 		{
-			Contract.Requires<InvalidOperationException>(!IsCompleted);
-
-			this.CompletedSynchronously = completedSynchronously;
-			_future.MarkCompleted(true);
-
-			Thread.MemoryBarrier();
-			var callback = _asyncCallback;
-			Thread.MemoryBarrier();
-			if (callback != null)
+			get
 			{
-				callback(this);
-			}
-		}
-
-		internal void MarkException(Exception ex, bool completedSynchronously)
-		{
-			Contract.Requires<InvalidOperationException>(!IsCompleted);
-
-			this.CompletedSynchronously = completedSynchronously;
-			_future.MarkFaulted(ex);
-
-			Thread.MemoryBarrier();
-			var callback = _asyncCallback;
-			Thread.MemoryBarrier();
-			if (callback != null)
-			{
-				callback(this);
+				Contract.Requires<ObjectDisposedException>(!IsDisposed);
+				return _future.IsFaulted;
 			}
 		}
 
@@ -227,5 +165,67 @@ namespace FlitBit.Core.Parallel
 			}
 			return true;
 		}
+
+		internal void MarkCompleted(bool completedSynchronously)
+		{
+			Contract.Requires<InvalidOperationException>(!IsCompleted);
+
+			this.CompletedSynchronously = completedSynchronously;
+			_future.MarkCompleted(true);
+
+			Thread.MemoryBarrier();
+			var callback = _asyncCallback;
+			Thread.MemoryBarrier();
+			if (callback != null)
+			{
+				callback(this);
+			}
+		}
+
+		internal void MarkException(Exception ex, bool completedSynchronously)
+		{
+			Contract.Requires<InvalidOperationException>(!IsCompleted);
+
+			this.CompletedSynchronously = completedSynchronously;
+			_future.MarkFaulted(ex);
+
+			Thread.MemoryBarrier();
+			var callback = _asyncCallback;
+			Thread.MemoryBarrier();
+			if (callback != null)
+			{
+				callback(this);
+			}
+		}
+
+		#region IAsyncResult Members
+
+		/// <summary>
+		///   Gets the task's asynchronous state.
+		/// </summary>
+		public Object AsyncState { get; private set; }
+
+		/// <summary>
+		///   Indicates whether the task completed synchronously.
+		/// </summary>
+		public bool CompletedSynchronously { get; private set; }
+
+		/// <summary>
+		///   Gets the task's wait handle.
+		/// </summary>
+		public WaitHandle AsyncWaitHandle
+		{
+			get { return _future.WaitHandle; }
+		}
+
+		/// <summary>
+		///   Gets a value indicating whether the asynchronous operation has completed.
+		/// </summary>
+		public bool IsCompleted
+		{
+			get { return _future.IsCompleted; }
+		}
+
+		#endregion
 	}
 }

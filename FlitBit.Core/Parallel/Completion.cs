@@ -28,9 +28,6 @@ namespace FlitBit.Core.Parallel
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		Future<bool> _future = new Future<bool>();
 
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		Object _target;
-
 		/// <summary>
 		///   Constructs a new instance.
 		/// </summary>
@@ -47,13 +44,21 @@ namespace FlitBit.Core.Parallel
 		/// </param>
 		public Completion(Object target, bool completed)
 		{
-			_target = target;
+			Target = target;
 			if (completed)
 			{
 				_future.MarkCompleted(true);
 			}
 			_context = ContextFlow.ForkAmbient();
 			_continuations = new ContinuationSet(ContextFlow.ForkAmbient());
+		}
+
+		/// <summary>
+		///   Gets the exception that caused the fault.
+		/// </summary>
+		public Exception Exception
+		{
+			get { return _future.Exception; }
 		}
 
 		/// <summary>
@@ -73,12 +78,9 @@ namespace FlitBit.Core.Parallel
 		}
 
 		/// <summary>
-		///   Gets the exception that caused the fault.
+		///   The completion's target object if given when the completion was created.
 		/// </summary>
-		public Exception Exception
-		{
-			get { return _future.Exception; }
-		}
+		public Object Target { get; private set; }
 
 		/// <summary>
 		///   Gets a wait handle for the completion.
@@ -92,6 +94,66 @@ namespace FlitBit.Core.Parallel
 
 				return _future.WaitHandle;
 			}
+		}
+
+		/// <summary>
+		///   Schedules an action to execute when this completion is done.
+		/// </summary>
+		/// <param name="continuation">a continuation to run upon completion.</param>
+		public void Continue(Continuation continuation)
+		{
+			Contract.Requires<ArgumentNullException>(continuation != null);
+			_continuations.Continue(continuation);
+		}
+
+		/// <summary>
+		///   Schedules an action to execute when another completion succeeds.
+		/// </summary>
+		/// <param name="continuation">an action to run when the completion succeeds</param>
+		/// <returns>a completion for the success action</returns>
+		public Completion ContinueWithCompletion(Continuation continuation)
+		{
+			Contract.Requires<ArgumentNullException>(continuation != null);
+			Contract.Ensures(Contract.Result<Completion>() != null);
+			return _continuations.ContinueWithCompletion(continuation);
+		}
+
+		/// <summary>
+		///   Schedules a function to execute when another completion succeeds.
+		/// </summary>
+		/// <typeparam name="TResult">result type R</typeparam>
+		/// <param name="continuation">a function to run when the completion succeeds</param>
+		/// <returns>a completion for the success function</returns>
+		public Completion<TResult> ContinueWithCompletion<TResult>(ContinuationFunc<TResult> continuation)
+		{
+			Contract.Requires<ArgumentNullException>(continuation != null);
+			Contract.Ensures(Contract.Result<Completion<TResult>>() != null);
+			return _continuations.ContinueWithCompletion(continuation);
+		}
+
+		/// <summary>
+		///   Makes an AsyncCallback delegate that produces the completion.
+		/// </summary>
+		/// <typeparam name="THandback">handback type H</typeparam>
+		/// <param name="handback">the handback</param>
+		/// <param name="handler">a handler that produces the completion</param>
+		/// <returns>An AsyncCallback.</returns>
+		public AsyncCallback MakeAsyncCallback<THandback>(THandback handback, Action<IAsyncResult, THandback> handler)
+		{
+			Contract.Requires<ObjectDisposedException>(!IsDisposed);
+
+			return ar =>
+			{
+				try
+				{
+					handler(ar, handback);
+					MarkCompleted();
+				}
+				catch (Exception e)
+				{
+					MarkFaulted(e);
+				}
+			};
 		}
 
 		/// <summary>
@@ -113,18 +175,6 @@ namespace FlitBit.Core.Parallel
 			Contract.Requires<ObjectDisposedException>(!IsDisposed);
 			_future.MarkFaulted(fault);
 			_continuations.NotifyCompletion(fault);
-		}
-
-		/// <summary>
-		///   Waits (blocks the current thread) until the value is present or the timeout is exceeded.
-		/// </summary>
-		/// <param name="timeout">A timespan representing the timeout period.</param>
-		/// <returns>The future's value.</returns>
-		public bool Wait(TimeSpan timeout)
-		{
-			Contract.Requires<ObjectDisposedException>(!IsDisposed);
-
-			return _future.Wait(timeout);
 		}
 
 		/// <summary>
@@ -161,25 +211,27 @@ namespace FlitBit.Core.Parallel
 		public AsyncResult ToAsyncResult(AsyncCallback asyncCallback, Object asyncHandback, Object asyncState)
 		{
 			Contract.Requires<ObjectDisposedException>(!IsDisposed);
-
 			if (_asyncResult == null)
 			{
 				lock (_future.SyncObject)
 				{
 					if (_asyncResult == null)
 					{
-						_asyncResult = new AsyncResult(asyncCallback, asyncHandback, asyncState);
-						this.Continue((e) =>
+						var ar = new AsyncResult(asyncCallback, asyncHandback, asyncState);
+						// ReSharper disable PossibleMultipleWriteAccessInDoubleCheckLocking
+						Util.VolatileWrite(out _asyncResult, ar);
+						// ReSharper restore PossibleMultipleWriteAccessInDoubleCheckLocking
+						this.Continue(e =>
+						{
+							if (e != null)
 							{
-								if (e != null)
-								{
-									_asyncResult.MarkException(e, false);
-								}
-								else
-								{
-									_asyncResult.MarkCompleted(false);
-								}
-							});
+								ar.MarkException(e, false);
+							}
+							else
+							{
+								ar.MarkCompleted(false);
+							}
+						});
 					}
 				}
 			}
@@ -187,63 +239,15 @@ namespace FlitBit.Core.Parallel
 		}
 
 		/// <summary>
-		///   Makes an AsyncCallback delegate that produces the completion.
+		///   Waits (blocks the current thread) until the value is present or the timeout is exceeded.
 		/// </summary>
-		/// <typeparam name="H">handback type H</typeparam>
-		/// <param name="handback">the handback</param>
-		/// <param name="handler">a handler that produces the completion</param>
-		/// <returns>An AsyncCallback.</returns>
-		public AsyncCallback MakeAsyncCallback<H>(H handback, Action<IAsyncResult, H> handler)
+		/// <param name="timeout">A timespan representing the timeout period.</param>
+		/// <returns>The future's value.</returns>
+		public bool Wait(TimeSpan timeout)
 		{
 			Contract.Requires<ObjectDisposedException>(!IsDisposed);
 
-			return new AsyncCallback(ar =>
-				{
-					try
-					{
-						handler(ar, handback);
-						MarkCompleted();
-					}
-					catch (Exception e)
-					{
-						MarkFaulted(e);
-					}
-				});
-		}
-
-		/// <summary>
-		///   Schedules an action to execute when this completion is done.
-		/// </summary>
-		/// <param name="continuation">a continuation to run upon completion.</param>
-		public void Continue(Continuation continuation)
-		{
-			Contract.Requires<ArgumentNullException>(continuation != null);
-			_continuations.Continue(continuation);
-		}
-
-		/// <summary>
-		///   Schedules an action to execute when another completion succeeds.
-		/// </summary>
-		/// <param name="continuation">an action to run when the completion succeeds</param>
-		/// <returns>a completion for the success action</returns>
-		public Completion ContinueWithCompletion(Continuation continuation)
-		{
-			Contract.Requires<ArgumentNullException>(continuation != null);
-			Contract.Ensures(Contract.Result<Completion>() != null);
-			return _continuations.ContinueWithCompletion(continuation);
-		}
-
-		/// <summary>
-		///   Schedules a function to execute when another completion succeeds.
-		/// </summary>
-		/// <typeparam name="R">result type R</typeparam>
-		/// <param name="continuation">a function to run when the completion succeeds</param>
-		/// <returns>a completion for the success function</returns>
-		public Completion<R> ContinueWithCompletion<R>(ContinuationFunc<R> continuation)
-		{
-			Contract.Requires<ArgumentNullException>(continuation != null);
-			Contract.Ensures(Contract.Result<Completion<R>>() != null);
-			return _continuations.ContinueWithCompletion(continuation);
+			return _future.Wait(timeout);
 		}
 
 		/// <summary>

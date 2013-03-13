@@ -9,7 +9,7 @@ namespace FlitBit.Core.Tests
 		public void InternIt()
 		{
 			var it = "it".InternIt();
-			ReferenceEquals("it", it);
+			Assert.AreSame("it", it);
 		}
 	}
 }

@@ -240,6 +240,8 @@ namespace FlitBit.Core.Buffers
 		[ContractClassFor(typeof(IBufferWriter))]
 		internal abstract class ContractForIBufferWriter : IBufferWriter
 		{
+			#region IBufferWriter Members
+
 			/// <summary>
 			///   Gets the encoding used when writing string data.
 			/// </summary>
@@ -469,6 +471,8 @@ namespace FlitBit.Core.Buffers
 
 				throw new NotImplementedException();
 			}
+
+			#endregion
 		}
 	}
 }

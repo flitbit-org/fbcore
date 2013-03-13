@@ -13,11 +13,11 @@ namespace FlitBit.Core.Tests.Parallel
 		public void DemuxProducer_CanDemultiplexOps()
 		{
 			var test = new
-				{
-					Threads = 12,
-					Iterations = 100000,
-					Max = 100
-				};
+			{
+				Threads = 12,
+				Iterations = 1000,
+				Max = 100
+			};
 			var originators = 0;
 			var observers = 0;
 			var blanks = 0;
@@ -27,52 +27,48 @@ namespace FlitBit.Core.Tests.Parallel
 			Exception ex = null;
 			for (var i = 0; i < test.Threads; i++)
 			{
-				var thread = new Thread(new ThreadStart(
-																	() =>
-																		{
-																			var rand = new Random();
+				var thread = new Thread(() =>
+				{
+					var rand = new Random();
 
-																			for (var j = 0; j < test.Iterations; j++)
-																			{
-																				var observed = false;
-																				var item = rand.Next(test.Max);
-																				demux.TryConsume(item, new Continuation<Tuple<DemuxResultKind, Observation>>(
-																																(e, res) =>
-																																	{
-																																		if (e != null && ex == null)
-																																		{
-																																			ex = e;
-																																		}
-																																		else if (res == null)
-																																		{
-																																			Interlocked.Increment(ref blanks);
-																																		}
-																																		else
-																																		{
-																																			switch (res.Item1)
-																																			{
-																																				case DemuxResultKind.None:
-																																					Interlocked.Increment(ref fails);
-																																					break;
-																																				case DemuxResultKind.Observed:
-																																					Interlocked.Increment(ref observers);
-																																					break;
-																																				case DemuxResultKind.Originated:
-																																					Interlocked.Increment(ref originators);
-																																					break;
-																																				default:
-																																					break;
-																																			}
-																																		}
-																																		observed = true;
-																																	}));
+					for (var j = 0; j < test.Iterations; j++)
+					{
+						var observed = false;
+						var item = rand.Next(test.Max);
+						demux.TryConsume(item, (e, res) =>
+						{
+							if (e != null && ex == null)
+							{
+								ex = e;
+							}
+							else if (res == null)
+							{
+								Interlocked.Increment(ref blanks);
+							}
+							else
+							{
+								switch (res.Item1)
+								{
+									case DemuxResultKind.None:
+										Interlocked.Increment(ref fails);
+										break;
+									case DemuxResultKind.Observed:
+										Interlocked.Increment(ref observers);
+										break;
+									case DemuxResultKind.Originated:
+										Interlocked.Increment(ref originators);
+										break;
+								}
+							}
+							observed = true;
+						});
 
-																				while (!observed)
-																				{
-																					Thread.Sleep(0);
-																				}
-																			}
-																		}));
+						while (!observed)
+						{
+							Thread.Sleep(0);
+						}
+					}
+				});
 				thread.Start();
 				threads.Add(thread);
 			}
@@ -102,36 +98,35 @@ namespace FlitBit.Core.Tests.Parallel
 			var threads = new Tuple<Thread, Object>[10];
 			for (var i = 0; i < threads.Length; i++)
 			{
-				var tuple = new Tuple<Thread, Object>(new Thread(new ParameterizedThreadStart(n =>
+				var tuple = new Tuple<Thread, Object>(new Thread(n =>
+				{
+					var idx = (int) n;
+					var completed = false;
+					producer.TryConsume(idx, (e, res) =>
 					{
-						var idx = (int) n;
-						var completed = false;
-						producer.TryConsume(idx, new Continuation<Tuple<DemuxResultKind, object>>(
-																			(e, res) =>
-																				{
-																					if (e != null)
-																					{
-																						lock (sync)
-																						{
-																							var tpl = threads[idx];
-																							threads[idx] = new Tuple<Thread, object>(tpl.Item1, e);
-																						}
-																					}
-																					else
-																					{
-																						lock (sync)
-																						{
-																							var tpl = threads[idx];
-																							threads[idx] = new Tuple<Thread, object>(tpl.Item1, tpl.Item1);
-																						}
-																					}
-																					completed = true;
-																				}));
-						while (!completed)
+						if (e != null)
 						{
-							Thread.Sleep(0);
+							lock (sync)
+							{
+								var tpl = threads[idx];
+								threads[idx] = new Tuple<Thread, object>(tpl.Item1, e);
+							}
 						}
-					})), null);
+						else
+						{
+							lock (sync)
+							{
+								var tpl = threads[idx];
+								threads[idx] = new Tuple<Thread, object>(tpl.Item1, tpl.Item1);
+							}
+						}
+						completed = true;
+					});
+					while (!completed)
+					{
+						Thread.Sleep(0);
+					}
+				}), null);
 				threads[i] = tuple;
 				tuple.Item1.Start(i);
 			}
@@ -141,9 +136,9 @@ namespace FlitBit.Core.Tests.Parallel
 			}
 			lock (sync)
 			{
-				for (var i = 0; i < threads.Length; i++)
+				foreach (var t in threads)
 				{
-					Assert.IsNotNull(threads[i].Item2);
+					Assert.IsNotNull(t.Item2);
 				}
 			}
 		}
@@ -159,26 +154,25 @@ namespace FlitBit.Core.Tests.Parallel
 
 		class Observation
 		{
-			public int Sequence { get; set; }
-			public int Producer { get; set; }
-			public int Observer { get; set; }
-			public int Latency { get; set; }
+			internal int Latency { get; set; }
+			internal int Producer { get; set; }
+			internal int Sequence { get; set; }
 		}
 
 		class TestDemuxer : DemuxProducer<int, Observation>
 		{
-			static int __sequence = 0;
+			static int __sequence;
 
 			protected override bool ProduceResult(int arg, out Observation value)
 			{
-				var wait = 0; // new Random().Next(50);
+				var wait = new Random().Next(10);
 				Thread.Sleep(wait);
 				value = new Observation
-					{
-						Sequence = Interlocked.Increment(ref __sequence),
-						Producer = Thread.CurrentThread.ManagedThreadId,
-						Latency = wait
-					};
+				{
+					Sequence = Interlocked.Increment(ref __sequence),
+					Producer = Thread.CurrentThread.ManagedThreadId,
+					Latency = wait
+				};
 				return true;
 			}
 		}

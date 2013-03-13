@@ -6,7 +6,7 @@
 
 using System;
 
-namespace FlitBit.Core
+namespace FlitBit.Core.Parallel
 {
 	/// <summary>
 	///   Event args for uncaught exceptions.

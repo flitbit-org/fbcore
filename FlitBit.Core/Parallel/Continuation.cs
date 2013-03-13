@@ -39,7 +39,7 @@ namespace FlitBit.Core.Parallel
 	/// <summary>
 	///   Continuation delegate.
 	/// </summary>
-	/// <typeparam name="R">result type R</typeparam>
+	/// <typeparam name="TResult">result type R</typeparam>
 	/// <param name="fault">an exception raised by the operation</param>
 	/// <returns>a return item</returns>
 	/// <remarks>
@@ -49,13 +49,13 @@ namespace FlitBit.Core.Parallel
 	///   cases, the <paramref name="fault" /> argument will be null; otherwise
 	///   it is the exception raised by the operation being continued.
 	/// </remarks>
-	public delegate R ContinuationFunc<out R>(Exception fault);
+	public delegate TResult ContinuationFunc<out TResult>(Exception fault);
 
 	/// <summary>
 	///   Continuation delegate.
 	/// </summary>
 	/// <typeparam name="T">item type T, usually the result type of the operation being continued.</typeparam>
-	/// <typeparam name="R">result type R</typeparam>
+	/// <typeparam name="TResult">result type R</typeparam>
 	/// <param name="fault">an exception raised by the operation</param>
 	/// <param name="item">the result of the continued operation (when the operation is a Fun&lt;>)</param>
 	/// <returns>a return item</returns>
@@ -66,5 +66,5 @@ namespace FlitBit.Core.Parallel
 	///   cases, the <paramref name="fault" /> argument will be null; otherwise
 	///   it is the exception raised by the operation being continued.
 	/// </remarks>
-	public delegate R ContinuationFunc<in T, out R>(Exception fault, T item);
+	public delegate TResult ContinuationFunc<in T, out TResult>(Exception fault, T item);
 }

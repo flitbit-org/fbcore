@@ -45,7 +45,7 @@ namespace FlitBit.Core.Buffers
 			ushort result;
 			unchecked
 			{
-				result = (ushort) (((uint) buffer[offset] << 8) | (uint) buffer[offset + 1]);
+				result = (ushort) (((uint) buffer[offset] << 8) | buffer[offset + 1]);
 			}
 			offset += 2;
 			return result;
@@ -69,7 +69,7 @@ namespace FlitBit.Core.Buffers
 				result = (((uint) buffer[offset] << 24)
 					| ((uint) buffer[offset + 1] << 16)
 					| ((uint) buffer[offset + 2] << 8)
-					| (uint) buffer[offset + 3]);
+					| buffer[offset + 3]);
 			}
 			offset += 4;
 			return result;
@@ -97,7 +97,7 @@ namespace FlitBit.Core.Buffers
 					| ((ulong) buffer[offset + 4] << 24)
 					| ((ulong) buffer[offset + 5] << 16)
 					| ((ulong) buffer[offset + 6] << 8)
-					| (ulong) buffer[offset + 7]);
+					| buffer[offset + 7]);
 			}
 			offset += 8;
 			return result;

@@ -29,18 +29,18 @@ namespace FlitBit.Core.Factory
 		bool CanConstruct<T>();
 
 		/// <summary>
-		///   Gets the implementation type used when type T is constructed.
-		/// </summary>
-		/// <typeparam name="T">type T</typeparam>
-		/// <returns>If the factory can construct instances of type T, the implementation type used; otherwise null.</returns>
-		Type GetImplementationType<T>();
-
-		/// <summary>
 		///   Creates a new instance of type T.
 		/// </summary>
 		/// <typeparam name="T">type T</typeparam>
 		/// <returns>a new instance</returns>
 		T CreateInstance<T>();
+
+		/// <summary>
+		///   Gets the implementation type used when type T is constructed.
+		/// </summary>
+		/// <typeparam name="T">type T</typeparam>
+		/// <returns>If the factory can construct instances of type T, the implementation type used; otherwise null.</returns>
+		Type GetImplementationType<T>();
 	}
 
 	namespace CodeContracts
@@ -51,10 +51,10 @@ namespace FlitBit.Core.Factory
 		[ContractClassFor(typeof(IFactory))]
 		internal abstract class ContractForFactory : IFactory
 		{
+			#region IFactory Members
+
 			public T CreateInstance<T>()
 			{
-				Contract.Ensures(Contract.Result<T>() != null);
-
 				throw new NotImplementedException();
 			}
 
@@ -69,6 +69,8 @@ namespace FlitBit.Core.Factory
 			}
 
 			public object ParallelShare() { throw new NotImplementedException(); }
+
+			#endregion
 		}
 	}
 }

@@ -12,13 +12,13 @@ namespace FlitBit.Core.Meta
 		/// <summary>
 		///   Creates a new instance.
 		/// </summary>
-		public AutoImplementedAttribute() { }
+		protected AutoImplementedAttribute() { }
 
 		/// <summary>
 		///   Creates a new instance.
 		/// </summary>
 		/// <param name="recommemdedScope">Recommended scope for the resultant type.</param>
-		public AutoImplementedAttribute(InstanceScopeKind recommemdedScope) { this.RecommemdedScope = recommemdedScope; }
+		protected AutoImplementedAttribute(InstanceScopeKind recommemdedScope) { this.RecommemdedScope = recommemdedScope; }
 
 		/// <summary>
 		///   Indicates the recommended instance scope for implementations.

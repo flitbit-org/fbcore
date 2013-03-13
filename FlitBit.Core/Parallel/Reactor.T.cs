@@ -17,26 +17,18 @@ namespace FlitBit.Core.Parallel
 	///   response to items being pushed to the reactor.
 	/// </summary>
 	/// <typeparam name="TItem">item type TItem</typeparam>
-	public class Reactor<TItem>
+	public class Reactor<TItem> : ReactorBase
 	{
-		/// <summary>
-		///   The default options used by reactors when none are given to the constructor.
-		/// </summary>
-		public static readonly ReactorOptions DefaultOptions = new ReactorOptions(
-			ReactorOptions.DefaultMaxDegreeOfParallelism, false, 0, ReactorOptions.DefaultMaxParallelDepth, 5);
-
-		[ThreadStatic]
-		static bool __isForegroundThreadBorrowed;
-
 		readonly WaitCallback _backgroundReactor;
 
 		readonly Object _lock = new Object();
 		readonly ReactorOptions _options;
 		readonly ConcurrentQueue<TItem> _queue = new ConcurrentQueue<TItem>();
 		readonly Action<Reactor<TItem>, TItem> _reactor;
-		int _backgroundWorkers = 0;
-		int _backgroundWorkersActive = 0;
-		int _backgroundWorkersScheduled = 0;
+
+		int _backgroundWorkers;
+		int _backgroundWorkersActive;
+		int _backgroundWorkersScheduled;
 		bool _canceled;
 
 		/// <summary>
@@ -57,7 +49,23 @@ namespace FlitBit.Core.Parallel
 
 			_reactor = reactor;
 			_options = options ?? DefaultOptions;
-			_backgroundReactor = new WaitCallback(Background_Reactor);
+			_backgroundReactor = Background_Reactor;
+		}
+
+		/// <summary>
+		///   Indicates whether the reactor is active.
+		/// </summary>
+		public bool IsActive
+		{
+			get { return Thread.VolatileRead(ref _backgroundWorkersActive) > 0; }
+		}
+
+		/// <summary>
+		///   Indicates whethe the reactor is stopping.
+		/// </summary>
+		public bool IsCanceled
+		{
+			get { return Util.VolatileRead(ref _canceled); }
 		}
 
 		/// <summary>
@@ -85,22 +93,6 @@ namespace FlitBit.Core.Parallel
 		}
 
 		/// <summary>
-		///   Indicates whether the reactor is active.
-		/// </summary>
-		public bool IsActive
-		{
-			get { return Thread.VolatileRead(ref _backgroundWorkersActive) > 0; }
-		}
-
-		/// <summary>
-		///   Indicates whethe the reactor is stopping.
-		/// </summary>
-		public bool IsCanceled
-		{
-			get { return Util.VolatileRead(ref _canceled); }
-		}
-
-		/// <summary>
 		///   Indicates whether the reactor is stopped.
 		/// </summary>
 		public bool IsStopped
@@ -116,15 +108,13 @@ namespace FlitBit.Core.Parallel
 			get { return _options; }
 		}
 
-		event EventHandler<ReactorExceptionArgs> _uncaughtException;
-
 		/// <summary>
 		///   Stops a reactor. Once stopped a reactor cannot be restarted.
 		/// </summary>
 		/// <returns>the reactor (for chaining)</returns>
 		public Reactor<TItem> Cancel()
 		{
-			Util.VolatileWrite(ref _canceled, true);
+			Util.VolatileWrite(out _canceled, true);
 			return this;
 		}
 
@@ -139,16 +129,16 @@ namespace FlitBit.Core.Parallel
 
 			if (_queue.Count > _options.MaxParallelDepth)
 			{
-				if (!__isForegroundThreadBorrowed)
+				if (!IsForegroundThreadBorrowed)
 				{
 					try
 					{
-						__isForegroundThreadBorrowed = true;
+						IsForegroundThreadBorrowed = true;
 						Foreground_Reactor(item, _options.DispatchesPerBorrowedThread);
 					}
 					finally
 					{
-						__isForegroundThreadBorrowed = false;
+						IsForegroundThreadBorrowed = false;
 					}
 				}
 			}
@@ -159,44 +149,6 @@ namespace FlitBit.Core.Parallel
 
 			CheckBackgroundReactorState();
 			return this;
-		}
-
-		void CheckBackgroundReactorState()
-		{
-			if (!IsCanceled)
-			{
-				lock (_lock)
-				{
-					var workers = _backgroundWorkersActive + _backgroundWorkersScheduled;
-					if (!IsCanceled && _queue.Count > 0
-						&& workers < _options.MaxDegreeOfParallelism)
-					{
-						ThreadPool.QueueUserWorkItem(this._backgroundReactor);
-						Interlocked.Increment(ref _backgroundWorkersScheduled);
-					}
-				}
-			}
-		}
-
-		/// <summary>
-		///   Event fired when uncaught exceptions are encountered by the reactor.
-		/// </summary>
-		public event EventHandler<ReactorExceptionArgs> UncaughtException
-		{
-			add { _uncaughtException += value; }
-			remove { _uncaughtException -= value; }
-		}
-
-		bool OnUncaughtException(Exception err)
-		{
-			if (_uncaughtException == null)
-			{
-				return false;
-			}
-
-			var args = new ReactorExceptionArgs(err);
-			_uncaughtException(this, args);
-			return args.Rethrow;
 		}
 
 		/// <summary>
@@ -213,12 +165,14 @@ namespace FlitBit.Core.Parallel
 		/// <param name="message"></param>
 		protected virtual void OnLogMessage(TraceEventType eventType, string message) { }
 
-		void Background_Reactor(object unused_state)
+		void Background_Reactor(object unusedState)
 		{
-			int itemsHandled = 0, workers, active;
+			var itemsHandled = 0;
 
 			try
 			{
+				int workers;
+				int active;
 				lock (_lock)
 				{
 					workers = Interlocked.Increment(ref _backgroundWorkers);
@@ -283,12 +237,31 @@ namespace FlitBit.Core.Parallel
 			}
 		}
 
+		void CheckBackgroundReactorState()
+		{
+			if (!IsCanceled)
+			{
+				lock (_lock)
+				{
+					var workers = _backgroundWorkersActive + _backgroundWorkersScheduled;
+					if (!IsCanceled && _queue.Count > 0
+						&& workers < _options.MaxDegreeOfParallelism)
+					{
+						ThreadPool.QueueUserWorkItem(this._backgroundReactor);
+						Interlocked.Increment(ref _backgroundWorkersScheduled);
+					}
+				}
+			}
+		}
+
 		void Foreground_Reactor(TItem item, int dispatchesPerSequential)
 		{
-			int itemsHandled = 0, workers, active;
+			var itemsHandled = 0;
 
 			try
 			{
+				int workers;
+				int active;
 				lock (_lock)
 				{
 					workers = Interlocked.Increment(ref _backgroundWorkers);
@@ -352,5 +325,28 @@ namespace FlitBit.Core.Parallel
 				}
 			}
 		}
+
+		bool OnUncaughtException(Exception err)
+		{
+			if (_uncaughtException == null)
+			{
+				return false;
+			}
+
+			var args = new ReactorExceptionArgs(err);
+			_uncaughtException(this, args);
+			return args.Rethrow;
+		}
+
+		/// <summary>
+		///   Event fired when uncaught exceptions are encountered by the reactor.
+		/// </summary>
+		public event EventHandler<ReactorExceptionArgs> UncaughtException
+		{
+			add { _uncaughtException += value; }
+			remove { _uncaughtException -= value; }
+		}
+
+		event EventHandler<ReactorExceptionArgs> _uncaughtException;
 	}
 }

@@ -25,7 +25,7 @@ namespace FlitBit.Core
 		/// <typeparam name="T"></typeparam>
 		/// <param name="item"></param>
 		/// <returns></returns>
-		T Add<T>(T item) where T : IDisposable;
+		T Add<T>(T item) where T : class, IDisposable;
 
 		/// <summary>
 		///   Adds an action to be performed upon scope
@@ -43,7 +43,16 @@ namespace FlitBit.Core
 		[ContractClassFor(typeof(ICleanupScope))]
 		internal abstract class ContractForICleanupScope : ICleanupScope
 		{
-			public T Add<T>(T item) where T : IDisposable
+			public ICleanupScope ShareScope()
+			{
+				Contract.Ensures(Contract.Result<ICleanupScope>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			#region ICleanupScope Members
+
+			public T Add<T>(T item) where T : class, IDisposable
 			{
 				Contract.Requires<ArgumentNullException>(item != null);
 				Contract.Ensures(Contract.Result<T>() != null);
@@ -67,12 +76,7 @@ namespace FlitBit.Core
 
 			public object ParallelShare() { throw new NotImplementedException(); }
 
-			public ICleanupScope ShareScope()
-			{
-				Contract.Ensures(Contract.Result<ICleanupScope>() != null);
-
-				throw new NotImplementedException();
-			}
+			#endregion
 		}
 	}
 }

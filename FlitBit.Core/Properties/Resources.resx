@@ -162,4 +162,7 @@
   <data name="Err_ExceptionOccurredInParallelThread" xml:space="preserve">
     <value>An error occured in a parallel thread.</value>
   </data>
+	<data name="Err_index_out_of_range" xml:space="preserve">
+    <value>index must be zero or greater but less than count</value>
+  </data>
 </root>

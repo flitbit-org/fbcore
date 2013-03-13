@@ -9,7 +9,7 @@ using System.Diagnostics.Contracts;
 
 namespace FlitBit.Core.Buffers
 {
-	internal class CRC
+	internal static class CRC
 	{
 		internal const int CrcTableLength = 256;
 	}
@@ -19,17 +19,15 @@ namespace FlitBit.Core.Buffers
 	/// </summary>
 	public class Crc16
 	{
-		static readonly ushort[] __table = new ushort[CRC.CrcTableLength];
+		static readonly ushort[] Table = new ushort[CRC.CrcTableLength];
 
 		static Crc16()
 		{
 			const ushort poly = 0xA001;
-			ushort value;
-			ushort temp;
 			for (ushort i = 0; i < CRC.CrcTableLength; ++i)
 			{
-				value = 0;
-				temp = i;
+				ushort value = 0;
+				var temp = i;
 				for (byte j = 0; j < 8; ++j)
 				{
 					if (((value ^ temp) & 0x0001) != 0)
@@ -42,7 +40,7 @@ namespace FlitBit.Core.Buffers
 					}
 					temp >>= 1;
 				}
-				__table[i] = value;
+				Table[i] = value;
 			}
 		}
 
@@ -60,7 +58,7 @@ namespace FlitBit.Core.Buffers
 			for (var i = 0; i < len; ++i)
 			{
 				var index = (byte) (crc ^ bytes[i]);
-				crc = (ushort) ((crc >> 8) ^ __table[index]);
+				crc = (ushort) ((crc >> 8) ^ Table[index]);
 			}
 			return crc;
 		}
@@ -71,27 +69,26 @@ namespace FlitBit.Core.Buffers
 	/// </summary>
 	public class Crc32
 	{
-		static readonly uint[] __table = new uint[CRC.CrcTableLength];
+		static readonly uint[] Table = new uint[CRC.CrcTableLength];
 
 		static Crc32()
 		{
-			var poly = 0xedb88320;
-			uint temp = 0;
+			const uint poly = 0xedb88320;
 			for (uint i = 0; i < CRC.CrcTableLength; ++i)
 			{
-				temp = i;
+				var temp = i;
 				for (var j = 8; j > 0; --j)
 				{
 					if ((temp & 1) == 1)
 					{
-						temp = (uint) ((temp >> 1) ^ poly);
+						temp = (temp >> 1) ^ poly;
 					}
 					else
 					{
 						temp >>= 1;
 					}
 				}
-				__table[i] = temp;
+				Table[i] = temp;
 			}
 		}
 
@@ -105,10 +102,10 @@ namespace FlitBit.Core.Buffers
 		{
 			Contract.Requires<ArgumentNullException>(bytes != null);
 			var crc = 0xffffffff;
-			for (var i = 0; i < bytes.Length; ++i)
+			foreach (var b in bytes)
 			{
-				var index = (byte) (((crc) & 0xff) ^ bytes[i]);
-				crc = (uint) ((crc >> 8) ^ __table[index]);
+				var index = (byte) (((crc) & 0xff) ^ b);
+				crc = (crc >> 8) ^ Table[index];
 			}
 			return ~crc;
 		}
@@ -128,7 +125,7 @@ namespace FlitBit.Core.Buffers
 			for (var i = first; i < length; ++i)
 			{
 				var index = (byte) (((crc) & 0xff) ^ bytes[i]);
-				crc = (uint) ((crc >> 8) ^ __table[index]);
+				crc = (crc >> 8) ^ Table[index];
 			}
 			return ~crc;
 		}
@@ -147,12 +144,12 @@ namespace FlitBit.Core.Buffers
 		/// <summary>
 		///   Common initial value of 0x1D0F
 		/// </summary>
-		NonZero_x1D0F = 0x1d0f,
+		NonZeroX1D0F = 0x1d0f,
 
 		/// <summary>
 		///   Common initial value of 0xFFFF
 		/// </summary>
-		NonZero_xFFFF = 0xffff,
+		NonZeroXFfff = 0xffff,
 	}
 
 	/// <summary>
@@ -160,18 +157,17 @@ namespace FlitBit.Core.Buffers
 	/// </summary>
 	public class Crc16Ccitt
 	{
-		static readonly ushort[] __table = new ushort[CRC.CrcTableLength];
+		static readonly ushort[] Table = new ushort[CRC.CrcTableLength];
 
 		readonly ushort _initialValue;
 
 		static Crc16Ccitt()
 		{
 			const ushort poly = 4129;
-			ushort temp, a;
 			for (var i = 0; i < CRC.CrcTableLength; ++i)
 			{
-				temp = 0;
-				a = (ushort) (i << 8);
+				ushort temp = 0;
+				var a = (ushort) (i << 8);
 				for (var j = 0; j < 8; ++j)
 				{
 					if (((temp ^ a) & 0x8000) != 0)
@@ -184,7 +180,7 @@ namespace FlitBit.Core.Buffers
 					}
 					a <<= 1;
 				}
-				__table[i] = temp;
+				Table[i] = temp;
 			}
 		}
 
@@ -207,7 +203,7 @@ namespace FlitBit.Core.Buffers
 			var len = bytes.Length;
 			for (var i = 0; i < len; ++i)
 			{
-				crc = (ushort) ((crc << 8) ^ __table[((crc >> 8) ^ (0xff & bytes[i]))]);
+				crc = (ushort) ((crc << 8) ^ Table[((crc >> 8) ^ (0xff & bytes[i]))]);
 			}
 			return crc;
 		}

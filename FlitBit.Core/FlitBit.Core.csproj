@@ -119,6 +119,7 @@
     <Compile Include="Buffers\IBufferWriter.cs" />
     <Compile Include="Buffers\Structs.cs" />
     <Compile Include="CleanupScope.cs" />
+    <Compile Include="CleanupScopeItemEventArgs.cs" />
     <Compile Include="Collections\BitFlags32.cs" />
     <Compile Include="Collections\BitVector.cs" />
     <Compile Include="Collections\EnumerableKeyValuePairs.cs" />
@@ -137,6 +138,7 @@
     <Compile Include="Factory\IFactoryProvider.cs" />
     <Compile Include="ICleanupScope.cs" />
     <Compile Include="IInterrogateDisposable.cs" />
+    <Compile Include="LogSink.cs" />
     <Compile Include="Meta\AutoImplementedAttribute.cs" />
     <Compile Include="Meta\InstanceScopeKind.cs" />
     <Compile Include="Meta\SensitiveInfoAttribute.cs" />
@@ -160,6 +162,7 @@
     <Compile Include="Parallel\IParallelShared.cs" />
     <Compile Include="Parallel\Notification.cs" />
     <Compile Include="Parallel\Reactor.T.cs" />
+    <Compile Include="Parallel\ReactorBase.cs" />
     <Compile Include="Parallel\ReactorExceptionArgs.cs" />
     <Compile Include="Parallel\ReactorOptions.cs" />
     <Compile Include="Parallel\ReactorState.cs" />
@@ -175,6 +178,7 @@
     <Compile Include="TypeLocks.cs" />
     <Compile Include="Util.cs" />
     <Compile Include="WeakReference.cs" />
+    <Compile Include="WeakReferenceExtensions.cs" />
     <Compile Include="Xml\XDynamic.cs" />
     <Compile Include="Xml\XmlExtensionMethods.cs" />
   </ItemGroup>
@@ -182,6 +186,7 @@
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

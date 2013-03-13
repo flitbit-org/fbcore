@@ -54,6 +54,8 @@ namespace FlitBit.Core.Parallel
 		[ContractClassFor(typeof(IFuture))]
 		internal abstract class ContractForIFuture : IFuture
 		{
+			#region IFuture Members
+
 			public Exception Exception
 			{
 				get { throw new NotImplementedException(); }
@@ -97,6 +99,8 @@ namespace FlitBit.Core.Parallel
 			}
 
 			public void Dispose() { throw new NotImplementedException(); }
+
+			#endregion
 		}
 	}
 }

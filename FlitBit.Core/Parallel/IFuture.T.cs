@@ -45,6 +45,18 @@ namespace FlitBit.Core.Parallel
 		T AwaitValue(TimeSpan timeout);
 
 		/// <summary>
+		///   Marks the completion.
+		/// </summary>
+		/// <param name="value"></param>
+		void MarkCompleted(T value);
+
+		/// <summary>
+		///   Marks the completion.
+		/// </summary>
+		/// <param name="fault"></param>
+		void MarkFaulted(Exception fault);
+
+		/// <summary>
 		///   Tries to get the future's value, blocking the current thread until it is available.
 		/// </summary>
 		/// <param name="value">variable where the value will be returned.</param>
@@ -71,18 +83,6 @@ namespace FlitBit.Core.Parallel
 		/// <exception cref="ParallelException">thrown if production of the future caused a fault.</exception>
 		/// <exception cref="TimeoutException">thrown if the future has not completed in the timeout period.</exception>
 		bool TryGetValue(TimeSpan timeout, out T value);
-
-		/// <summary>
-		///   Marks the completion.
-		/// </summary>
-		/// <param name="value"></param>
-		void MarkCompleted(T value);
-
-		/// <summary>
-		///   Marks the completion.
-		/// </summary>
-		/// <param name="fault"></param>
-		void MarkFaulted(Exception fault);
 	}
 
 	namespace CodeContracts
@@ -93,6 +93,8 @@ namespace FlitBit.Core.Parallel
 		[ContractClassFor(typeof(IFuture<>))]
 		internal abstract class ContractForIFuture<T> : IFuture<T>
 		{
+			#region IFuture<T> Members
+
 			public T AwaitValue()
 			{
 				Contract.Requires<ObjectDisposedException>(!IsDisposed);
@@ -173,6 +175,8 @@ namespace FlitBit.Core.Parallel
 			}
 
 			public void Dispose() { throw new NotImplementedException(); }
+
+			#endregion
 		}
 	}
 }

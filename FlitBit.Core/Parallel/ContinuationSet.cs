@@ -11,7 +11,8 @@ namespace FlitBit.Core.Parallel
 	{
 		readonly ContextFlow _context;
 		readonly ConcurrentQueue<ContinuationNotifier> _continuations = new ConcurrentQueue<ContinuationNotifier>();
-		int _completed = 0;
+
+		int _completed;
 		Exception _fault;
 
 		internal ContinuationSet(ContextFlow context) { _context = context; }
@@ -48,12 +49,12 @@ namespace FlitBit.Core.Parallel
 			return waitable;
 		}
 
-		internal Completion<R> ContinueWithCompletion<R>(ContinuationFunc<R> continuation)
+		internal Completion<TResult> ContinueWithCompletion<TResult>(ContinuationFunc<TResult> continuation)
 		{
-			var waitable = new Completion<R>(continuation.Target);
+			var waitable = new Completion<TResult>(continuation.Target);
 			try
 			{
-				_continuations.Enqueue(new ContinuationNotifierWithCompletion<R>(continuation, waitable));
+				_continuations.Enqueue(new ContinuationNotifierWithCompletion<TResult>(continuation, waitable));
 			}
 			finally
 			{
@@ -67,7 +68,7 @@ namespace FlitBit.Core.Parallel
 
 		internal void NotifyCompletion(Exception e)
 		{
-			Util.VolatileWrite(ref _fault, e);
+			Util.VolatileWrite(out _fault, e);
 			Interlocked.Increment(ref _completed);
 			Go.Parallel(background_Notifier);
 		}
@@ -84,8 +85,8 @@ namespace FlitBit.Core.Parallel
 
 		class ContinuationNotifier
 		{
-			int _continued = 0;
-			Delegate _delg;
+			readonly Delegate _delg;
+			int _continued;
 
 			public ContinuationNotifier(Delegate delg) { this._delg = delg; }
 
@@ -94,23 +95,23 @@ namespace FlitBit.Core.Parallel
 				if (Interlocked.CompareExchange(ref _continued, 1, 0) == 0)
 				{
 					ThreadPool.QueueUserWorkItem(unused =>
+					{
+						if (context != null)
+						{
+							ContextFlow.Ambient.Push(context);
+						}
+						try
+						{
+							PerformContinuation(_delg, e);
+						}
+						finally
 						{
 							if (context != null)
 							{
-								ContextFlow.Ambient.Push(context);
+								ContextFlow.Ambient.TryPop(context);
 							}
-							try
-							{
-								PerformContinuation(_delg, e);
-							}
-							finally
-							{
-								if (context != null)
-								{
-									ContextFlow.Ambient.TryPop(context);
-								}
-							}
-						});
+						}
+					});
 				}
 			}
 
@@ -129,7 +130,7 @@ namespace FlitBit.Core.Parallel
 
 		class ContinuationNotifierWithCompletion : ContinuationNotifier
 		{
-			Completion _comp;
+			readonly Completion _comp;
 
 			public ContinuationNotifierWithCompletion(Continuation delg, Completion comp)
 				: base(delg) { this._comp = comp; }
@@ -162,18 +163,18 @@ namespace FlitBit.Core.Parallel
 			}
 		}
 
-		class ContinuationNotifierWithCompletion<R> : ContinuationNotifier
+		class ContinuationNotifierWithCompletion<TResult> : ContinuationNotifier
 		{
-			Completion<R> _comp;
+			readonly Completion<TResult> _comp;
 
-			public ContinuationNotifierWithCompletion(ContinuationFunc<R> delg, Completion<R> comp)
+			public ContinuationNotifierWithCompletion(ContinuationFunc<TResult> delg, Completion<TResult> comp)
 				: base(delg) { this._comp = comp; }
 
 			protected override void PerformContinuation(Delegate delg, Exception e)
 			{
 				try
 				{
-					var res = (R) ((ContinuationFunc<R>) delg)(e);
+					var res = ((ContinuationFunc<TResult>) delg)(e);
 					try
 					{
 						_comp.MarkCompleted(res);

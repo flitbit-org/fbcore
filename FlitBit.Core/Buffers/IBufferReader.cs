@@ -124,6 +124,16 @@ namespace FlitBit.Core.Buffers
 		long ReadInt64(byte[] buffer, ref int offset);
 
 		/// <summary>
+		///   Reads an instance of type T from the buffer.
+		/// </summary>
+		/// <typeparam name="T">type T</typeparam>
+		/// <param name="buffer">the buffer</param>
+		/// <param name="offset">offest into buffer where reading begins</param>
+		/// <param name="reflector">reflector for reading type T</param>
+		/// <returns>the instance of type T read from the buffer</returns>
+		T ReadReflectedObject<T>(byte[] buffer, ref int offset, IBufferReflector<T> reflector);
+
+		/// <summary>
 		///   Reads a signed byte from the buffer.
 		/// </summary>
 		/// <param name="buffer">the buffer</param>
@@ -179,16 +189,6 @@ namespace FlitBit.Core.Buffers
 		/// <param name="offset">offest into buffer where reading begins</param>
 		/// <returns>a value</returns>
 		ulong ReadUInt64(byte[] buffer, ref int offset);
-
-		/// <summary>
-		///   Reads an instance of type T from the buffer.
-		/// </summary>
-		/// <typeparam name="T">type T</typeparam>
-		/// <param name="buffer">the buffer</param>
-		/// <param name="offset">offest into buffer where reading begins</param>
-		/// <param name="reflector">reflector for reading type T</param>
-		/// <returns>the instance of type T read from the buffer</returns>
-		T ReadReflectedObject<T>(byte[] buffer, ref int offset, IBufferReflector<T> reflector);
 	}
 
 	namespace CodeContracts
@@ -199,6 +199,8 @@ namespace FlitBit.Core.Buffers
 		[ContractClassFor(typeof(IBufferReader))]
 		internal abstract class ContractForIBufferReader : IBufferReader
 		{
+			#region IBufferReader Members
+
 			public Encoding Encoding
 			{
 				get
@@ -253,7 +255,7 @@ namespace FlitBit.Core.Buffers
 			{
 				Contract.Requires<ArgumentNullException>(buffer != null);
 				Contract.Requires<ArgumentOutOfRangeException>(offset >= 0);
-				Contract.Requires<ArgumentOutOfRangeException>((sizeof(char)*arrayLength) <= buffer.Length - offset,
+				Contract.Requires<ArgumentOutOfRangeException>((sizeof(char) * arrayLength) <= buffer.Length - offset,
 																											Resources.Chk_OffsetWouldResultInBufferOverrun);
 
 				throw new NotImplementedException();
@@ -405,6 +407,8 @@ namespace FlitBit.Core.Buffers
 
 				throw new NotImplementedException();
 			}
+
+			#endregion
 		}
 	}
 }
