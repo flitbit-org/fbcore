@@ -36,7 +36,8 @@ namespace FlitBit.Core.Parallel
 		/// </summary>
 		/// <param name="reactor">the reactor's action</param>
 		public Reactor(Action<Reactor<TItem>, TItem> reactor)
-			: this(reactor, DefaultOptions) { }
+			: this(reactor, DefaultOptions)
+		{}
 
 		/// <summary>
 		///   Creates a new instance.
@@ -55,27 +56,18 @@ namespace FlitBit.Core.Parallel
 		/// <summary>
 		///   Indicates whether the reactor is active.
 		/// </summary>
-		public bool IsActive
-		{
-			get { return Thread.VolatileRead(ref _backgroundWorkersActive) > 0; }
-		}
+		public bool IsActive { get { return Thread.VolatileRead(ref _backgroundWorkersActive) > 0; } }
 
 		/// <summary>
 		///   Indicates whethe the reactor is stopping.
 		/// </summary>
-		public bool IsCanceled
-		{
-			get { return Util.VolatileRead(ref _canceled); }
-		}
+		public bool IsCanceled { get { return Util.VolatileRead(ref _canceled); } }
 
 		/// <summary>
 		///   Determines if the reactor is empty. Empty means there are no items
 		///   that have not already been reacted too.
 		/// </summary>
-		public bool IsEmpty
-		{
-			get { return _queue.IsEmpty; }
-		}
+		public bool IsEmpty { get { return _queue.IsEmpty; } }
 
 		/// <summary>
 		///   Indicates whether the reactor is idle.
@@ -95,18 +87,12 @@ namespace FlitBit.Core.Parallel
 		/// <summary>
 		///   Indicates whether the reactor is stopped.
 		/// </summary>
-		public bool IsStopped
-		{
-			get { return IsCanceled && IsIdle; }
-		}
+		public bool IsStopped { get { return IsCanceled && IsIdle; } }
 
 		/// <summary>
 		///   Gets the reactor's options.
 		/// </summary>
-		public ReactorOptions Options
-		{
-			get { return _options; }
-		}
+		public ReactorOptions Options { get { return _options; } }
 
 		/// <summary>
 		///   Stops a reactor. Once stopped a reactor cannot be restarted.
@@ -156,14 +142,18 @@ namespace FlitBit.Core.Parallel
 		/// </summary>
 		/// <param name="levels"></param>
 		/// <returns></returns>
-		protected virtual bool AllowLogEvent(SourceLevels levels) { return false; }
+		protected virtual bool AllowLogEvent(SourceLevels levels)
+		{
+			return false;
+		}
 
 		/// <summary>
 		///   Occurs when logging messages are created on the reactor.
 		/// </summary>
 		/// <param name="eventType"></param>
 		/// <param name="message"></param>
-		protected virtual void OnLogMessage(TraceEventType eventType, string message) { }
+		protected virtual void OnLogMessage(TraceEventType eventType, string message)
+		{}
 
 		void Background_Reactor(object unusedState)
 		{
@@ -341,11 +331,7 @@ namespace FlitBit.Core.Parallel
 		/// <summary>
 		///   Event fired when uncaught exceptions are encountered by the reactor.
 		/// </summary>
-		public event EventHandler<ReactorExceptionArgs> UncaughtException
-		{
-			add { _uncaughtException += value; }
-			remove { _uncaughtException -= value; }
-		}
+		public event EventHandler<ReactorExceptionArgs> UncaughtException { add { _uncaughtException += value; } remove { _uncaughtException -= value; } }
 
 		event EventHandler<ReactorExceptionArgs> _uncaughtException;
 	}

@@ -20,7 +20,8 @@ namespace FlitBit.Core.Buffers
 		///   Creates a new instance.
 		/// </summary>
 		protected BufferWriter()
-			: this(Encoding.Unicode) { }
+			: this(Encoding.Unicode)
+		{}
 
 		/// <summary>
 		///   Creates a new instance.
@@ -121,7 +122,10 @@ namespace FlitBit.Core.Buffers
 		/// <param name="offset">offest into buffer where writing begins</param>
 		/// <param name="value">the value</param>
 		/// <returns>number of bytes written</returns>
-		public int Write(byte[] buffer, ref int offset, char value) { return Write(buffer, ref offset, (Int16) value); }
+		public int Write(byte[] buffer, ref int offset, char value)
+		{
+			return Write(buffer, ref offset, (Int16) value);
+		}
 
 		/// <summary>
 		///   Writes an Int16 to the buffer.
@@ -130,7 +134,10 @@ namespace FlitBit.Core.Buffers
 		/// <param name="offset">offest into buffer where writing begins</param>
 		/// <param name="value">the value</param>
 		/// <returns>number of bytes written</returns>
-		public int Write(byte[] buffer, ref int offset, short value) { return Write(buffer, ref offset, (ushort) value); }
+		public int Write(byte[] buffer, ref int offset, short value)
+		{
+			return Write(buffer, ref offset, (ushort) value);
+		}
 
 		/// <summary>
 		///   Writes an Int32 to the buffer.
@@ -139,7 +146,10 @@ namespace FlitBit.Core.Buffers
 		/// <param name="offset">offest into buffer where writing begins</param>
 		/// <param name="value">the value</param>
 		/// <returns>number of bytes written</returns>
-		public int Write(byte[] buffer, ref int offset, int value) { return Write(buffer, ref offset, (uint) value); }
+		public int Write(byte[] buffer, ref int offset, int value)
+		{
+			return Write(buffer, ref offset, (uint) value);
+		}
 
 		/// <summary>
 		///   Writes an Int64 to the buffer.
@@ -148,7 +158,10 @@ namespace FlitBit.Core.Buffers
 		/// <param name="offset">offest into buffer where writing begins</param>
 		/// <param name="value">the value</param>
 		/// <returns>number of bytes written</returns>
-		public int Write(byte[] buffer, ref int offset, long value) { return Write(buffer, ref offset, (ulong) value); }
+		public int Write(byte[] buffer, ref int offset, long value)
+		{
+			return Write(buffer, ref offset, (ulong) value);
+		}
 
 		/// <summary>
 		///   Writes a decimal value to the buffer.
@@ -176,7 +189,10 @@ namespace FlitBit.Core.Buffers
 		/// <param name="offset">offest into buffer where writing begins</param>
 		/// <param name="value">the value</param>
 		/// <returns>number of bytes written</returns>
-		public int Write(byte[] buffer, ref int offset, double value) { return Write(buffer, ref offset, BitConverter.DoubleToInt64Bits(value)); }
+		public int Write(byte[] buffer, ref int offset, double value)
+		{
+			return Write(buffer, ref offset, BitConverter.DoubleToInt64Bits(value));
+		}
 
 		/// <summary>
 		///   Writes a floating point single value to the buffer.
@@ -185,7 +201,10 @@ namespace FlitBit.Core.Buffers
 		/// <param name="offset">offest into buffer where writing begins</param>
 		/// <param name="value">the value</param>
 		/// <returns>number of bytes written</returns>
-		public int Write(byte[] buffer, ref int offset, float value) { return Write(buffer, ref offset, new Int32SingleUnion(value).AsInt32); }
+		public int Write(byte[] buffer, ref int offset, float value)
+		{
+			return Write(buffer, ref offset, new Int32SingleUnion(value).AsInt32);
+		}
 
 		/// <summary>
 		///   Writes a signed byte to the buffer.
@@ -195,7 +214,10 @@ namespace FlitBit.Core.Buffers
 		/// <param name="value">the value</param>
 		/// <returns>number of bytes written</returns>
 		[CLSCompliant(false)]
-		public int Write(byte[] buffer, ref int offset, sbyte value) { return Write(buffer, ref offset, (byte) value); }
+		public int Write(byte[] buffer, ref int offset, sbyte value)
+		{
+			return Write(buffer, ref offset, (byte) value);
+		}
 
 		/// <summary>
 		///   Writes a UInt16 value to the buffer.
@@ -205,7 +227,10 @@ namespace FlitBit.Core.Buffers
 		/// <param name="value">the value</param>
 		/// <returns>number of bytes written</returns>
 		[CLSCompliant(false)]
-		public virtual int Write(byte[] buffer, ref int offset, ushort value) { throw new NotImplementedException(); }
+		public virtual int Write(byte[] buffer, ref int offset, ushort value)
+		{
+			throw new NotImplementedException();
+		}
 
 		/// <summary>
 		///   Writes a UInt32 value to the buffer.
@@ -215,7 +240,10 @@ namespace FlitBit.Core.Buffers
 		/// <param name="value">the value</param>
 		/// <returns>number of bytes written</returns>
 		[CLSCompliant(false)]
-		public virtual int Write(byte[] buffer, ref int offset, uint value) { throw new NotImplementedException(); }
+		public virtual int Write(byte[] buffer, ref int offset, uint value)
+		{
+			throw new NotImplementedException();
+		}
 
 		/// <summary>
 		///   Writes a UInt64 value to the buffer.
@@ -225,7 +253,10 @@ namespace FlitBit.Core.Buffers
 		/// <param name="value">the value</param>
 		/// <returns>number of bytes written</returns>
 		[CLSCompliant(false)]
-		public virtual int Write(byte[] buffer, ref int offset, ulong value) { throw new NotImplementedException(); }
+		public virtual int Write(byte[] buffer, ref int offset, ulong value)
+		{
+			throw new NotImplementedException();
+		}
 
 		/// <summary>
 		///   Writes a Guid value to the buffer.
@@ -234,7 +265,10 @@ namespace FlitBit.Core.Buffers
 		/// <param name="offset">offest into buffer where writing begins</param>
 		/// <param name="value">the value</param>
 		/// <returns>number of bytes written</returns>
-		public int Write(byte[] buffer, ref int offset, Guid value) { return Write(buffer, ref offset, value.ToByteArray()); }
+		public int Write(byte[] buffer, ref int offset, Guid value)
+		{
+			return Write(buffer, ref offset, value.ToByteArray());
+		}
 
 		/// <summary>
 		///   Writes a string to the buffer.
@@ -244,7 +278,10 @@ namespace FlitBit.Core.Buffers
 		/// <param name="value">the string</param>
 		/// <param name="byteLengthPrefix">whether a byte length prefix should be written</param>
 		/// <returns>number of bytes written</returns>
-		public int Write(byte[] buffer, ref int offset, string value, bool byteLengthPrefix) { return Write(buffer, ref offset, value, byteLengthPrefix, this.Encoding); }
+		public int Write(byte[] buffer, ref int offset, string value, bool byteLengthPrefix)
+		{
+			return Write(buffer, ref offset, value, byteLengthPrefix, this.Encoding);
+		}
 
 		/// <summary>
 		///   Writes a string to the buffer.
@@ -287,7 +324,10 @@ namespace FlitBit.Core.Buffers
 		/// <param name="value">the value</param>
 		/// <param name="byteLengthPrefix">whether a byte length prefix should be written</param>
 		/// <returns>number of bytes written</returns>
-		public int Write(byte[] buffer, ref int offset, Char[] value, bool byteLengthPrefix) { return Write(buffer, ref offset, value, byteLengthPrefix, this.Encoding); }
+		public int Write(byte[] buffer, ref int offset, Char[] value, bool byteLengthPrefix)
+		{
+			return Write(buffer, ref offset, value, byteLengthPrefix, this.Encoding);
+		}
 
 		/// <summary>
 		///   Writes an array of chars to the buffer.
@@ -332,7 +372,10 @@ namespace FlitBit.Core.Buffers
 		/// <param name="value">the instance</param>
 		/// <returns>number of bytes written</returns>
 		[CLSCompliant(false)]
-		public int WriteReflectedObject<T>(byte[] buffer, ref int offset, IBufferReflector<T> reflector, T value) { return reflector.WriteToBuffer(this, buffer, ref offset, value); }
+		public int WriteReflectedObject<T>(byte[] buffer, ref int offset, IBufferReflector<T> reflector, T value)
+		{
+			return reflector.WriteToBuffer(this, buffer, ref offset, value);
+		}
 
 		#endregion
 

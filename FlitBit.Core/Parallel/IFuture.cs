@@ -56,25 +56,13 @@ namespace FlitBit.Core.Parallel
 		{
 			#region IFuture Members
 
-			public Exception Exception
-			{
-				get { throw new NotImplementedException(); }
-			}
+			public Exception Exception { get { throw new NotImplementedException(); } }
 
-			public bool IsCompleted
-			{
-				get { throw new NotImplementedException(); }
-			}
+			public bool IsCompleted { get { throw new NotImplementedException(); } }
 
-			public bool IsFaulted
-			{
-				get { throw new NotImplementedException(); }
-			}
+			public bool IsFaulted { get { throw new NotImplementedException(); } }
 
-			public object SyncObject
-			{
-				get { throw new NotImplementedException(); }
-			}
+			public object SyncObject { get { throw new NotImplementedException(); } }
 
 			public bool Wait(TimeSpan timeout)
 			{
@@ -93,12 +81,12 @@ namespace FlitBit.Core.Parallel
 				}
 			}
 
-			public bool IsDisposed
-			{
-				get { throw new NotImplementedException(); }
-			}
+			public bool IsDisposed { get { throw new NotImplementedException(); } }
 
-			public void Dispose() { throw new NotImplementedException(); }
+			public void Dispose()
+			{
+				throw new NotImplementedException();
+			}
 
 			#endregion
 		}

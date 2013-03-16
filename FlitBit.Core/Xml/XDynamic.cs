@@ -46,7 +46,10 @@ namespace FlitBit.Core.Xml
 		/// </summary>
 		/// <param name="text">source xml text</param>
 		/// <returns>a dynamic object shaped like the input xml</returns>
-		public static dynamic Parse(string text) { return Parse(text, false); }
+		public static dynamic Parse(string text)
+		{
+			return Parse(text, false);
+		}
 
 		/// <summary>
 		///   Creates an object over the XElement given.

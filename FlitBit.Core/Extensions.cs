@@ -164,19 +164,29 @@ namespace FlitBit.Core
 		{
 			Contract.Requires<ArgumentNullException>(ex != null);
 			var builder = new StringBuilder(400)
-				.Append(ex.GetType().FullName).Append(": ").Append(ex.Message);
+				.Append(ex.GetType()
+									.FullName)
+				.Append(": ")
+				.Append(ex.Message);
 			var e = ex.InnerException;
 			var indent = 1;
 			while (e != null)
 			{
-				builder.Append(Environment.NewLine).Append(new String('\t', indent++)).Append("InnerException >")
-							.Append(e.GetType().FullName).Append(": ").Append(e.Message);
+				builder.Append(Environment.NewLine)
+							.Append(new String('\t', indent++))
+							.Append("InnerException >")
+							.Append(e.GetType()
+											.FullName)
+							.Append(": ")
+							.Append(e.Message);
 
 				e = e.InnerException;
 			}
 			if (exposeStackTrace)
 			{
-				builder.Append(Environment.NewLine).Append(new String('\t', indent)).Append("\t StackTrace >>")
+				builder.Append(Environment.NewLine)
+							.Append(new String('\t', indent))
+							.Append("\t StackTrace >>")
 							.Append(ex.StackTrace);
 			}
 			return builder.ToString();
@@ -321,7 +331,10 @@ namespace FlitBit.Core
 		/// </summary>
 		/// <param name="source">the source</param>
 		/// <returns>the JSON representation of the source</returns>
-		public static string ToJson(this object source) { return JsonConvert.SerializeObject(source, Formatting.Indented, new IsoDateTimeConverter()); }
+		public static string ToJson(this object source)
+		{
+			return JsonConvert.SerializeObject(source, Formatting.Indented, new IsoDateTimeConverter());
+		}
 
 		/// <summary>
 		///   Converts an enumerable to a readonly collection.
@@ -367,7 +380,12 @@ namespace FlitBit.Core
 			return items;
 		}
 
-		static dynamic ConvertArrayContainingObjects(IEnumerable<JToken> arr) { return arr.Select(item => item.Type == JTokenType.Null ? null : ConvertJson(item)).Cast<ExpandoObject>().ToList(); }
+		static dynamic ConvertArrayContainingObjects(IEnumerable<JToken> arr)
+		{
+			return arr.Select(item => item.Type == JTokenType.Null ? null : ConvertJson(item))
+								.Cast<ExpandoObject>()
+								.ToList();
+		}
 
 		static dynamic ConvertArrayContainingSimilarTypes(JArray arr)
 		{
@@ -410,7 +428,11 @@ namespace FlitBit.Core
 			throw new NotImplementedException();
 		}
 
-		static dynamic ConvertArrayContainingTypeof<T>(IEnumerable<JToken> arr) { return arr.Select(item => item.Type == JTokenType.Null ? default(T) : item.Value<T>()).ToList(); }
+		static dynamic ConvertArrayContainingTypeof<T>(IEnumerable<JToken> arr)
+		{
+			return arr.Select(item => item.Type == JTokenType.Null ? default(T) : item.Value<T>())
+								.ToList();
+		}
 
 		static dynamic ConvertJson(IEnumerable<JToken> token)
 		{
@@ -422,11 +444,13 @@ namespace FlitBit.Core
 			if (token is JObject)
 			{
 				var expando = new ExpandoObject();
-				(from childToken in token where childToken is JProperty select childToken as JProperty).ToList()
-																																															.ForEach(
-																																																			 property =>
-																																																				((IDictionary<string, object>) expando).Add(property.Name,
-																																																																										ConvertJson(property.Value)));
+				(from childToken in token
+				where childToken is JProperty
+				select childToken as JProperty).ToList()
+																			.ForEach(
+																							 property =>
+																								((IDictionary<string, object>) expando).Add(property.Name,
+																																														ConvertJson(property.Value)));
 				return expando;
 			}
 			var arr = token as JArray;

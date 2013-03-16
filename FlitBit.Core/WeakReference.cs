@@ -21,7 +21,8 @@ namespace FlitBit.Core
 		/// </summary>
 		/// <param name="target">a reference target.</param>
 		public WeakReference(T target)
-			: base(target) { }
+			: base(target)
+		{}
 
 		/// <summary>
 		///   Creates a new instance (from serialization)
@@ -29,14 +30,12 @@ namespace FlitBit.Core
 		/// <param name="info">serialization info</param>
 		/// <param name="context">serialization context</param>
 		protected WeakReference(SerializationInfo info, StreamingContext context)
-			: base(info, context) { }
+			: base(info, context)
+		{}
 
 		/// <summary>
 		///   Gets the referenced target as type T.
 		/// </summary>
-		public T StrongTarget
-		{
-			get { return (T) this.Target; }
-		}
+		public T StrongTarget { get { return (T) this.Target; } }
 	}
 }

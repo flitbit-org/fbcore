@@ -67,14 +67,17 @@ namespace FlitBit.Core
 				throw new NotImplementedException();
 			}
 
-			public bool IsDisposed
+			public bool IsDisposed { get { throw new NotImplementedException(); } }
+
+			public void Dispose()
 			{
-				get { throw new NotImplementedException(); }
+				throw new NotImplementedException();
 			}
 
-			public void Dispose() { throw new NotImplementedException(); }
-
-			public object ParallelShare() { throw new NotImplementedException(); }
+			public object ParallelShare()
+			{
+				throw new NotImplementedException();
+			}
 
 			#endregion
 		}

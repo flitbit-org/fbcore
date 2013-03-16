@@ -33,7 +33,9 @@ namespace FlitBit.Core.Net
 		///   String used as the Client in HTTP requests.
 		/// </summary>
 		public static readonly string ResourceClientString = String
-			.Concat(Resources.ResourceClientName, Assembly.GetExecutingAssembly().GetName().Version.ToString());
+			.Concat(Resources.ResourceClientName, Assembly.GetExecutingAssembly()
+																										.GetName()
+																										.Version.ToString());
 
 		/// <summary>
 		///   Deserializes a response to an object of type T.
@@ -136,7 +138,10 @@ namespace FlitBit.Core.Net
 		/// <param name="req">the http request</param>
 		/// <param name="body">the post body (will be serialized as JSON)</param>
 		/// <param name="after">an action to be called upon completion</param>
-		public static void HttpPostJson<TBody>(this HttpWebRequest req, TBody body, Action<Exception, HttpWebResponse> after) { HttpPostJson(req, body, Encoding.UTF8, after); }
+		public static void HttpPostJson<TBody>(this HttpWebRequest req, TBody body, Action<Exception, HttpWebResponse> after)
+		{
+			HttpPostJson(req, body, Encoding.UTF8, after);
+		}
 
 		/// <summary>
 		///   Performs an HTTP POST against a URI as JSON.
@@ -155,7 +160,10 @@ namespace FlitBit.Core.Net
 			var lclEncoding = encoding ?? Encoding.UTF8;
 
 			var bodyAsString = JsonConvert.SerializeObject(body, Formatting.None,
-																										new JsonSerializerSettings {MissingMemberHandling = MissingMemberHandling.Ignore});
+																										new JsonSerializerSettings
+																										{
+																											MissingMemberHandling = MissingMemberHandling.Ignore
+																										});
 			var buffer = lclEncoding.GetBytes(bodyAsString);
 
 			ExecuteHttpVerbWithPostBody(req, buffer, "application/json", "POST", after);
@@ -173,7 +181,10 @@ namespace FlitBit.Core.Net
 		/// <param name="after">
 		///   an action to be called upon completion
 		/// </param>
-		public static void HttpPostXml(this HttpWebRequest req, XmlDocument body, Action<Exception, HttpWebResponse> after) { HttpPostXml(req, body, Encoding.UTF8, after); }
+		public static void HttpPostXml(this HttpWebRequest req, XmlDocument body, Action<Exception, HttpWebResponse> after)
+		{
+			HttpPostXml(req, body, Encoding.UTF8, after);
+		}
 
 		/// <summary>
 		///   Performs an HTTP POST against a URI as XML.
@@ -212,7 +223,10 @@ namespace FlitBit.Core.Net
 		/// <param name="req">the http request</param>
 		/// <param name="body">the post body (will be serialized as JSON)</param>
 		/// <param name="after">an action to be called upon completion</param>
-		public static void HttpPutJson<TBody>(this HttpWebRequest req, TBody body, Action<Exception, HttpWebResponse> after) { HttpPutJson(req, body, Encoding.UTF8, after); }
+		public static void HttpPutJson<TBody>(this HttpWebRequest req, TBody body, Action<Exception, HttpWebResponse> after)
+		{
+			HttpPutJson(req, body, Encoding.UTF8, after);
+		}
 
 		/// <summary>
 		///   Performs an HTTP PUT against a URI as JSON.
@@ -231,7 +245,10 @@ namespace FlitBit.Core.Net
 			var lclEncoding = encoding ?? Encoding.UTF8;
 
 			var bodyAsString = JsonConvert.SerializeObject(body, Formatting.None,
-																										new JsonSerializerSettings {MissingMemberHandling = MissingMemberHandling.Ignore});
+																										new JsonSerializerSettings
+																										{
+																											MissingMemberHandling = MissingMemberHandling.Ignore
+																										});
 			var buffer = lclEncoding.GetBytes(bodyAsString);
 
 			ExecuteHttpVerbWithPostBody(req, buffer, "application/json", "PUT", after);
@@ -241,7 +258,10 @@ namespace FlitBit.Core.Net
 		/// <param name="req">The request.</param>
 		/// <param name="body">The body.</param>
 		/// <param name="after">The continuation to be executed after.</param>
-		public static void HttpPutText(this HttpWebRequest req, string body, Action<Exception, HttpWebResponse> after) { HttpPutText(req, body, Encoding.UTF8, after); }
+		public static void HttpPutText(this HttpWebRequest req, string body, Action<Exception, HttpWebResponse> after)
+		{
+			HttpPutText(req, body, Encoding.UTF8, after);
+		}
 
 		/// <summary>Performs an HTTP PUT against a URI as text.</summary>
 		/// <param name="req">The request.</param>
@@ -263,7 +283,10 @@ namespace FlitBit.Core.Net
 		/// <param name="req">the http request</param>
 		/// <param name="body">the post body</param>
 		/// <param name="after">an action to be called upon completion</param>
-		public static void HttpPutXml(this HttpWebRequest req, XElement body, Action<Exception, HttpWebResponse> after) { HttpPutXml(req, body, Encoding.UTF8, after); }
+		public static void HttpPutXml(this HttpWebRequest req, XElement body, Action<Exception, HttpWebResponse> after)
+		{
+			HttpPutXml(req, body, Encoding.UTF8, after);
+		}
 
 		/// <summary>
 		///   Performs an HTTP PUT against a URI as XML.
@@ -303,7 +326,10 @@ namespace FlitBit.Core.Net
 		/// </summary>
 		/// <param name="uri">the URI</param>
 		/// <returns>a web request</returns>
-		public static HttpWebRequest MakeResourceRequest(this Uri uri) { return MakeResourceRequest(uri, false); }
+		public static HttpWebRequest MakeResourceRequest(this Uri uri)
+		{
+			return MakeResourceRequest(uri, false);
+		}
 
 		/// <summary>
 		///   Given a URI, makes a web request.
@@ -362,7 +388,8 @@ namespace FlitBit.Core.Net
 			Contract.Ensures(Contract.Result<Completion<HttpWebResponse>>() != null);
 			Contract.Assert(uri.Scheme != null && uri.Scheme.StartsWith("http"), "URI must be http(s) scheme");
 
-			return uri.MakeResourceRequest().ParallelGet(responseHandler);
+			return uri.MakeResourceRequest()
+								.ParallelGet(responseHandler);
 		}
 
 		/// <summary>

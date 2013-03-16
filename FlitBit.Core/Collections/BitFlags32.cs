@@ -38,7 +38,10 @@ namespace FlitBit.Core.Collections
 		///   Creates a new instance.
 		/// </summary>
 		/// <param name="flags">flag values</param>
-		public BitFlags32(int flags) { _flags = flags; }
+		public BitFlags32(int flags)
+		{
+			_flags = flags;
+		}
 
 		/// <summary>
 		///   Gets and sets bit values to ON (true) or OFF (false).
@@ -59,18 +62,12 @@ namespace FlitBit.Core.Collections
 		/// <summary>
 		///   Indicates whether the bit flags are empty (none set to true).
 		/// </summary>
-		public bool IsEmpty
-		{
-			get { return _flags == 0; }
-		}
+		public bool IsEmpty { get { return _flags == 0; } }
 
 		/// <summary>
 		///   Number of flags currently set to true.
 		/// </summary>
-		public int TrueFlagCount
-		{
-			get { return _flags.CountBitsInFlag(); }
-		}
+		public int TrueFlagCount { get { return _flags.CountBitsInFlag(); } }
 
 		/// <summary>
 		///   Determines if the flags are equal to another object.
@@ -121,14 +118,20 @@ namespace FlitBit.Core.Collections
 		/// </summary>
 		/// <param name="flags">flags to turn off</param>
 		/// <returns>the flags for chaining</returns>
-		public BitFlags32 ExcludeFlags(int flags) { return new BitFlags32(_flags &= ~(flags)); }
+		public BitFlags32 ExcludeFlags(int flags)
+		{
+			return new BitFlags32(_flags &= ~(flags));
+		}
 
 		/// <summary>
 		///   Includes all of the flags given. (turns on bits corresponding to the bits given)
 		/// </summary>
 		/// <param name="flags">flags to turn on</param>
 		/// <returns>the flags for chaining</returns>
-		public BitFlags32 IncludeFlags(int flags) { return new BitFlags32(_flags | flags); }
+		public BitFlags32 IncludeFlags(int flags)
+		{
+			return new BitFlags32(_flags | flags);
+		}
 
 		/// <summary>
 		///   Turns the bit off at the position indicated.
@@ -166,21 +169,30 @@ namespace FlitBit.Core.Collections
 		/// <param name="lhs">left hand comparand</param>
 		/// <param name="rhs">right hand comparand</param>
 		/// <returns>true if the comparands are equal; otherwise false</returns>
-		public static bool operator ==(BitFlags32 lhs, BitFlags32 rhs) { return lhs._flags == rhs._flags; }
+		public static bool operator ==(BitFlags32 lhs, BitFlags32 rhs)
+		{
+			return lhs._flags == rhs._flags;
+		}
 
 		/// <summary>
 		///   Implicit conversion operator from BitFlags to Int32.
 		/// </summary>
 		/// <param name="flags">value to convert</param>
 		/// <returns>an Int32 representation of the flags</returns>
-		public static implicit operator int(BitFlags32 flags) { return flags._flags; }
+		public static implicit operator int(BitFlags32 flags)
+		{
+			return flags._flags;
+		}
 
 		/// <summary>
 		///   Implicit converstion operator from Int32 to BitFlags32
 		/// </summary>
 		/// <param name="flags">value to convert</param>
 		/// <returns>a BitFlags32</returns>
-		public static implicit operator BitFlags32(int flags) { return new BitFlags32(flags); }
+		public static implicit operator BitFlags32(int flags)
+		{
+			return new BitFlags32(flags);
+		}
 
 		/// <summary>
 		///   Inequality operator.
@@ -188,7 +200,10 @@ namespace FlitBit.Core.Collections
 		/// <param name="lhs">left hand comparand</param>
 		/// <param name="rhs">right hand comparand</param>
 		/// <returns>true if the comparands are NOT equal; otherwise false</returns>
-		public static bool operator !=(BitFlags32 lhs, BitFlags32 rhs) { return lhs._flags != rhs._flags; }
+		public static bool operator !=(BitFlags32 lhs, BitFlags32 rhs)
+		{
+			return lhs._flags != rhs._flags;
+		}
 
 		#region IEquatable<BitFlags32> Members
 
@@ -197,7 +212,10 @@ namespace FlitBit.Core.Collections
 		/// </summary>
 		/// <param name="other">the other</param>
 		/// <returns>true if equal; otherwise false</returns>
-		public bool Equals(BitFlags32 other) { return _flags == other._flags; }
+		public bool Equals(BitFlags32 other)
+		{
+			return _flags == other._flags;
+		}
 
 		#endregion
 	}

@@ -16,7 +16,10 @@ namespace FlitBit.Core.Parallel
 		Exception _fault;
 		T _res;
 
-		internal ContinuationSet(ContextFlow context) { _context = context; }
+		internal ContinuationSet(ContextFlow context)
+		{
+			_context = context;
+		}
 
 		internal void Continue(Continuation<T> continuation)
 		{
@@ -91,7 +94,10 @@ namespace FlitBit.Core.Parallel
 			readonly Delegate _delg;
 			int _continued;
 
-			public ContinuationNotifier(Delegate delg) { this._delg = delg; }
+			public ContinuationNotifier(Delegate delg)
+			{
+				this._delg = delg;
+			}
 
 			public void ContinueWith(ContextFlow context, Exception e, T res)
 			{
@@ -136,7 +142,10 @@ namespace FlitBit.Core.Parallel
 			readonly Completion _comp;
 
 			public ContinuationNotifierWithCompletion(Continuation<T> delg, Completion comp)
-				: base(delg) { this._comp = comp; }
+				: base(delg)
+			{
+				this._comp = comp;
+			}
 
 			protected override void PerformContinuation(Delegate delg, Exception e, T res)
 			{
@@ -171,7 +180,10 @@ namespace FlitBit.Core.Parallel
 			readonly Completion<TResult> _comp;
 
 			public ContinuationNotifierWithCompletion(ContinuationFunc<T, TResult> delg, Completion<TResult> comp)
-				: base(delg) { this._comp = comp; }
+				: base(delg)
+			{
+				this._comp = comp;
+			}
 
 			protected override void PerformContinuation(Delegate delg, Exception e, T res)
 			{

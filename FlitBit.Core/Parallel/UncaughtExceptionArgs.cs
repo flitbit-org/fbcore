@@ -17,7 +17,10 @@ namespace FlitBit.Core.Parallel
 		///   Creates a new instance.
 		/// </summary>
 		/// <param name="e"></param>
-		public UncaughtExceptionArgs(Exception e) { this.Error = e; }
+		public UncaughtExceptionArgs(Exception e)
+		{
+			this.Error = e;
+		}
 
 		/// <summary>
 		///   The uncaught exception.

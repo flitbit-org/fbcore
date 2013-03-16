@@ -31,7 +31,10 @@ namespace FlitBit.Core.Parallel
 		/// <summary>
 		///   Constructs a new instance.
 		/// </summary>
-		public Future() { _status = StatusWaiting; }
+		public Future()
+		{
+			_status = StatusWaiting;
+		}
 
 		/// <summary>
 		///   Constructs a new instance.
@@ -84,10 +87,7 @@ namespace FlitBit.Core.Parallel
 		///   Gets the future's synchronization object.
 		/// </summary>
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		public object SyncObject
-		{
-			get { return this._sync; }
-		}
+		public object SyncObject { get { return this._sync; } }
 
 		/// <summary>
 		///   Marks the completion.
@@ -128,26 +128,17 @@ namespace FlitBit.Core.Parallel
 		/// <summary>
 		///   Indicates whether the wait has completed.
 		/// </summary>
-		public bool IsCompleted
-		{
-			get { return Thread.VolatileRead(ref _status) == StatusCompleted; }
-		}
+		public bool IsCompleted { get { return Thread.VolatileRead(ref _status) == StatusCompleted; } }
 
 		/// <summary>
 		///   Determines if the completion resulted in an error.
 		/// </summary>
-		public bool IsFaulted
-		{
-			get { return Util.VolatileRead(ref _fault) != null; }
-		}
+		public bool IsFaulted { get { return Util.VolatileRead(ref _fault) != null; } }
 
 		/// <summary>
 		///   Gets the exception that caused the fault.
 		/// </summary>
-		public Exception Exception
-		{
-			get { return Util.VolatileRead(ref _fault); }
-		}
+		public Exception Exception { get { return Util.VolatileRead(ref _fault); } }
 
 		/// <summary>
 		///   Waits (blocks the current thread) until the value is present or the timeout is exceeded.
@@ -177,10 +168,7 @@ namespace FlitBit.Core.Parallel
 		///   has been set; whichever comes sooner.
 		/// </summary>
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		public T Value
-		{
-			get { return AwaitValue(); }
-		}
+		public T Value { get { return AwaitValue(); } }
 
 		/// <summary>
 		///   Tries to read the value. This call will not block the calling
@@ -323,10 +311,7 @@ namespace FlitBit.Core.Parallel
 		///   Gets a wait handle for the future.
 		/// </summary>
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		public WaitHandle WaitHandle
-		{
-			get { return Waitable.WaitHandle; }
-		}
+		public WaitHandle WaitHandle { get { return Waitable.WaitHandle; } }
 
 		#endregion
 	}

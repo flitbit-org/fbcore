@@ -22,7 +22,10 @@ namespace FlitBit.Core.Parallel
 			other.ForkContext(this);
 		}
 
-		ContextFlow() { Ambient.Push(this); }
+		ContextFlow()
+		{
+			Ambient.Push(this);
+		}
 
 		/// <summary>
 		///   Performs the disposal.
@@ -48,15 +51,19 @@ namespace FlitBit.Core.Parallel
 						if (cstack != null)
 						{
 							var builder = new StringBuilder(2000);
-							builder.Append(Environment.NewLine).Append(">> Creation stack... ");
+							builder.Append(Environment.NewLine)
+										.Append(">> Creation stack... ");
 							foreach (var frame in CreationStack)
 							{
 								var method = frame.GetMethod();
 								builder.Append(Environment.NewLine)
 											.Append("\t >> ")
-											.Append(method.DeclaringType.GetReadableSimpleName()).Append(".").Append(method.Name);
+											.Append(method.DeclaringType.GetReadableSimpleName())
+											.Append(".")
+											.Append(method.Name);
 							}
-							builder.Append(Environment.NewLine).Append(">> Disposal stack... ");
+							builder.Append(Environment.NewLine)
+										.Append(">> Disposal stack... ");
 							var stackFrames = new StackTrace().GetFrames();
 							if (stackFrames != null)
 							{
@@ -65,7 +72,9 @@ namespace FlitBit.Core.Parallel
 									var method = frame.GetMethod();
 									builder.Append(Environment.NewLine)
 												.Append("\t >> ")
-												.Append(method.DeclaringType.GetReadableSimpleName()).Append(".").Append(method.Name);
+												.Append(method.DeclaringType.GetReadableSimpleName())
+												.Append(".")
+												.Append(method.Name);
 								}
 							}
 
@@ -119,7 +128,8 @@ namespace FlitBit.Core.Parallel
 			{
 				if (it.Value.Count > 0)
 				{
-					it.Value.Peek().Fork(fork);
+					it.Value.Peek()
+						.Fork(fork);
 				}
 			}
 			return this;
@@ -138,7 +148,8 @@ namespace FlitBit.Core.Parallel
 			Stack<Forker> stack;
 			if (_stacks.TryGetValue(typeof(T), out stack) && stack.Count > 0)
 			{
-				ambient = (T) stack.Peek().Item;
+				ambient = (T) stack.Peek()
+													.Item;
 				return true;
 			}
 			ambient = default(T);
@@ -151,7 +162,8 @@ namespace FlitBit.Core.Parallel
 			Stack<Forker> stack;
 			if (_stacks.TryGetValue(typeof(T), out stack) && stack.Count > 0)
 			{
-				return ReferenceEquals(comparand, stack.Pop().Item);
+				return ReferenceEquals(comparand, stack.Pop()
+																							.Item);
 			}
 			return false;
 		}
@@ -295,7 +307,10 @@ namespace FlitBit.Core.Parallel
 		class Forker<T> : Forker
 			where T : IParallelShared
 		{
-			public Forker(object item) { this.Item = item; }
+			public Forker(object item)
+			{
+				this.Item = item;
+			}
 
 			public override void Fork(ContextFlow context)
 			{

@@ -43,17 +43,11 @@ namespace FlitBit.Core.Buffers
 		/// <summary>
 		///   Returns the value of the instance as an Int32.
 		/// </summary>
-		internal int AsInt32
-		{
-			get { return i; }
-		}
+		internal int AsInt32 { get { return i; } }
 
 		/// <summary>
 		///   Returns the value of the instance as a Single.
 		/// </summary>
-		internal float AsSingle
-		{
-			get { return f; }
-		}
+		internal float AsSingle { get { return f; } }
 	}
 }

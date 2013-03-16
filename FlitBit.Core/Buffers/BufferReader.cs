@@ -20,7 +20,8 @@ namespace FlitBit.Core.Buffers
 		///   Creates a new instance.
 		/// </summary>
 		protected BufferReader()
-			: this(Encoding.Unicode) { }
+			: this(Encoding.Unicode)
+		{}
 
 		/// <summary>
 		///   Creates a new instance.
@@ -46,7 +47,10 @@ namespace FlitBit.Core.Buffers
 		/// <param name="buffer">the buffer</param>
 		/// <param name="offset">offest into buffer where reading begins</param>
 		/// <returns>a value</returns>
-		public bool ReadBoolean(byte[] buffer, ref int offset) { return buffer[offset++] == 1; }
+		public bool ReadBoolean(byte[] buffer, ref int offset)
+		{
+			return buffer[offset++] == 1;
+		}
 
 		/// <summary>
 		///   Reads a byte array from the buffer.
@@ -54,7 +58,10 @@ namespace FlitBit.Core.Buffers
 		/// <param name="buffer">the buffer</param>
 		/// <param name="offset">offest into buffer where reading begins</param>
 		/// <returns>a byte array</returns>
-		public byte ReadByte(byte[] buffer, ref int offset) { return buffer[offset++]; }
+		public byte ReadByte(byte[] buffer, ref int offset)
+		{
+			return buffer[offset++];
+		}
 
 		/// <summary>
 		///   Reads a byte array from the buffer.
@@ -152,7 +159,10 @@ namespace FlitBit.Core.Buffers
 		/// <param name="buffer">the buffer</param>
 		/// <param name="offset">offest into buffer where reading begins</param>
 		/// <returns>a double value</returns>
-		public double ReadDouble(byte[] buffer, ref int offset) { return BitConverter.Int64BitsToDouble(ReadInt64(buffer, ref offset)); }
+		public double ReadDouble(byte[] buffer, ref int offset)
+		{
+			return BitConverter.Int64BitsToDouble(ReadInt64(buffer, ref offset));
+		}
 
 		/// <summary>
 		///   Reads a single from the buffer.
@@ -160,7 +170,10 @@ namespace FlitBit.Core.Buffers
 		/// <param name="buffer">the buffer</param>
 		/// <param name="offset">offest into buffer where reading begins</param>
 		/// <returns>a single value</returns>
-		public float ReadSingle(byte[] buffer, ref int offset) { return new Int32SingleUnion(ReadInt32(buffer, ref offset)).AsSingle; }
+		public float ReadSingle(byte[] buffer, ref int offset)
+		{
+			return new Int32SingleUnion(ReadInt32(buffer, ref offset)).AsSingle;
+		}
 
 		/// <summary>
 		///   Reads a signed byte from the buffer.
@@ -168,7 +181,10 @@ namespace FlitBit.Core.Buffers
 		/// <param name="buffer">the buffer</param>
 		/// <param name="offset">offest into buffer where reading begins</param>
 		/// <returns>a signed byte</returns>
-		public sbyte ReadSByte(byte[] buffer, ref int offset) { return (sbyte) ReadByte(buffer, ref offset); }
+		public sbyte ReadSByte(byte[] buffer, ref int offset)
+		{
+			return (sbyte) ReadByte(buffer, ref offset);
+		}
 
 		/// <summary>
 		///   Reads a UInt32 from the buffer.
@@ -176,7 +192,10 @@ namespace FlitBit.Core.Buffers
 		/// <param name="buffer">the buffer</param>
 		/// <param name="offset">offest into buffer where reading begins</param>
 		/// <returns>a UInt32 value</returns>
-		public virtual ushort ReadUInt16(byte[] buffer, ref int offset) { throw new NotImplementedException(); }
+		public virtual ushort ReadUInt16(byte[] buffer, ref int offset)
+		{
+			throw new NotImplementedException();
+		}
 
 		/// <summary>
 		///   Reads a UInt32 from the buffer.
@@ -184,7 +203,10 @@ namespace FlitBit.Core.Buffers
 		/// <param name="buffer">the buffer</param>
 		/// <param name="offset">offest into buffer where reading begins</param>
 		/// <returns>a UInt32 value</returns>
-		public virtual uint ReadUInt32(byte[] buffer, ref int offset) { throw new NotImplementedException(); }
+		public virtual uint ReadUInt32(byte[] buffer, ref int offset)
+		{
+			throw new NotImplementedException();
+		}
 
 		/// <summary>
 		///   Reads a UInt64 from the buffer.
@@ -192,7 +214,10 @@ namespace FlitBit.Core.Buffers
 		/// <param name="buffer">the buffer</param>
 		/// <param name="offset">offest into buffer where reading begins</param>
 		/// <returns>a UInt64 value</returns>
-		public virtual ulong ReadUInt64(byte[] buffer, ref int offset) { throw new NotImplementedException(); }
+		public virtual ulong ReadUInt64(byte[] buffer, ref int offset)
+		{
+			throw new NotImplementedException();
+		}
 
 		/// <summary>
 		///   Reads a Guid from the buffer.
@@ -200,7 +225,10 @@ namespace FlitBit.Core.Buffers
 		/// <param name="buffer">the buffer</param>
 		/// <param name="offset">offest into buffer where reading begins</param>
 		/// <returns>a guid value</returns>
-		public Guid ReadGuid(byte[] buffer, ref int offset) { return new Guid(ReadBytes(buffer, ref offset, 16)); }
+		public Guid ReadGuid(byte[] buffer, ref int offset)
+		{
+			return new Guid(ReadBytes(buffer, ref offset, 16));
+		}
 
 		/// <summary>
 		///   Reads an length-prefixed string from the buffer.
@@ -208,7 +236,10 @@ namespace FlitBit.Core.Buffers
 		/// <param name="buffer">the buffer</param>
 		/// <param name="offset">offest into buffer where reading begins</param>
 		/// <returns>a string value</returns>
-		public string ReadStringWithByteCountPrefix(byte[] buffer, ref int offset) { return ReadStringWithByteCountPrefix(buffer, ref offset, this.Encoding); }
+		public string ReadStringWithByteCountPrefix(byte[] buffer, ref int offset)
+		{
+			return ReadStringWithByteCountPrefix(buffer, ref offset, this.Encoding);
+		}
 
 		/// <summary>
 		///   Reads an length-prefixed, encoded string from the buffer.

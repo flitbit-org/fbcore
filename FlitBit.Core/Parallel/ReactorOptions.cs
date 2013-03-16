@@ -34,14 +34,16 @@ namespace FlitBit.Core.Parallel
 		///   Creates a new instance.
 		/// </summary>
 		public ReactorOptions()
-			: this(DefaultMaxDegreeOfParallelism) { }
+			: this(DefaultMaxDegreeOfParallelism)
+		{}
 
 		/// <summary>
 		///   Creates a new instance with a max degree of parallelism.
 		/// </summary>
 		/// <param name="maxDegreeOfParallelism">a max degree of parallelism</param>
 		public ReactorOptions(int maxDegreeOfParallelism)
-			: this(maxDegreeOfParallelism, false, 0, DefaultMaxParallelDepth, DefaultDispatchesPerBorrowedThread) { }
+			: this(maxDegreeOfParallelism, false, 0, DefaultMaxParallelDepth, DefaultDispatchesPerBorrowedThread)
+		{}
 
 		/// <summary>
 		///   Creates a new instance.

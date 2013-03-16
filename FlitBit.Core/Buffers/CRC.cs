@@ -188,7 +188,10 @@ namespace FlitBit.Core.Buffers
 		///   Creates a new instance.
 		/// </summary>
 		/// <param name="initialValue">which initial value the checksum should use</param>
-		public Crc16Ccitt(InitialCrcValue initialValue) { this._initialValue = (ushort) initialValue; }
+		public Crc16Ccitt(InitialCrcValue initialValue)
+		{
+			this._initialValue = (ushort) initialValue;
+		}
 
 		/// <summary>
 		///   Computes a checksum over an array of bytes.

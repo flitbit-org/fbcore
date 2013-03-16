@@ -58,17 +58,22 @@ namespace FlitBit.Core.Factory
 				throw new NotImplementedException();
 			}
 
-			public bool CanConstruct<T>() { throw new NotImplementedException(); }
-
-			public Type GetImplementationType<T>() { throw new NotImplementedException(); }
-
-			public IFactory Next
+			public bool CanConstruct<T>()
 			{
-				get { throw new NotImplementedException(); }
-				set { throw new NotImplementedException(); }
+				throw new NotImplementedException();
 			}
 
-			public object ParallelShare() { throw new NotImplementedException(); }
+			public Type GetImplementationType<T>()
+			{
+				throw new NotImplementedException();
+			}
+
+			public IFactory Next { get { throw new NotImplementedException(); } set { throw new NotImplementedException(); } }
+
+			public object ParallelShare()
+			{
+				throw new NotImplementedException();
+			}
 
 			#endregion
 		}

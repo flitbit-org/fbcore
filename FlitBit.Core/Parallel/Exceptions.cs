@@ -12,14 +12,16 @@ namespace FlitBit.Core.Parallel
 		/// <summary>
 		///   Creates a new instance.
 		/// </summary>
-		public ParallelException() { }
+		public ParallelException()
+		{}
 
 		/// <summary>
 		///   Creates a new instance.
 		/// </summary>
 		/// <param name="message">an error message</param>
 		public ParallelException(string message)
-			: base(message) { }
+			: base(message)
+		{}
 
 		/// <summary>
 		///   Creates a new instance.
@@ -27,7 +29,8 @@ namespace FlitBit.Core.Parallel
 		/// <param name="message">an error message</param>
 		/// <param name="cause">an inner exception that caused this exception</param>
 		public ParallelException(string message, Exception cause)
-			: base(message, cause) { }
+			: base(message, cause)
+		{}
 
 		/// <summary>
 		///   Used by serialization to create an instance.
@@ -35,7 +38,8 @@ namespace FlitBit.Core.Parallel
 		/// <param name="si"></param>
 		/// <param name="sc"></param>
 		protected ParallelException(SerializationInfo si, StreamingContext sc)
-			: base(si, sc) { }
+			: base(si, sc)
+		{}
 	}
 
 	/// <summary>
@@ -47,14 +51,16 @@ namespace FlitBit.Core.Parallel
 		/// <summary>
 		///   Creates a new instance.
 		/// </summary>
-		public ParallelTimeoutException() { }
+		public ParallelTimeoutException()
+		{}
 
 		/// <summary>
 		///   Creates a new instance.
 		/// </summary>
 		/// <param name="message">an error message</param>
 		public ParallelTimeoutException(string message)
-			: base(message) { }
+			: base(message)
+		{}
 
 		/// <summary>
 		///   Creates a new instance.
@@ -62,7 +68,8 @@ namespace FlitBit.Core.Parallel
 		/// <param name="message">an error message</param>
 		/// <param name="cause">an inner exception that caused this exception</param>
 		public ParallelTimeoutException(string message, Exception cause)
-			: base(message, cause) { }
+			: base(message, cause)
+		{}
 
 		/// <summary>
 		///   Used by serialization to create an instance.
@@ -70,6 +77,7 @@ namespace FlitBit.Core.Parallel
 		/// <param name="si"></param>
 		/// <param name="sc"></param>
 		protected ParallelTimeoutException(SerializationInfo si, StreamingContext sc)
-			: base(si, sc) { }
+			: base(si, sc)
+		{}
 	}
 }

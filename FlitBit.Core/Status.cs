@@ -30,28 +30,34 @@ namespace FlitBit.Core
 		int _status;
 
 		[SuppressMessage("Microsoft.Usage", "CA2207")]
-		static Status() { Contract.Assert(typeof(TEnum).IsEnum, Resources.Err_StatusTypeMustBeEnum); }
+		static Status()
+		{
+			Contract.Assert(typeof(TEnum).IsEnum, Resources.Err_StatusTypeMustBeEnum);
+		}
 
 		/// <summary>
 		///   Creates a new instance.
 		/// </summary>
 		/// <param name="initialState">Initial state</param>
-		public Status(TEnum initialState) { _status = Convert.ToInt32(initialState); }
+		public Status(TEnum initialState)
+		{
+			_status = Convert.ToInt32(initialState);
+		}
 
 		/// <summary>
 		///   Accesses the current state.
 		/// </summary>
-		public TEnum CurrentState
-		{
-			get { return (TEnum) Enum.ToObject(typeof(TEnum), Thread.VolatileRead(ref _status)); }
-		}
+		public TEnum CurrentState { get { return (TEnum) Enum.ToObject(typeof(TEnum), Thread.VolatileRead(ref _status)); } }
 
 		/// <summary>
 		///   Tests whether the status is equal to another
 		/// </summary>
 		/// <param name="obj">the other</param>
 		/// <returns>true if equal; otherwise false</returns>
-		public override bool Equals(object obj) { return (obj is Status<TEnum>) && Equals((Status<TEnum>) obj); }
+		public override bool Equals(object obj)
+		{
+			return (obj is Status<TEnum>) && Equals((Status<TEnum>) obj);
+		}
 
 		/// <summary>
 		///   Gets the hashcode.
@@ -109,7 +115,10 @@ namespace FlitBit.Core
 		/// </summary>
 		/// <param name="other">the other</param>
 		/// <returns>true if equal; otherwise false</returns>
-		public bool Equals(Status<TEnum> other) { return this._status == other._status; }
+		public bool Equals(Status<TEnum> other)
+		{
+			return this._status == other._status;
+		}
 
 		/// <summary>
 		///   Determines if the current state includes the value given.
@@ -129,7 +138,10 @@ namespace FlitBit.Core
 		/// <returns>
 		///   <em>true</em> if the current state is greater than <paramref name="comparand" />; otherwise <em>false</em>
 		/// </returns>
-		public bool IsGreaterThan(TEnum comparand) { return Thread.VolatileRead(ref _status) > Convert.ToInt32(comparand); }
+		public bool IsGreaterThan(TEnum comparand)
+		{
+			return Thread.VolatileRead(ref _status) > Convert.ToInt32(comparand);
+		}
 
 		/// <summary>
 		///   Determines if the current state is less than the comparand.
@@ -138,7 +150,10 @@ namespace FlitBit.Core
 		/// <returns>
 		///   <em>true</em> if the current state is less than <paramref name="comparand" />; otherwise <em>false</em>
 		/// </returns>
-		public bool IsLessThan(TEnum comparand) { return Thread.VolatileRead(ref _status) < Convert.ToInt32(comparand); }
+		public bool IsLessThan(TEnum comparand)
+		{
+			return Thread.VolatileRead(ref _status) < Convert.ToInt32(comparand);
+		}
 
 		/// <summary>
 		///   Performs a state transition if the current state compares greater than the <paramref name="comparand" />
@@ -366,7 +381,10 @@ namespace FlitBit.Core
 		/// <param name="lhs">left hand comparand</param>
 		/// <param name="rhs">right hand comparand</param>
 		/// <returns>true if the comparands are equal</returns>
-		public static bool operator ==(Status<TEnum> lhs, Status<TEnum> rhs) { return lhs.Equals(rhs); }
+		public static bool operator ==(Status<TEnum> lhs, Status<TEnum> rhs)
+		{
+			return lhs.Equals(rhs);
+		}
 
 		/// <summary>
 		///   Specialized == operator
@@ -374,7 +392,10 @@ namespace FlitBit.Core
 		/// <param name="lhs">left hand comparand</param>
 		/// <param name="rhs">right hand comparand</param>
 		/// <returns>true if the comparands are equal</returns>
-		public static bool operator ==(Status<TEnum> lhs, TEnum rhs) { return lhs.Equals(ToStatus(rhs)); }
+		public static bool operator ==(Status<TEnum> lhs, TEnum rhs)
+		{
+			return lhs.Equals(ToStatus(rhs));
+		}
 
 		/// <summary>
 		///   Specialized == operator
@@ -382,7 +403,11 @@ namespace FlitBit.Core
 		/// <param name="lhs">left hand comparand</param>
 		/// <param name="rhs">right hand comparand</param>
 		/// <returns>true if the comparands are equal</returns>
-		public static bool operator ==(TEnum lhs, Status<TEnum> rhs) { return ToStatus(lhs).Equals(rhs); }
+		public static bool operator ==(TEnum lhs, Status<TEnum> rhs)
+		{
+			return ToStatus(lhs)
+				.Equals(rhs);
+		}
 
 		/// <summary>
 		///   Specialized != operator
@@ -390,7 +415,10 @@ namespace FlitBit.Core
 		/// <param name="lhs">left hand comparand</param>
 		/// <param name="rhs">right hand comparand</param>
 		/// <returns>true if the comparands are not equal</returns>
-		public static bool operator !=(Status<TEnum> lhs, Status<TEnum> rhs) { return !lhs.Equals(rhs); }
+		public static bool operator !=(Status<TEnum> lhs, Status<TEnum> rhs)
+		{
+			return !lhs.Equals(rhs);
+		}
 
 		/// <summary>
 		///   Specialized != operator
@@ -398,7 +426,10 @@ namespace FlitBit.Core
 		/// <param name="lhs">left hand comparand</param>
 		/// <param name="rhs">right hand comparand</param>
 		/// <returns>true if the comparands are not equal</returns>
-		public static bool operator !=(Status<TEnum> lhs, TEnum rhs) { return !lhs.Equals(ToStatus(rhs)); }
+		public static bool operator !=(Status<TEnum> lhs, TEnum rhs)
+		{
+			return !lhs.Equals(ToStatus(rhs));
+		}
 
 		/// <summary>
 		///   Specialized != operator
@@ -406,7 +437,11 @@ namespace FlitBit.Core
 		/// <param name="lhs">left hand comparand</param>
 		/// <param name="rhs">right hand comparand</param>
 		/// <returns>true if the comparands are not equal</returns>
-		public static bool operator !=(TEnum lhs, Status<TEnum> rhs) { return !ToStatus(lhs).Equals(rhs); }
+		public static bool operator !=(TEnum lhs, Status<TEnum> rhs)
+		{
+			return !ToStatus(lhs)
+				.Equals(rhs);
+		}
 
 		/// <summary>
 		///   Converts Status&lt;E> to E
@@ -414,7 +449,10 @@ namespace FlitBit.Core
 		/// <param name="s">the status</param>
 		/// <returns>the equivalent E</returns>
 		[SuppressMessage("Microsoft.Design", "CA1000", Justification = "By design.")]
-		public static TEnum ToObject(Status<TEnum> s) { return s.CurrentState; }
+		public static TEnum ToObject(Status<TEnum> s)
+		{
+			return s.CurrentState;
+		}
 
 		/// <summary>
 		///   Converts E to Status&lt;E>
@@ -422,6 +460,9 @@ namespace FlitBit.Core
 		/// <param name="s">the value</param>
 		/// <returns>the equivalent Status&lt;E></returns>
 		[SuppressMessage("Microsoft.Design", "CA1000", Justification = "By design.")]
-		public static Status<TEnum> ToStatus(TEnum s) { return new Status<TEnum>(s); }
+		public static Status<TEnum> ToStatus(TEnum s)
+		{
+			return new Status<TEnum>(s);
+		}
 	}
 }

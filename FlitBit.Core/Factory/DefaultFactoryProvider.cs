@@ -6,7 +6,10 @@
 
 		#region IFactoryProvider Members
 
-		public IFactory GetFactory() { return _factory; }
+		public IFactory GetFactory()
+		{
+			return _factory;
+		}
 
 		#endregion
 	}

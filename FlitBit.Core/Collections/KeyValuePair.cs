@@ -32,18 +32,12 @@ namespace FlitBit.Core.Collections
 		/// <summary>
 		///   Gets the pair's key.
 		/// </summary>
-		public string Key
-		{
-			get { return _key; }
-		}
+		public string Key { get { return _key; } }
 
 		/// <summary>
 		///   Gets the pair's value.
 		/// </summary>
-		public string Value
-		{
-			get { return _value; }
-		}
+		public string Value { get { return _value; } }
 
 		/// <summary>
 		///   Determines if the pair is equal to another object.
@@ -82,7 +76,10 @@ namespace FlitBit.Core.Collections
 		///   Converts the pair to a string representation.
 		/// </summary>
 		/// <returns></returns>
-		public override string ToString() { return ToString('='); }
+		public override string ToString()
+		{
+			return ToString('=');
+		}
 
 		/// <summary>
 		///   Determines if the pair is equal to another.
@@ -102,7 +99,10 @@ namespace FlitBit.Core.Collections
 		/// </summary>
 		/// <param name="sep">a separator character</param>
 		/// <returns></returns>
-		public string ToString(char sep) { return String.Concat(_key, sep, _value); }
+		public string ToString(char sep)
+		{
+			return String.Concat(_key, sep, _value);
+		}
 
 		/// <summary>
 		///   Determines if two pairs are equal.
@@ -112,7 +112,10 @@ namespace FlitBit.Core.Collections
 		/// <returns>
 		///   <em>true</em> if equal; otherwise <em>false</em>
 		/// </returns>
-		public static bool operator ==(KeyValuePair lhs, KeyValuePair rhs) { return lhs.Equals(rhs); }
+		public static bool operator ==(KeyValuePair lhs, KeyValuePair rhs)
+		{
+			return lhs.Equals(rhs);
+		}
 
 		/// <summary>
 		///   Determines if two pairs are unequal.
@@ -122,7 +125,10 @@ namespace FlitBit.Core.Collections
 		/// <returns>
 		///   <em>true</em> if unequal; otherwise <em>false</em>
 		/// </returns>
-		public static bool operator !=(KeyValuePair lhs, KeyValuePair rhs) { return !lhs.Equals(rhs); }
+		public static bool operator !=(KeyValuePair lhs, KeyValuePair rhs)
+		{
+			return !lhs.Equals(rhs);
+		}
 
 		/// <summary>
 		///   Tries to parse a key-value-pair from an input string.

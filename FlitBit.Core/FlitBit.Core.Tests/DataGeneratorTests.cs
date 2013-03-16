@@ -15,12 +15,13 @@ namespace FlitBit.Core.Tests
 			[TestMethod]
 			public void DataGenerator_CanGetStrings()
 			{
-				const int MaxLength = 2000;
+				const int Length = 2000;
 				var gen = new DataGenerator();
 				for (int i = 0; i < 100; i++)
 				{
-					var s = gen.GetString(MaxLength);
+					var s = gen.GetString(Length);
 					Assert.IsNotNull(s);
+					Assert.AreEqual(Length, s.Length);
 				}
 			}
 

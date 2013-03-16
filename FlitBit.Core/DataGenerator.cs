@@ -30,7 +30,8 @@ namespace FlitBit.Core
 		///   Creates a new instance.
 		/// </summary>
 		public DataGenerator()
-			: this(BufferReader.Create()) { }
+			: this(BufferReader.Create())
+		{}
 
 		/// <summary>
 		///   Creates a new instance.
@@ -48,7 +49,10 @@ namespace FlitBit.Core
 		/// <typeparam name="T">item type T</typeparam>
 		/// <param name="length">length of the new array</param>
 		/// <returns>the value</returns>
-		public T[] GetArray<T>(int length) { return GetArray<T>(length, true); }
+		public T[] GetArray<T>(int length)
+		{
+			return GetArray<T>(length, true);
+		}
 
 		/// <summary>
 		///   Gets an array of random items.
@@ -166,14 +170,20 @@ namespace FlitBit.Core
 		///   Gets a random boolean value.
 		/// </summary>
 		/// <returns>the value</returns>
-		public bool GetBoolean() { return GetBytes(1)[0] % 2 == 0; }
+		public bool GetBoolean()
+		{
+			return GetBytes(1)[0] % 2 == 0;
+		}
 
 		/// <summary>
 		///   Gets a random byte value.
 		/// </summary>
 		/// <returns>the value</returns>
 		[SuppressMessage("Microsoft.Design", "CA1024")]
-		public byte GetByte() { return GetBytes(1)[0]; }
+		public byte GetByte()
+		{
+			return GetBytes(1)[0];
+		}
 
 		/// <summary>
 		///   Gets an array of random byte values.
@@ -221,7 +231,9 @@ namespace FlitBit.Core
 			}
 
 			var bytes = GetBytes(length);
-			return Convert.ToBase64String(bytes).Substring(length).ToCharArray();
+			return Convert.ToBase64String(bytes)
+										.Substring(length)
+										.ToCharArray();
 		}
 
 		/// <summary>
@@ -250,7 +262,8 @@ namespace FlitBit.Core
 			{
 				ticks = Math.Abs(ticks);
 			}
-			ticks = ticks % (DateTime.MaxValue.Ticks - TimeSpan.FromHours(14).Ticks);
+			ticks = ticks % (DateTime.MaxValue.Ticks - TimeSpan.FromHours(14)
+																												.Ticks);
 			var offsetHours = Math.Abs(GetInt32()) % 14;
 			var offsetMinutes = TimeOffsetMinutes[Math.Abs(GetInt32()) % TimeOffsetMinutes.Length];
 			var offset = TimeSpan.FromHours(GetBoolean() ? offsetHours : -offsetHours);
@@ -430,7 +443,8 @@ namespace FlitBit.Core
 			}
 
 			var bytes = GetBytes(length);
-			return Convert.ToBase64String(bytes).Substring(length);
+			return Convert.ToBase64String(bytes)
+										.Substring(0, length);
 		}
 
 		/// <summary>
@@ -447,7 +461,8 @@ namespace FlitBit.Core
 			}
 
 			var bytes = GetBytes(length);
-			return Convert.ToBase64String(bytes, Base64FormattingOptions.InsertLineBreaks).Substring(length);
+			return Convert.ToBase64String(bytes, Base64FormattingOptions.InsertLineBreaks)
+										.Substring(0, length);
 		}
 
 		/// <summary>
@@ -501,7 +516,11 @@ namespace FlitBit.Core
 
 		static Buffer AllocRandomBuffer()
 		{
-			var buffer = new Buffer {Position = 0, Bytes = new byte[AllocationLength]};
+			var buffer = new Buffer
+			{
+				Position = 0,
+				Bytes = new byte[AllocationLength]
+			};
 			using (var rng = new RNGCryptoServiceProvider())
 			{
 				rng.GetBytes(buffer.Bytes);
@@ -547,10 +566,7 @@ namespace FlitBit.Core
 			internal byte[] Bytes;
 			internal int Position;
 
-			internal int BytesRemaining
-			{
-				get { return Bytes.Length - Position; }
-			}
+			internal int BytesRemaining { get { return Bytes.Length - Position; } }
 		}
 	}
 }

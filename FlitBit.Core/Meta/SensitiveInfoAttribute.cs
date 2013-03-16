@@ -34,7 +34,10 @@ namespace FlitBit.Core.Meta
 		///   Creates a new instance.
 		/// </summary>
 		/// <param name="kind">the sensitivity kind</param>
-		public SensitiveInfoAttribute(SensitiveInfoKind kind) { this.Kind = kind; }
+		public SensitiveInfoAttribute(SensitiveInfoKind kind)
+		{
+			this.Kind = kind;
+		}
 
 		/// <summary>
 		///   Gets the sensitivity kind.

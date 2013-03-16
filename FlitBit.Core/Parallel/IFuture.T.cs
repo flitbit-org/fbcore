@@ -116,16 +116,22 @@ namespace FlitBit.Core.Parallel
 				throw new NotImplementedException();
 			}
 
-			public bool TryGetValue(out T value) { throw new NotImplementedException(); }
-
-			public bool TryGetValue(int millisecondsTimeout, out T value) { throw new NotImplementedException(); }
-
-			public bool TryGetValue(TimeSpan timeout, out T value) { throw new NotImplementedException(); }
-
-			public T Value
+			public bool TryGetValue(out T value)
 			{
-				get { throw new NotImplementedException(); }
+				throw new NotImplementedException();
 			}
+
+			public bool TryGetValue(int millisecondsTimeout, out T value)
+			{
+				throw new NotImplementedException();
+			}
+
+			public bool TryGetValue(TimeSpan timeout, out T value)
+			{
+				throw new NotImplementedException();
+			}
+
+			public T Value { get { throw new NotImplementedException(); } }
 
 			public void MarkCompleted(T value)
 			{
@@ -142,39 +148,27 @@ namespace FlitBit.Core.Parallel
 				throw new NotImplementedException();
 			}
 
-			public Exception Exception
+			public Exception Exception { get { throw new NotImplementedException(); } }
+
+			public bool IsCompleted { get { throw new NotImplementedException(); } }
+
+			public bool IsFaulted { get { throw new NotImplementedException(); } }
+
+			public object SyncObject { get { throw new NotImplementedException(); } }
+
+			public bool Wait(TimeSpan timeout)
 			{
-				get { throw new NotImplementedException(); }
+				throw new NotImplementedException();
 			}
 
-			public bool IsCompleted
+			public WaitHandle WaitHandle { get { throw new NotImplementedException(); } }
+
+			public bool IsDisposed { get { throw new NotImplementedException(); } }
+
+			public void Dispose()
 			{
-				get { throw new NotImplementedException(); }
+				throw new NotImplementedException();
 			}
-
-			public bool IsFaulted
-			{
-				get { throw new NotImplementedException(); }
-			}
-
-			public object SyncObject
-			{
-				get { throw new NotImplementedException(); }
-			}
-
-			public bool Wait(TimeSpan timeout) { throw new NotImplementedException(); }
-
-			public WaitHandle WaitHandle
-			{
-				get { throw new NotImplementedException(); }
-			}
-
-			public bool IsDisposed
-			{
-				get { throw new NotImplementedException(); }
-			}
-
-			public void Dispose() { throw new NotImplementedException(); }
 
 			#endregion
 		}

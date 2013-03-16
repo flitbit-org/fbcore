@@ -46,11 +46,15 @@ namespace FlitBit.Core.Collections
 		///   Gets the enumerator.
 		/// </summary>
 		/// <returns></returns>
-		public IEnumerator<KeyValuePair> GetEnumerator() {
+		public IEnumerator<KeyValuePair> GetEnumerator()
+		{
 			return ((IEnumerable<KeyValuePair>) this._kvps).GetEnumerator();
 		}
 
-		IEnumerator IEnumerable.GetEnumerator() { return GetEnumerator(); }
+		IEnumerator IEnumerable.GetEnumerator()
+		{
+			return GetEnumerator();
+		}
 
 		#endregion
 	}

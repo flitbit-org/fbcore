@@ -140,17 +140,21 @@ namespace FlitBit.Core
 			} // for c1
 		}
 
-		public virtual long Sigma
-		{
-			get { return __sigma[0]; }
-		}
+		public virtual long Sigma { get { return __sigma[0]; } }
 
 		// constructor
 
 		// set()
 
-		public virtual long get_Renamed(int x1, int x2, int x3) { return __tris[x1][x2][x3]; }
-		public virtual void set_Renamed(int x1, int x2, int x3, short v) { __tris[x1][x2][x3] = v; }
+		public virtual long get_Renamed(int x1, int x2, int x3)
+		{
+			return __tris[x1][x2][x3];
+		}
+
+		public virtual void set_Renamed(int x1, int x2, int x3, short v)
+		{
+			__tris[x1][x2][x3] = v;
+		}
 
 		// get()
 	}

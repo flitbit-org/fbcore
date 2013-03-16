@@ -18,14 +18,16 @@ namespace FlitBit.Core.Buffers
 		///   Creates a new instance.
 		/// </summary>
 		public BigEndianBufferWriter()
-			: base(Encoding.Unicode) { }
+			: base(Encoding.Unicode)
+		{}
 
 		/// <summary>
 		///   Creates a new instance.
 		/// </summary>
 		/// <param name="enc">the encoding used to produce bytes for strings.</param>
 		public BigEndianBufferWriter(Encoding enc)
-			: base(enc) { }
+			: base(enc)
+		{}
 
 		/// <summary>
 		///   Writes an UInt16 to a buffer.

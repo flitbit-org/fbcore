@@ -36,7 +36,8 @@ namespace FlitBit.Core
 		///   Creates a new scope.
 		/// </summary>
 		public CleanupScope()
-			: this(false) { }
+			: this(false)
+		{}
 
 		/// <summary>
 		///   Creates a new scope.
@@ -57,14 +58,18 @@ namespace FlitBit.Core
 		/// <param name="independent">indicates whether the scope is independent of the stack</param>
 		/// <param name="ownerNotifier">the owner, notifier</param>
 		public CleanupScope(object ownerNotifier, bool independent)
-			: this(independent) { _ownerNotifier = ownerNotifier; }
+			: this(independent)
+		{
+			_ownerNotifier = ownerNotifier;
+		}
 
 		/// <summary>
 		///   Creates a new instance.
 		/// </summary>
 		/// <param name="ownerNotifier">the owner, notifier</param>
 		public CleanupScope(object ownerNotifier)
-			: this(ownerNotifier, false) { }
+			: this(ownerNotifier, false)
+		{}
 
 		/// <summary>
 		///   Creates a new scope and adds to it the disposable item given.
@@ -89,7 +94,8 @@ namespace FlitBit.Core
 		/// </summary>
 		/// <param name="items">Items to be disposed when the scope is cleaned up.</param>
 		public CleanupScope(params IDisposable[] items)
-			: this(false, items) { }
+			: this(false, items)
+		{}
 
 		/// <summary>
 		///   Creates a new scope and adds an action to be performed when the scope is cleaned up.
@@ -110,7 +116,8 @@ namespace FlitBit.Core
 		/// </summary>
 		/// <param name="actions">an array of actions to be performed when the scope is cleaned up.</param>
 		public CleanupScope(params Action[] actions)
-			: this(false, actions) { }
+			: this(false, actions)
+		{}
 
 		/// <summary>
 		///   Shares the scope. Callers must guarantee that there is a matching call to Dispose
@@ -185,7 +192,8 @@ namespace FlitBit.Core
 																																							": ",
 																																							(item.Disposable == null)
 																																								? item.Action.GetFullName()
-																																								: item.Disposable.GetType().FullName,
+																																								: item.Disposable.GetType()
+																																											.FullName,
 																																							"; ", e.FormatForLogging())
 								);
 						}
@@ -284,7 +292,10 @@ namespace FlitBit.Core
 			NotifyItemAdded(action);
 		}
 
-		object IParallelShared.ParallelShare() { return ShareScope(); }
+		object IParallelShared.ParallelShare()
+		{
+			return ShareScope();
+		}
 
 		#endregion
 

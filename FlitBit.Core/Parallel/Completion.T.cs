@@ -32,7 +32,8 @@ namespace FlitBit.Core.Parallel
 		///   Constructs a new instance.
 		/// </summary>
 		public Completion(Object target)
-			: this(target, false, default(T)) { }
+			: this(target, false, default(T))
+		{}
 
 		/// <summary>
 		///   Constructs a new instance.
@@ -57,26 +58,17 @@ namespace FlitBit.Core.Parallel
 		/// <summary>
 		///   Gets the exception that caused the fault.
 		/// </summary>
-		public Exception Exception
-		{
-			get { return _future.Exception; }
-		}
+		public Exception Exception { get { return _future.Exception; } }
 
 		/// <summary>
 		///   Indicates whether the wait has completed.
 		/// </summary>
-		public bool IsCompleted
-		{
-			get { return _future.IsCompleted; }
-		}
+		public bool IsCompleted { get { return _future.IsCompleted; } }
 
 		/// <summary>
 		///   Determines if the completion resulted in an error.
 		/// </summary>
-		public bool IsFaulted
-		{
-			get { return _future.IsFaulted; }
-		}
+		public bool IsFaulted { get { return _future.IsFaulted; } }
 
 		/// <summary>
 		///   The completion's target object if given when the completion was created.
@@ -279,7 +271,10 @@ namespace FlitBit.Core.Parallel
 		/// </summary>
 		/// <param name="timeout">A timespan representing the timeout period.</param>
 		/// <returns>The future's value.</returns>
-		public bool Wait(TimeSpan timeout) { return _future.Wait(timeout); }
+		public bool Wait(TimeSpan timeout)
+		{
+			return _future.Wait(timeout);
+		}
 
 		/// <summary>
 		///   Performs dispose on the completion.

@@ -49,7 +49,10 @@ namespace FlitBit.Core.Factory
 			{
 				if (type.GetConstructor(Type.EmptyTypes) != null)
 				{
-					rec = new TypeRecord {TargetType = type};
+					rec = new TypeRecord
+					{
+						TargetType = type
+					};
 					_types.TryAdd(key, rec);
 					return true;
 				}
@@ -64,7 +67,11 @@ namespace FlitBit.Core.Factory
 										if (impl == null || functor == null)
 										{
 											// use the implementation type if provided
-											rec = new TypeRecord {TargetType = impl, Functor = functor};
+											rec = new TypeRecord
+											{
+												TargetType = impl,
+												Functor = functor
+											};
 											this._types.TryAdd(key, rec);
 											gotImpl = true;
 										}
@@ -98,7 +105,10 @@ namespace FlitBit.Core.Factory
 		///   This type sharable between threads as-is.
 		/// </summary>
 		/// <returns></returns>
-		public object ParallelShare() { return this; }
+		public object ParallelShare()
+		{
+			return this;
+		}
 
 		#endregion
 
@@ -107,7 +117,10 @@ namespace FlitBit.Core.Factory
 			public Delegate Functor;
 			public Type TargetType;
 
-			internal object CreateInstance() { return (TargetType == null) ? Functor.DynamicInvoke(null) : Activator.CreateInstance(TargetType); }
+			internal object CreateInstance()
+			{
+				return (TargetType == null) ? Functor.DynamicInvoke(null) : Activator.CreateInstance(TargetType);
+			}
 		}
 	}
 }

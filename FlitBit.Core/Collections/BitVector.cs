@@ -83,18 +83,12 @@ namespace FlitBit.Core.Collections
 		/// <summary>
 		///   Number of flags in the vector.
 		/// </summary>
-		public int Count
-		{
-			get { return _count; }
-		}
+		public int Count { get { return _count; } }
 
 		/// <summary>
 		///   Determines if the vector is empty.
 		/// </summary>
-		public bool IsEmpty
-		{
-			get { return _count == 0; }
-		}
+		public bool IsEmpty { get { return _count == 0; } }
 
 		/// <summary>
 		///   Number of flags currently set to true.
@@ -140,7 +134,7 @@ namespace FlitBit.Core.Collections
 			result ^= _count * prime;
 			if (_flags != null)
 			{
-				int index = 0;
+				var index = 0;
 				for (; index < this._flags.Length; index++)
 				{
 					var item = this._flags[index];
@@ -188,7 +182,10 @@ namespace FlitBit.Core.Collections
 		/// </summary>
 		/// <param name="index"></param>
 		/// <returns></returns>
-		public BitFlags32 GetFlags(int index) { return _flags[index]; }
+		public BitFlags32 GetFlags(int index)
+		{
+			return _flags[index];
+		}
 
 		/// <summary>
 		///   Sets the BitFlags32 at the index given.
@@ -208,7 +205,10 @@ namespace FlitBit.Core.Collections
 		/// <param name="lhs">left hand comparand</param>
 		/// <param name="rhs">right hand comparand</param>
 		/// <returns>true if the comparands are equal; otherwise false</returns>
-		public static bool operator ==(BitVector lhs, BitVector rhs) { return lhs.Equals(rhs); }
+		public static bool operator ==(BitVector lhs, BitVector rhs)
+		{
+			return lhs.Equals(rhs);
+		}
 
 		/// <summary>
 		///   Inequality operator.
@@ -216,7 +216,10 @@ namespace FlitBit.Core.Collections
 		/// <param name="lhs">left hand comparand</param>
 		/// <param name="rhs">right hand comparand</param>
 		/// <returns>true if the comparands are NOT equal; otherwise false</returns>
-		public static bool operator !=(BitVector lhs, BitVector rhs) { return !lhs.Equals(rhs); }
+		public static bool operator !=(BitVector lhs, BitVector rhs)
+		{
+			return !lhs.Equals(rhs);
+		}
 
 		#region ICloneable Members
 
@@ -224,7 +227,10 @@ namespace FlitBit.Core.Collections
 		///   Clones the current instance.
 		/// </summary>
 		/// <returns></returns>
-		public object Clone() { return Copy(); }
+		public object Clone()
+		{
+			return Copy();
+		}
 
 		#endregion
 

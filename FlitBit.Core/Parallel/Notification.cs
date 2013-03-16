@@ -28,7 +28,10 @@ namespace FlitBit.Core.Parallel
 		readonly Reactor<NotifyRecord> _invoker = new Reactor<NotifyRecord>((self, rec) => rec.Handler());
 		readonly Lazy<Notifier> _notifier;
 
-		Notification() { _notifier = new Lazy<Notifier>(() => new Notifier(_incomming, _invoker), LazyThreadSafetyMode.ExecutionAndPublication); }
+		Notification()
+		{
+			_notifier = new Lazy<Notifier>(() => new Notifier(_incomming, _invoker), LazyThreadSafetyMode.ExecutionAndPublication);
+		}
 
 		/// <summary>
 		///   Schedules a continuation action for after an async result
@@ -68,10 +71,7 @@ namespace FlitBit.Core.Parallel
 		/// <summary>
 		///   Accesses the (Lazy) notification instance.
 		/// </summary>
-		public static Notification Instance
-		{
-			get { return Singleton.Value; }
-		}
+		public static Notification Instance { get { return Singleton.Value; } }
 
 		class Notifier : Disposable
 		{
@@ -105,10 +105,7 @@ namespace FlitBit.Core.Parallel
 				_waiter.Start();
 			}
 
-			internal int ID
-			{
-				get { return _id; }
-			}
+			internal int ID { get { return _id; } }
 
 			protected override bool PerformDispose(bool disposing)
 			{
@@ -314,17 +311,11 @@ namespace FlitBit.Core.Parallel
 				public int ID { get; set; }
 				public Reactor<NotifyRecord> Notifier { get; set; }
 
-				public List<NotifyRecord> Records
-				{
-					get { return Util.VolatileRead(ref _records); }
-				}
+				public List<NotifyRecord> Records { get { return Util.VolatileRead(ref _records); } }
 
 				public ConcurrentQueue<NotifyRecord> SharedQueue { get; set; }
 
-				public int Status
-				{
-					get { return Thread.VolatileRead(ref _status); }
-				}
+				public int Status { get { return Thread.VolatileRead(ref _status); } }
 
 				public int MarkOk(int expect, List<NotifyRecord> records)
 				{
@@ -351,8 +342,15 @@ namespace FlitBit.Core.Parallel
 					return false;
 				}
 
-				public void MarkStopped() { Thread.VolatileWrite(ref _status, CStatusStopped); }
-				public int MarkWaiting(int expect) { return Interlocked.CompareExchange(ref _status, CStatusWaiting, expect); }
+				public void MarkStopped()
+				{
+					Thread.VolatileWrite(ref _status, CStatusStopped);
+				}
+
+				public int MarkWaiting(int expect)
+				{
+					return Interlocked.CompareExchange(ref _status, CStatusWaiting, expect);
+				}
 
 				public void Stop()
 				{

@@ -11,7 +11,10 @@ namespace FlitBit.Core
 		///   Creates a new instance.
 		/// </summary>
 		/// <param name="item">the item that caused the event</param>
-		public CleanupScopeItemEventArgs(object item) { this.Item = item; }
+		public CleanupScopeItemEventArgs(object item)
+		{
+			this.Item = item;
+		}
 
 		/// <summary>
 		///   The item that caused the event.

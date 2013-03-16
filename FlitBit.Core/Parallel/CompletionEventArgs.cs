@@ -11,7 +11,10 @@ namespace FlitBit.Core.Parallel
 		///   Creates a new instance.
 		/// </summary>
 		/// <param name="completion">the completion</param>
-		public CompletionEventArgs(Completion completion) { this.Completion = completion; }
+		public CompletionEventArgs(Completion completion)
+		{
+			this.Completion = completion;
+		}
 
 		/// <summary>
 		///   The completion upon which the event fired.

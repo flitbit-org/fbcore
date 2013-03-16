@@ -18,7 +18,10 @@ namespace FlitBit.Core.Parallel
 		///   Creates a new instance.
 		/// </summary>
 		/// <param name="err">the uncaught exception</param>
-		public ReactorExceptionArgs(Exception err) { UncaughtException = err; }
+		public ReactorExceptionArgs(Exception err)
+		{
+			UncaughtException = err;
+		}
 
 		/// <summary>
 		///   Whether the exception should be rethrown.

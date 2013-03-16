@@ -164,7 +164,10 @@ namespace FlitBit.Core.Xml
 		/// <param name="name">name</param>
 		/// <param name="value">reference to a variable that will receive the value upon success.</param>
 		[SuppressMessage("Microsoft.Design", "CA1011", Justification = "By design.")]
-		public static void ReadNamedValueOrDefault(this XElement element, string name, out bool value) { TryReadNamedValue(element, name, out value); }
+		public static void ReadNamedValueOrDefault(this XElement element, string name, out bool value)
+		{
+			TryReadNamedValue(element, name, out value);
+		}
 
 		/// <summary>
 		///   Read a named value from an xml element; if the value doesn't exist, value is set to
@@ -210,7 +213,10 @@ namespace FlitBit.Core.Xml
 		/// <param name="name">name</param>
 		/// <param name="value">reference to a variable that will receive the value upon success.</param>
 		[SuppressMessage("Microsoft.Design", "CA1011", Justification = "By design.")]
-		public static void ReadNamedValueOrDefault(this XElement element, string name, out byte value) { TryReadNamedValue(element, name, out value); }
+		public static void ReadNamedValueOrDefault(this XElement element, string name, out byte value)
+		{
+			TryReadNamedValue(element, name, out value);
+		}
 
 		/// <summary>
 		///   Read a named value from an xml element; if the value doesn't exist, value is set to
@@ -256,7 +262,10 @@ namespace FlitBit.Core.Xml
 		/// <param name="name">name</param>
 		/// <param name="value">reference to a variable that will receive the value upon success.</param>
 		[SuppressMessage("Microsoft.Design", "CA1011", Justification = "By design.")]
-		public static void ReadNamedValueOrDefault(this XElement element, string name, out char value) { TryReadNamedValue(element, name, out value); }
+		public static void ReadNamedValueOrDefault(this XElement element, string name, out char value)
+		{
+			TryReadNamedValue(element, name, out value);
+		}
 
 		/// <summary>
 		///   Read a named value from an xml element; if the value doesn't exist, value is set to
@@ -302,7 +311,10 @@ namespace FlitBit.Core.Xml
 		/// <param name="name">name</param>
 		/// <param name="value">reference to a variable that will receive the value upon success.</param>
 		[SuppressMessage("Microsoft.Design", "CA1011", Justification = "By design.")]
-		public static void ReadNamedValueOrDefault(this XElement element, string name, out DateTime value) { TryReadNamedValue(element, name, out value); }
+		public static void ReadNamedValueOrDefault(this XElement element, string name, out DateTime value)
+		{
+			TryReadNamedValue(element, name, out value);
+		}
 
 		/// <summary>
 		///   Read a named value from an xml element; if the value doesn't exist, value is set to
@@ -348,7 +360,10 @@ namespace FlitBit.Core.Xml
 		/// <param name="name">name</param>
 		/// <param name="value">reference to a variable that will receive the value upon success.</param>
 		[SuppressMessage("Microsoft.Design", "CA1011", Justification = "By design.")]
-		public static void ReadNamedValueOrDefault(this XElement element, string name, out decimal value) { TryReadNamedValue(element, name, out value); }
+		public static void ReadNamedValueOrDefault(this XElement element, string name, out decimal value)
+		{
+			TryReadNamedValue(element, name, out value);
+		}
 
 		/// <summary>
 		///   Read a named value from an xml element; if the value doesn't exist, value is set to
@@ -394,7 +409,10 @@ namespace FlitBit.Core.Xml
 		/// <param name="name">name</param>
 		/// <param name="value">reference to a variable that will receive the value upon success.</param>
 		[SuppressMessage("Microsoft.Design", "CA1011", Justification = "By design.")]
-		public static void ReadNamedValueOrDefault(this XElement element, string name, out double value) { TryReadNamedValue(element, name, out value); }
+		public static void ReadNamedValueOrDefault(this XElement element, string name, out double value)
+		{
+			TryReadNamedValue(element, name, out value);
+		}
 
 		/// <summary>
 		///   Read a named value from an xml element; if the value doesn't exist, value is set to
@@ -440,7 +458,10 @@ namespace FlitBit.Core.Xml
 		/// <param name="name">name</param>
 		/// <param name="value">reference to a variable that will receive the value upon success.</param>
 		[SuppressMessage("Microsoft.Design", "CA1011", Justification = "By design.")]
-		public static void ReadNamedValueOrDefault(this XElement element, string name, out short value) { TryReadNamedValue(element, name, out value); }
+		public static void ReadNamedValueOrDefault(this XElement element, string name, out short value)
+		{
+			TryReadNamedValue(element, name, out value);
+		}
 
 		/// <summary>
 		///   Read a named value from an xml element; if the value doesn't exist, value is set to
@@ -486,7 +507,10 @@ namespace FlitBit.Core.Xml
 		/// <param name="name">name</param>
 		/// <param name="value">reference to a variable that will receive the value upon success.</param>
 		[SuppressMessage("Microsoft.Design", "CA1011", Justification = "By design.")]
-		public static void ReadNamedValueOrDefault(this XElement element, string name, out int value) { TryReadNamedValue(element, name, out value); }
+		public static void ReadNamedValueOrDefault(this XElement element, string name, out int value)
+		{
+			TryReadNamedValue(element, name, out value);
+		}
 
 		/// <summary>
 		///   Read a named value from an xml element; if the value doesn't exist, value is set to
@@ -532,7 +556,10 @@ namespace FlitBit.Core.Xml
 		/// <param name="name">name</param>
 		/// <param name="value">reference to a variable that will receive the value upon success.</param>
 		[SuppressMessage("Microsoft.Design", "CA1011", Justification = "By design.")]
-		public static void ReadNamedValueOrDefault(this XElement element, string name, out long value) { TryReadNamedValue(element, name, out value); }
+		public static void ReadNamedValueOrDefault(this XElement element, string name, out long value)
+		{
+			TryReadNamedValue(element, name, out value);
+		}
 
 		/// <summary>
 		///   Read a named value from an xml element; if the value doesn't exist, value is set to
@@ -578,7 +605,10 @@ namespace FlitBit.Core.Xml
 		/// <param name="name">name</param>
 		/// <param name="value">reference to a variable that will receive the value upon success.</param>
 		[SuppressMessage("Microsoft.Design", "CA1011", Justification = "By design.")]
-		public static void ReadNamedValueOrDefault<T>(this XElement element, string name, out T value) { TryReadNamedValue(element, name, out value); }
+		public static void ReadNamedValueOrDefault<T>(this XElement element, string name, out T value)
+		{
+			TryReadNamedValue(element, name, out value);
+		}
 
 		/// <summary>
 		///   Read a named value from an xml element; if the value doesn't exist, value is set to
@@ -624,7 +654,10 @@ namespace FlitBit.Core.Xml
 		/// <param name="name">name</param>
 		/// <param name="value">reference to a variable that will receive the value upon success.</param>
 		[CLSCompliant(false), SuppressMessage("Microsoft.Design", "CA1011", Justification = "By design.")]
-		public static void ReadNamedValueOrDefault(this XElement element, string name, out sbyte value) { TryReadNamedValue(element, name, out value); }
+		public static void ReadNamedValueOrDefault(this XElement element, string name, out sbyte value)
+		{
+			TryReadNamedValue(element, name, out value);
+		}
 
 		/// <summary>
 		///   Read a named value from an xml element; if the value doesn't exist, value is set to
@@ -670,7 +703,10 @@ namespace FlitBit.Core.Xml
 		/// <param name="name">name</param>
 		/// <param name="value">reference to a variable that will receive the value upon success.</param>
 		[SuppressMessage("Microsoft.Design", "CA1011", Justification = "By design.")]
-		public static void ReadNamedValueOrDefault(this XElement element, string name, out float value) { TryReadNamedValue(element, name, out value); }
+		public static void ReadNamedValueOrDefault(this XElement element, string name, out float value)
+		{
+			TryReadNamedValue(element, name, out value);
+		}
 
 		/// <summary>
 		///   Read a named value from an xml element; if the value doesn't exist, value is set to
@@ -716,7 +752,10 @@ namespace FlitBit.Core.Xml
 		/// <param name="name">name</param>
 		/// <param name="value">reference to a variable that will receive the value upon success.</param>
 		[SuppressMessage("Microsoft.Design", "CA1011", Justification = "By design.")]
-		public static void ReadNamedValueOrDefault(this XElement element, string name, out string value) { TryReadNamedValue(element, name, out value); }
+		public static void ReadNamedValueOrDefault(this XElement element, string name, out string value)
+		{
+			TryReadNamedValue(element, name, out value);
+		}
 
 		/// <summary>
 		///   Read a named value from an xml element; if the value doesn't exist, value is set to
@@ -762,7 +801,10 @@ namespace FlitBit.Core.Xml
 		/// <param name="name">name</param>
 		/// <param name="value">reference to a variable that will receive the value upon success.</param>
 		[CLSCompliant(false), SuppressMessage("Microsoft.Design", "CA1011", Justification = "By design.")]
-		public static void ReadNamedValueOrDefault(this XElement element, string name, out ushort value) { TryReadNamedValue(element, name, out value); }
+		public static void ReadNamedValueOrDefault(this XElement element, string name, out ushort value)
+		{
+			TryReadNamedValue(element, name, out value);
+		}
 
 		/// <summary>
 		///   Read a named value from an xml element; if the value doesn't exist, value is set to
@@ -808,7 +850,10 @@ namespace FlitBit.Core.Xml
 		/// <param name="name">name</param>
 		/// <param name="value">reference to a variable that will receive the value upon success.</param>
 		[CLSCompliant(false), SuppressMessage("Microsoft.Design", "CA1011", Justification = "By design.")]
-		public static void ReadNamedValueOrDefault(this XElement element, string name, out uint value) { TryReadNamedValue(element, name, out value); }
+		public static void ReadNamedValueOrDefault(this XElement element, string name, out uint value)
+		{
+			TryReadNamedValue(element, name, out value);
+		}
 
 		/// <summary>
 		///   Read a named value from an xml element; if the value doesn't exist, value is set to
@@ -854,7 +899,10 @@ namespace FlitBit.Core.Xml
 		/// <param name="name">name</param>
 		/// <param name="value">reference to a variable that will receive the value upon success.</param>
 		[CLSCompliant(false), SuppressMessage("Microsoft.Design", "CA1011", Justification = "By design.")]
-		public static void ReadNamedValueOrDefault(this XElement element, string name, out ulong value) { TryReadNamedValue(element, name, out value); }
+		public static void ReadNamedValueOrDefault(this XElement element, string name, out ulong value)
+		{
+			TryReadNamedValue(element, name, out value);
+		}
 
 		/// <summary>
 		///   Read a named value from an xml element; if the value doesn't exist, value is set to
@@ -900,7 +948,10 @@ namespace FlitBit.Core.Xml
 		/// <param name="name">name</param>
 		/// <param name="value">reference to a variable that will receive the value upon success.</param>
 		[SuppressMessage("Microsoft.Design", "CA1011", Justification = "By design.")]
-		public static void ReadNamedValueOrDefaultAsEnum<T>(this XElement element, string name, out T value) { TryReadNamedValueAsEnum(element, name, out value); }
+		public static void ReadNamedValueOrDefaultAsEnum<T>(this XElement element, string name, out T value)
+		{
+			TryReadNamedValueAsEnum(element, name, out value);
+		}
 
 		/// <summary>
 		///   Read a named value from an xml element; if the value doesn't exist, value is set to
@@ -1027,7 +1078,10 @@ namespace FlitBit.Core.Xml
 		/// </summary>
 		/// <param name="xml">the source xml element</param>
 		/// <returns>a dynamic object shaped according to the input xml</returns>
-		public static dynamic ToDynamic(this XElement xml) { return XDynamic.ToDynamic(xml); }
+		public static dynamic ToDynamic(this XElement xml)
+		{
+			return XDynamic.ToDynamic(xml);
+		}
 
 		/// <summary>
 		///   Tries to read a named value from an xml element.
@@ -1582,6 +1636,9 @@ namespace FlitBit.Core.Xml
 		/// </summary>
 		/// <param name="text">the source xml</param>
 		/// <returns>a dynamic object shaped according to the input xml</returns>
-		public static dynamic XmlToDynamic(this string text) { return XDynamic.Parse(text); }
+		public static dynamic XmlToDynamic(this string text)
+		{
+			return XDynamic.Parse(text);
+		}
 	}
 }

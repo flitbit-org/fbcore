@@ -24,7 +24,8 @@ namespace FlitBit.Core.Parallel
 		///   Creates a new instance.
 		/// </summary>
 		public AsyncResult()
-			: this(null, null, null) { }
+			: this(null, null, null)
+		{}
 
 		/// <summary>
 		///   Creates a new instance and initializes the AsyncCallback.
@@ -32,7 +33,8 @@ namespace FlitBit.Core.Parallel
 		/// <param name="asyncCallback">A delegate to be called when the async operation completes.</param>
 		/// <param name="asyncHandback">A handback object passed to the AsyncCallback when the operation completes.</param>
 		public AsyncResult(AsyncCallback asyncCallback, Object asyncHandback)
-			: this(asyncCallback, asyncHandback, null) { }
+			: this(asyncCallback, asyncHandback, null)
+		{}
 
 		/// <summary>
 		///   Creates a new instance and initializes the AsyncCallback.
@@ -213,18 +215,12 @@ namespace FlitBit.Core.Parallel
 		/// <summary>
 		///   Gets the task's wait handle.
 		/// </summary>
-		public WaitHandle AsyncWaitHandle
-		{
-			get { return _future.WaitHandle; }
-		}
+		public WaitHandle AsyncWaitHandle { get { return _future.WaitHandle; } }
 
 		/// <summary>
 		///   Gets a value indicating whether the asynchronous operation has completed.
 		/// </summary>
-		public bool IsCompleted
-		{
-			get { return _future.IsCompleted; }
-		}
+		public bool IsCompleted { get { return _future.IsCompleted; } }
 
 		#endregion
 	}

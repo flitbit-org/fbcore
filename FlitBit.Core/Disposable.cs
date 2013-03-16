@@ -31,7 +31,8 @@ namespace FlitBit.Core
 		///   Creates a new instance.
 		/// </summary>
 		protected Disposable()
-			: this(true) { }
+			: this(true)
+		{}
 #else
 	/// <summary>
 	///   Creates a new instance.
@@ -60,7 +61,10 @@ namespace FlitBit.Core
 		/// <summary>
 		///   Finalizes the instance.
 		/// </summary>
-		~Disposable() { this.Dispose(false); }
+		~Disposable()
+		{
+			this.Dispose(false);
+		}
 
 		/// <summary>
 		///   Disposes the instance.
@@ -76,10 +80,7 @@ namespace FlitBit.Core
 		/// <summary>
 		///   Indicates whether the instance has been disposed.
 		/// </summary>
-		public bool IsDisposed
-		{
-			get { return _disposal.CurrentState == DisposalState.Disposed; }
-		}
+		public bool IsDisposed { get { return _disposal.CurrentState == DisposalState.Disposed; } }
 
 		bool Dispose(bool disposing)
 		{
@@ -97,15 +98,19 @@ namespace FlitBit.Core
 								if (cstack != null)
 								{
 									var builder = new StringBuilder(2000);
-									builder.Append(Environment.NewLine).Append(">> Creation stack... ");
+									builder.Append(Environment.NewLine)
+												.Append(">> Creation stack... ");
 									foreach (var frame in CreationStack)
 									{
 										var method = frame.GetMethod();
 										builder.Append(Environment.NewLine)
 													.Append("\t >> ")
-													.Append(method.DeclaringType.GetReadableSimpleName()).Append(".").Append(method.Name);
+													.Append(method.DeclaringType.GetReadableSimpleName())
+													.Append(".")
+													.Append(method.Name);
 									}
-									builder.Append(Environment.NewLine).Append(">> Disposal stack... ");
+									builder.Append(Environment.NewLine)
+												.Append(">> Disposal stack... ");
 									var stackFrames = new StackTrace().GetFrames();
 									if (stackFrames != null)
 									{
@@ -114,7 +119,9 @@ namespace FlitBit.Core
 											var method = frame.GetMethod();
 											builder.Append(Environment.NewLine)
 														.Append("\t >> ")
-														.Append(method.DeclaringType.GetReadableSimpleName()).Append(".").Append(method.Name);
+														.Append(method.DeclaringType.GetReadableSimpleName())
+														.Append(".")
+														.Append(method.Name);
 										}
 									}
 

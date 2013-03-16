@@ -81,7 +81,8 @@ namespace FlitBit.Core.Collections
 				var values = nvc.GetValues(name);
 				if (values != null && values.Any())
 				{
-					return values.Select(v => Convert.ChangeType(v, typeof(T))).Cast<T>();
+					return values.Select(v => Convert.ChangeType(v, typeof(T)))
+											.Cast<T>();
 				}
 			}
 			return Enumerable.Empty<T>();

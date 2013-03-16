@@ -23,7 +23,8 @@ namespace FlitBit.Core.Configuration
 		/// <summary>
 		///   Creates a new instance.
 		/// </summary>
-		protected AbstractConfigurationElementCollection() { }
+		protected AbstractConfigurationElementCollection()
+		{}
 
 		/// <summary>
 		///   Creates a new instance.
@@ -67,26 +68,17 @@ namespace FlitBit.Core.Configuration
 		/// </summary>
 		/// <param name="key">an element's key</param>
 		/// <returns>the element with the given key</returns>
-		public TElement this[TKey key]
-		{
-			get { return (TElement) BaseGet(key); }
-		}
+		public TElement this[TKey key] { get { return (TElement) BaseGet(key); } }
 
 		/// <summary>
 		///   CollectionType
 		/// </summary>
-		public override ConfigurationElementCollectionType CollectionType
-		{
-			get { return ConfigurationElementCollectionType.AddRemoveClearMap; }
-		}
+		public override ConfigurationElementCollectionType CollectionType { get { return ConfigurationElementCollectionType.AddRemoveClearMap; } }
 
 		/// <summary>
 		///   Number of elements.
 		/// </summary>
-		public new int Count
-		{
-			get { return base.Count; }
-		}
+		public new int Count { get { return base.Count; } }
 
 		/// <summary>
 		///   Adds an element.
@@ -101,7 +93,10 @@ namespace FlitBit.Core.Configuration
 		/// <summary>
 		///   Clears the elements.
 		/// </summary>
-		public void Clear() { BaseClear(); }
+		public void Clear()
+		{
+			BaseClear();
+		}
 
 		/// <summary>
 		///   Finds the index of an element.
@@ -128,13 +123,19 @@ namespace FlitBit.Core.Configuration
 		///   Removes an element by key.
 		/// </summary>
 		/// <param name="key">the element's key</param>
-		public void Remove(TKey key) { BaseRemove(key); }
+		public void Remove(TKey key)
+		{
+			BaseRemove(key);
+		}
 
 		/// <summary>
 		///   Removes an element at the given index.
 		/// </summary>
 		/// <param name="index">the element's index</param>
-		public void RemoveAt(int index) { BaseRemoveAt(index); }
+		public void RemoveAt(int index)
+		{
+			BaseRemoveAt(index);
+		}
 
 		/// <summary>
 		///   Abstract method; gets the element's key.
@@ -147,7 +148,10 @@ namespace FlitBit.Core.Configuration
 		///   Creates a new element of type TElement.
 		/// </summary>
 		/// <returns></returns>
-		protected override ConfigurationElement CreateNewElement() { return new TElement(); }
+		protected override ConfigurationElement CreateNewElement()
+		{
+			return new TElement();
+		}
 
 		/// <summary>
 		///   Gets the element's key.

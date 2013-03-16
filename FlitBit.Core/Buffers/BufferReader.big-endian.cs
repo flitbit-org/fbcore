@@ -21,14 +21,16 @@ namespace FlitBit.Core.Buffers
 		///   Creates a new instance.
 		/// </summary>
 		public BigEndianBufferReader()
-			: base(Encoding.Unicode) { }
+			: base(Encoding.Unicode)
+		{}
 
 		/// <summary>
 		///   Creates a new instance.
 		/// </summary>
 		/// <param name="enc">an encoding</param>
 		public BigEndianBufferReader(Encoding enc)
-			: base(enc) { }
+			: base(enc)
+		{}
 
 		/// <summary>
 		///   Reads an UInt16 from the buffer.
