@@ -21,8 +21,8 @@ namespace FlitBit.Core
 	{
 		const int AllocationLength = 1024;
 		static readonly char[] CDigits = "0123456789".ToCharArray();
-		static Buffer __buffer;
 		static readonly int[] TimeOffsetMinutes = new[] {0, 15, 30, 45};
+		static Buffer __buffer;
 
 		readonly IBufferReader _reader;
 
@@ -230,8 +230,11 @@ namespace FlitBit.Core
 		/// <returns>the value</returns>
 		public DateTime GetDateTime()
 		{
-			long ticks = GetInt64();
-			if (ticks < 0) ticks = Math.Abs(ticks);
+			var ticks = GetInt64();
+			if (ticks < 0)
+			{
+				ticks = Math.Abs(ticks);
+			}
 			ticks = ticks % DateTime.MaxValue.Ticks;
 			return new DateTime(ticks);
 		}
@@ -242,8 +245,11 @@ namespace FlitBit.Core
 		/// <returns>the value</returns>
 		public DateTimeOffset GetDateTimeOffset()
 		{
-			long ticks = GetInt64();
-			if (ticks < 0) ticks = Math.Abs(ticks);
+			var ticks = GetInt64();
+			if (ticks < 0)
+			{
+				ticks = Math.Abs(ticks);
+			}
 			ticks = ticks % (DateTime.MaxValue.Ticks - TimeSpan.FromHours(14).Ticks);
 			var offsetHours = Math.Abs(GetInt32()) % 14;
 			var offsetMinutes = TimeOffsetMinutes[Math.Abs(GetInt32()) % TimeOffsetMinutes.Length];
@@ -285,7 +291,10 @@ namespace FlitBit.Core
 				var bytes = GetBytes(sizeof(double));
 				var ofs = 0;
 				var res = _reader.ReadDouble(bytes, ref ofs);
-				if (Double.IsNaN(res)) continue;
+				if (Double.IsNaN(res))
+				{
+					continue;
+				}
 				return res;
 			}
 		}
@@ -399,7 +408,10 @@ namespace FlitBit.Core
 				var bytes = GetBytes(sizeof(float));
 				var ofs = 0;
 				var res = _reader.ReadSingle(bytes, ref ofs);
-				if (Single.IsNaN(res)) continue;
+				if (Single.IsNaN(res))
+				{
+					continue;
+				}
 				return res;
 			}
 		}
