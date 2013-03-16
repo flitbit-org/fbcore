@@ -54,6 +54,8 @@
   <ItemGroup>
     <Compile Include="Buffers\BuffersTest.cs" />
     <Compile Include="CleanupScopeTests.cs" />
+    <Compile Include="Collections\BitFlags32Tests.cs" />
+    <Compile Include="Collections\BitVectorTests.cs" />
     <Compile Include="DataGeneratorTests.cs" />
     <Compile Include="DisposableTests.cs" />
     <Compile Include="DynamicJsonTests.cs" />
