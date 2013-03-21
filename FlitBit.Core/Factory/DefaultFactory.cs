@@ -97,6 +97,23 @@ namespace FlitBit.Core.Factory
 		}
 
 		/// <summary>
+		/// Notifies the factory that TImpl is an implementation that should be used to fulfill requests for type T.
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <typeparam name="TImpl"></typeparam>
+		public void RegisterImplementationType<T, TImpl>() where TImpl : T
+		{
+			var key = typeof(T).GetKeyForType();
+			var reg = new TypeRecord
+			{
+				TargetType = typeof(TImpl)
+			};
+			// !! Think about an implementation-type-replaced event.
+			// This blanket replacement favors frameworks wired up later in the process.
+			_types.AddOrUpdate(key, reg, (k, current) => reg);
+		}
+
+		/// <summary>
 		///   Gets or sets the next factory when chained.
 		/// </summary>
 		public IFactory Next { get; set; }

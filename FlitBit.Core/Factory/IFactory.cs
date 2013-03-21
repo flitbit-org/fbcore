@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Diagnostics.Contracts;
-using FlitBit.Core.Factory.CodeContracts;
 using FlitBit.Core.Parallel;
 
 namespace FlitBit.Core.Factory
@@ -13,7 +11,6 @@ namespace FlitBit.Core.Factory
 	///   While the FlitBit.IoC's IContainer is-a IFactory, it is a trivial matter to build adapters to
 	///   other IoC containers by implementing IFactory to delegate to the IoC of your choice.
 	/// </remarks>
-	[ContractClass(typeof(ContractForFactory))]
 	public interface IFactory : IParallelShared
 	{
 		/// <summary>
@@ -41,41 +38,12 @@ namespace FlitBit.Core.Factory
 		/// <typeparam name="T">type T</typeparam>
 		/// <returns>If the factory can construct instances of type T, the implementation type used; otherwise null.</returns>
 		Type GetImplementationType<T>();
-	}
 
-	namespace CodeContracts
-	{
 		/// <summary>
-		///   CodeContracts Class for IFactory
+		/// Notifies the factory that TImpl is an implementation that should be used to fulfill requests for type T.
 		/// </summary>
-		[ContractClassFor(typeof(IFactory))]
-		internal abstract class ContractForFactory : IFactory
-		{
-			#region IFactory Members
-
-			public T CreateInstance<T>()
-			{
-				throw new NotImplementedException();
-			}
-
-			public bool CanConstruct<T>()
-			{
-				throw new NotImplementedException();
-			}
-
-			public Type GetImplementationType<T>()
-			{
-				throw new NotImplementedException();
-			}
-
-			public IFactory Next { get { throw new NotImplementedException(); } set { throw new NotImplementedException(); } }
-
-			public object ParallelShare()
-			{
-				throw new NotImplementedException();
-			}
-
-			#endregion
-		}
+		/// <typeparam name="T"></typeparam>
+		/// <typeparam name="TImpl"></typeparam>
+		void RegisterImplementationType<T, TImpl>() where TImpl : T;
 	}
 }
