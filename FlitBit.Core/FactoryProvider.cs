@@ -25,7 +25,17 @@ namespace FlitBit.Core
 		/// <param name="provider"></param>
 		public static void SetFactoryProvider(IFactoryProvider provider)
 		{
-			__provider = provider;
+			var prev = Util.VolatileRead(ref __provider);
+			if (prev == provider)
+			{
+				return;
+			}
+			Util.VolatileWrite(out __provider, provider);
+			if (prev != null && provider != null)
+			{
+				provider.GetFactory()
+								.Next = prev.GetFactory();
+			}
 		}
 	}
 }
