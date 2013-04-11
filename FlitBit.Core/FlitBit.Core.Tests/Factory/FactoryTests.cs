@@ -3,6 +3,7 @@ using System.Text;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using FlitBit.Core.Meta;
 
 namespace FlitBit.Core.Tests.Factory
 {
@@ -25,6 +26,23 @@ namespace FlitBit.Core.Tests.Factory
 
 		public override string Foo { get; set; }
 	}
+
+	[DefaultImplementation(InstanceScopeKind.OnDemand, typeof(ImplementedByDef))]
+	public interface IImplementedByDefault
+	{
+		string Foo { get; set; }
+	}
+
+	public class ImplementedByDef : IImplementedByDefault
+	{
+		public ImplementedByDef()
+		{
+			this.Foo = new DataGenerator().GetWords(20);
+		}
+
+		public string Foo { get; set; }
+	}
+
 
 	[TestClass]
 	public class FactoryTests
@@ -103,6 +121,18 @@ namespace FlitBit.Core.Tests.Factory
 			Assert.IsTrue(factory.CanConstruct<Unimplemented>());
 
 			var impl = factory.CreateInstance<Unimplemented>();
+			Assert.IsNotNull(impl);
+			Assert.IsNotNull(impl.Foo);
+		}
+
+		[TestMethod]
+		public void Factory_Can_Construct_Interface_With_DefaultImplementationAttribute()
+		{
+			var factory = FactoryProvider.Factory;
+			Assert.IsNotNull(factory);
+			Assert.IsTrue(factory.CanConstruct<IImplementedByDefault>());
+			
+			var impl = factory.CreateInstance<Implemented>();
 			Assert.IsNotNull(impl);
 			Assert.IsNotNull(impl.Foo);
 		}

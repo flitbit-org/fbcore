@@ -7,27 +7,30 @@ namespace FlitBit.Core.Meta
 	///   Indicates that an implementation of the interface is generated.
 	/// </summary>
 	[AttributeUsage(AttributeTargets.Interface)]
-	public abstract class AutoImplementedAttribute : Attribute
+	public class DefaultImplementationAttribute : AutoImplementedAttribute
 	{
 		/// <summary>
 		///   Creates a new instance.
 		/// </summary>
-		protected AutoImplementedAttribute()
+		public DefaultImplementationAttribute()
 		{}
 
 		/// <summary>
 		///   Creates a new instance.
 		/// </summary>
 		/// <param name="recommemdedScope">Recommended scope for the resultant type.</param>
-		protected AutoImplementedAttribute(InstanceScopeKind recommemdedScope)
+		/// <param name="defaultImplType">The default implementation used when non-other is contributed.</param>
+		public DefaultImplementationAttribute(InstanceScopeKind recommemdedScope, Type defaultImplType)
+			: base(recommemdedScope)
 		{
 			this.RecommemdedScope = recommemdedScope;
+			this.DefaultImplementationType = defaultImplType;
 		}
 
 		/// <summary>
-		///   Indicates the recommended instance scope for implementations.
+		/// The default implementation used when non-other is contributed.
 		/// </summary>
-		public InstanceScopeKind RecommemdedScope { get; set; }
+		public Type DefaultImplementationType { get; set; }
 
 		/// <summary>
 		///   Gets the implementation for target type T.
@@ -43,6 +46,14 @@ namespace FlitBit.Core.Meta
 		///   If the <paramref name="complete" /> callback is invoked, it must be given either an implementation type
 		///   assignable to type T, or a factory function that creates implementations of type T.
 		/// </remarks>
-		public abstract bool GetImplementation<T>(IFactory factory, Action<Type, Func<T>> complete);
+		public override bool GetImplementation<T>(IFactory factory, Action<Type, Func<T>> complete)
+		{
+			if (DefaultImplementationType != null)
+			{
+				complete(DefaultImplementationType, null);
+				return true;
+			}
+			return false;
+		}
 	}
 }

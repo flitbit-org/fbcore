@@ -97,7 +97,6 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
@@ -140,6 +139,7 @@
     <Compile Include="IInterrogateDisposable.cs" />
     <Compile Include="LogSink.cs" />
     <Compile Include="Meta\AutoImplementedAttribute.cs" />
+    <Compile Include="Meta\DefaultImplementationAttribute.cs" />
     <Compile Include="Meta\InstanceScopeKind.cs" />
     <Compile Include="Meta\SensitiveInfoAttribute.cs" />
     <Compile Include="Net\Enums.cs" />
