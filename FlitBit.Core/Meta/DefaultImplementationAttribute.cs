@@ -4,7 +4,7 @@ using FlitBit.Core.Factory;
 namespace FlitBit.Core.Meta
 {
 	/// <summary>
-	///   Indicates that an implementation of the interface is generated.
+	///   Indicates the default implementation of an interface.
 	/// </summary>
 	[AttributeUsage(AttributeTargets.Interface)]
 	public class DefaultImplementationAttribute : AutoImplementedAttribute
