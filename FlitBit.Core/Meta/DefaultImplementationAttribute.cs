@@ -55,5 +55,28 @@ namespace FlitBit.Core.Meta
 			}
 			return false;
 		}
+
+        /// <summary>
+        ///   Gets the implementation for target type T.
+        /// </summary>
+        /// <param name="factory">the factory from which the type was requsted.</param>
+        /// <param name="complete">callback invoked when the implementation is available</param>
+        /// <returns>
+        ///   <em>true</em> if implemented; otherwise <em>false</em>.
+        /// </returns>
+        /// <exception cref="ArgumentException">thrown if type T is not eligible for implementation</exception>
+        /// <remarks>
+        ///   If the <paramref name="complete" /> callback is invoked, it must be given either an implementation type
+        ///   assignable to type, or a factory function that creates implementations of type T.
+        /// </remarks>
+	    public override bool GetImplementation(IFactory factory, Action<Type, CompleteDelegate> complete)
+	    {
+            if (DefaultImplementationType != null)
+            {
+                complete(DefaultImplementationType, null);
+                return true;
+            }
+            return false;
+	    }
 	}
 }

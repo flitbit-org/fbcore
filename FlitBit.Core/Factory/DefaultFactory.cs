@@ -13,8 +13,55 @@ namespace FlitBit.Core.Factory
 		readonly ConcurrentDictionary<object, TypeRecord> _types = new ConcurrentDictionary<object, TypeRecord>();
 
 		#region IFactory Members
+        /// <summary>
+        /// Determins if the factory can construct instances of type.
+        /// </summary>
+        /// <param name="type">The Type</param>
+        /// <returns></returns>
+	    public bool CanConstruct(Type type)
+	    {
+            var key = type.GetKeyForType();
+            TypeRecord rec;
+            if (_types.TryGetValue(key, out rec))
+            {
+                return true;
+            }
+            if (!type.IsAbstract)
+            {
+                if (type.GetConstructor(Type.EmptyTypes) != null)
+                {
+                    rec = new TypeRecord
+                    {
+                        TargetType = type
+                    };
+                    _types.TryAdd(key, rec);
+                    return true;
+                }
+            }
+            else
+            {
+                var gotImpl = false;
+                return type.GetCustomAttributes(typeof(AutoImplementedAttribute), false)
+                                    .Cast<AutoImplementedAttribute>()
+                                    .Any(attr => attr.GetImplementation(this, (impl, functor) =>
+                                    {
+                                        if (impl == null || functor == null)
+                                        {
+                                            // use the implementation type if provided
+                                            rec = new TypeRecord
+                                            {
+                                                TargetType = impl,
+                                                Functor = functor
+                                            };
+                                            this._types.TryAdd(key, rec);
+                                            gotImpl = true;
+                                        }
+                                    }) && gotImpl);
+            }
+            return false;
+	    }
 
-		/// <summary>
+	    /// <summary>
 		///   Creates a new instance of type T.
 		/// </summary>
 		/// <typeparam name="T">type T</typeparam>
@@ -87,16 +134,25 @@ namespace FlitBit.Core.Factory
 		/// <returns></returns>
 		public Type GetImplementationType<T>()
 		{
-			var key = typeof(T).GetKeyForType();
-			TypeRecord rec;
-			if (this.CanConstruct<T>() && _types.TryGetValue(key, out rec))
-			{
-				return rec.TargetType;
-			}
-			return null;
+            return GetImplementationType(typeof(T));
 		}
+        /// <summary>
+        /// Gets the factory's implementation type for type
+        /// </summary>
+        /// <param name="type">The type</param>
+        /// <returns></returns>
+	    public Type GetImplementationType(Type type)
+	    {
+            var key = type.GetKeyForType();
+            TypeRecord rec;
+            if (this.CanConstruct(type) && _types.TryGetValue(key, out rec))
+            {
+                return rec.TargetType;
+            }
+            return null;
+	    }
 
-		/// <summary>
+	    /// <summary>
 		/// Notifies the factory that TImpl is an implementation that should be used to fulfill requests for type T.
 		/// </summary>
 		/// <typeparam name="T"></typeparam>

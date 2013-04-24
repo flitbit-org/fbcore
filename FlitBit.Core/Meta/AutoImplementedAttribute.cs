@@ -9,6 +9,11 @@ namespace FlitBit.Core.Meta
 	[AttributeUsage(AttributeTargets.Interface)]
 	public abstract class AutoImplementedAttribute : Attribute
 	{
+        /// <summary>
+        /// Added complete delegate
+        /// </summary>
+        public delegate void CompleteDelegate();
+
 		/// <summary>
 		///   Creates a new instance.
 		/// </summary>
@@ -44,5 +49,20 @@ namespace FlitBit.Core.Meta
 		///   assignable to type T, or a factory function that creates implementations of type T.
 		/// </remarks>
 		public abstract bool GetImplementation<T>(IFactory factory, Action<Type, Func<T>> complete);
+
+        /// <summary>
+        ///  Gets the implementation for type
+        /// </summary>
+        /// <param name="factory">the factory from which the type was requested.</param>
+        /// <param name="complete">callback invoked when the implementation is available</param>
+        /// <returns>
+        ///   <em>true</em> if implemented; otherwise <em>false</em>.
+        /// </returns>
+        /// <exception cref="ArgumentException">thrown if type T is not eligible for implementation</exception>
+        /// <remarks>
+        ///   If the <paramref name="complete" /> callback is invoked, it must be given either an implementation type
+        ///   assignable to type T, or a factory function that creates implementations of type T.
+        /// </remarks>
+        public abstract bool GetImplementation(IFactory factory, Action<Type, CompleteDelegate> complete);
 	}
 }

@@ -25,6 +25,13 @@ namespace FlitBit.Core.Factory
 		/// <returns></returns>
 		bool CanConstruct<T>();
 
+        /// <summary>
+        ///   Indicates whether the factory can construct type.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+	    bool CanConstruct(Type type);
+
 		/// <summary>
 		///   Creates a new instance of type T.
 		/// </summary>
@@ -38,6 +45,14 @@ namespace FlitBit.Core.Factory
 		/// <typeparam name="T">type T</typeparam>
 		/// <returns>If the factory can construct instances of type T, the implementation type used; otherwise null.</returns>
 		Type GetImplementationType<T>();
+
+        /// <summary>
+        ///   Gets the implementation type used when type is constructed
+        /// </summary>
+        /// <param name="type">Type</param>
+        /// <returns>If the factory can construct instances of type, the implementation type used; otherwise null.</returns>
+        Type GetImplementationType(Type type);
+
 
 		/// <summary>
 		/// Notifies the factory that TImpl is an implementation that should be used to fulfill requests for type T.
