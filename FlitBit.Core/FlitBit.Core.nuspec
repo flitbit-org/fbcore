@@ -4,13 +4,13 @@
     <id>$id$</id>
     <version>$version$</version>
     <title>$title$</title>
-    <authors>Phillip Clark, Montane Hamilton</authors>
+    <authors>Phillip Clark</authors>
     <owners>$author$</owners>
     <licenseUrl>http://fbcore.codeplex.com/license</licenseUrl>
     <projectUrl>http://fbcore.codeplex.com/</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Core classes and utilities used by the FlitBit Frameworks.</description>
-    <releaseNotes>Added DataGenerator utility methods for generating random DateTime and DateTimeOffsets.</releaseNotes>
+    <releaseNotes>New IFactory methods to reduce reflection. From Tyler Garlick's fork.</releaseNotes>
     <copyright>Copyright 2013</copyright>
   </metadata>
 </package>
