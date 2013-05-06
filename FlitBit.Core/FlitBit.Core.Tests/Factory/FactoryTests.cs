@@ -1,49 +1,8 @@
 ﻿using System;
-using System.Text;
-using System.Collections.Generic;
-using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using FlitBit.Core.Meta;
 
 namespace FlitBit.Core.Tests.Factory
 {
-	public interface IUnimplementedInterface
-	{
-		string Foo { get; set; }
-	}
-
-	public abstract class Unimplemented : IUnimplementedInterface
-	{	
-		public abstract string Foo { get; set; }
-	}
-
-	public class Implemented : Unimplemented
-	{
-		public Implemented()
-		{
-			this.Foo = new DataGenerator().GetWords(20);
-		}
-
-		public override string Foo { get; set; }
-	}
-
-	[DefaultImplementation(InstanceScopeKind.OnDemand, typeof(ImplementedByDef))]
-	public interface IImplementedByDefault
-	{
-		string Foo { get; set; }
-	}
-
-	public class ImplementedByDef : IImplementedByDefault
-	{
-		public ImplementedByDef()
-		{
-			this.Foo = new DataGenerator().GetWords(20);
-		}
-
-		public string Foo { get; set; }
-	}
-
-
 	[TestClass]
 	public class FactoryTests
 	{
@@ -135,6 +94,22 @@ namespace FlitBit.Core.Tests.Factory
 			var impl = factory.CreateInstance<Implemented>();
 			Assert.IsNotNull(impl);
 			Assert.IsNotNull(impl.Foo);
+		}
+
+		[TestMethod]
+		public void Factory_Can_Construct_When_Implemented_By_Attribute()
+		{
+			var factory = FactoryProvider.Factory;
+			Assert.IsNotNull(factory);
+			
+			Assert.IsTrue(factory.CanConstruct<IAmImplementedByAttribute>());
+
+			var impl = factory.CreateInstance<IAmImplementedByAttribute>();
+			Assert.IsNotNull(impl);
+			Assert.IsNull(impl.NuthinMuch);
+			impl.NuthinMuch = "your name here";
+			Assert.IsNotNull(impl.NuthinMuch);
+
 		}
 	}
 }

@@ -43,7 +43,20 @@ namespace FlitBit.Core.Meta
 		///   If the <paramref name="complete" /> callback is invoked, it must be given either an implementation type
 		///   assignable to type T, or a factory function that creates implementations of type T.
 		/// </remarks>
-		public abstract bool GetImplementation<T>(IFactory factory, Action<Type, Func<T>> complete);
+		public virtual bool GetImplementation<T>(IFactory factory, Action<Type, Func<T>> complete)
+		{
+			return GetImplementation(factory, typeof(T), (t, f) =>
+			{
+				if (f != null)
+				{
+					complete(t, () => (T) f());
+				}
+				else
+				{
+					complete(t, null);
+				}
+			});
+		}
 
 		/// <summary>
 		///   Gets the implementation for type

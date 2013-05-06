@@ -42,11 +42,11 @@ namespace FlitBit.Core.Factory
 			else
 			{
 				var gotImpl = false;
-				return type.GetCustomAttributes(typeof(AutoImplementedAttribute), false)
+				return type.GetCustomAttributes(typeof(AutoImplementedAttribute), true)
 									.Cast<AutoImplementedAttribute>()
 									.Any(attr => attr.GetImplementation(this, type, (impl, functor) =>
 									{
-										if (impl == null || functor == null)
+										if (impl != null || functor != null)
 										{
 											// use the implementation type if provided
 											rec = new TypeRecord
@@ -69,14 +69,23 @@ namespace FlitBit.Core.Factory
 		/// <returns></returns>
 		public T CreateInstance<T>()
 		{
-			var key = typeof(T).GetKeyForType();
+			return (T) CreateInstance(typeof(T));
+		}
+
+		/// <summary>
+		///   Creates a new instance of the type provided.
+		/// </summary>
+		/// <returns>a new instance</returns>
+		public object CreateInstance(Type type)
+		{
+			var key = type.GetKeyForType();
 			TypeRecord rec;
-			if (this.CanConstruct<T>() && _types.TryGetValue(key, out rec))
+			if (this.CanConstruct(type) && _types.TryGetValue(key, out rec))
 			{
-				return (T) rec.CreateInstance();
+				return rec.CreateInstance();
 			}
 			throw new InvalidOperationException(String.Concat("No suitable implementation found: ",
-																												typeof(T).GetReadableFullName(), "."));
+																												type.GetReadableFullName(), "."));
 		}
 
 		/// <summary>
@@ -155,7 +164,7 @@ namespace FlitBit.Core.Factory
 
 			internal object CreateInstance()
 			{
-				return (TargetType == null) ? Functor.DynamicInvoke(null) : Activator.CreateInstance(TargetType);
+				return (Functor != null) ? Functor.DynamicInvoke(null) : Activator.CreateInstance(TargetType);
 			}
 		}
 	}

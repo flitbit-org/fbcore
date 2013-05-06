@@ -40,6 +40,13 @@ namespace FlitBit.Core.Factory
 		T CreateInstance<T>();
 
 		/// <summary>
+		///   Creates a new instance of the type provided.
+		/// </summary>
+		/// <param name="type">the type of instance to create</param>
+		/// <returns>a new instance</returns>
+		object CreateInstance(Type type);
+
+		/// <summary>
 		///   Gets the implementation type used when type T is constructed.
 		/// </summary>
 		/// <typeparam name="T">type T</typeparam>
