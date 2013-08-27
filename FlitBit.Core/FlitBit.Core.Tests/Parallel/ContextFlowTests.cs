@@ -25,7 +25,10 @@ namespace FlitBit.Core.Tests.Parallel
 		[TestMethod]
 		public void ContextFlow_EmptyContextWhenNoContext()
 		{
-			var ambient = System.Threading.Tasks.Task.Factory.StartNew(() => ContextFlow.ForkAmbient()).Result;
+			// TaskCreationOptions.LongRunning hints to TPL that it should always make a new thread for this work
+			// ContextFlow.ForkAmbient would only have an empty context in a new thread where no context is set,
+			// so only a new thread would guarantee the test results are accurate
+			var ambient = System.Threading.Tasks.Task.Factory.StartNew(() => ContextFlow.ForkAmbient(), System.Threading.Tasks.TaskCreationOptions.LongRunning).Result;
 			Assert.IsNull(ambient);
 		}
 
