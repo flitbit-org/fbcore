@@ -25,7 +25,7 @@ namespace FlitBit.Core.Tests.Parallel
 		[TestMethod]
 		public void ContextFlow_EmptyContextWhenNoContext()
 		{
-			var ambient = ContextFlow.ForkAmbient();
+			var ambient = System.Threading.Tasks.Task.Factory.StartNew(() => ContextFlow.ForkAmbient()).Result;
 			Assert.IsNull(ambient);
 		}
 

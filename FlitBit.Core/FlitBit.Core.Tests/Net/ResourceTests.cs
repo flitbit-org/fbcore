@@ -222,9 +222,9 @@ namespace FlitBit.Core.Tests.Net
 		[TestMethod]
 		public void HttpGetDynamic_Sequential()
 		{
-			GetTweetsAndPrint(new Uri("http://search.twitter.com/search.json?q=hollywood"));
-			GetTweetsAndPrint(new Uri("http://search.twitter.com/search.json?q=supreme%20court"));
-			GetTweetsAndPrint(new Uri("http://search.twitter.com/search.json?q=erlang"));
+			GetTweetsAndPrint(new Uri("http://api.openweathermap.org/data/2.5/weather?q=London,uk"));
+			GetTweetsAndPrint(new Uri("http://api.openweathermap.org/data/2.5/weather?q=Seattle,wa"));
+			GetTweetsAndPrint(new Uri("http://api.openweathermap.org/data/2.5/weather?q=Salt,ut"));
 		}
 
 		void GetTweetsAndPrint(Uri uri)
@@ -232,11 +232,8 @@ namespace FlitBit.Core.Tests.Net
 			var request = uri.MakeResourceRequest();
 			request.HttpGet((e, r) =>
 			{
-				var dyn = r.DeserializeResponseAsDynamic();
-				foreach (var tweet in dyn.results)
-				{
-					Console.WriteLine(String.Concat(tweet.from_user_name, " says: ", tweet.text));
-				}
+				var json = r.DeserializeResponseAsDynamic();
+				Console.WriteLine(String.Concat(json.name, " weather: ", json.weather[0].description));
 			});
 		}
 

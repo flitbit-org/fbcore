@@ -371,7 +371,7 @@ namespace FlitBit.Core.Net
 			Func<HttpWebResponse, T> responseHandler)
 		{
 			Contract.Requires(req != null);
-			Contract.Ensures(Contract.Result<Completion<HttpWebResponse>>() != null);
+			Contract.Ensures(Contract.Result<Completion<T>>() != null);
 
 			return ParallelExecuteHttpVerb(req, "DELETE", responseHandler);
 		}
@@ -385,7 +385,7 @@ namespace FlitBit.Core.Net
 		public static Completion<T> ParallelGet<T>(this Uri uri, Func<HttpWebResponse, T> responseHandler)
 		{
 			Contract.Requires<ArgumentNullException>(uri != null);
-			Contract.Ensures(Contract.Result<Completion<HttpWebResponse>>() != null);
+			Contract.Ensures(Contract.Result<Completion<T>>() != null);
 			Contract.Assert(uri.Scheme != null && uri.Scheme.StartsWith("http"), "URI must be http(s) scheme");
 
 			return uri.MakeResourceRequest()
@@ -401,7 +401,7 @@ namespace FlitBit.Core.Net
 		public static Completion<T> ParallelGet<T>(this HttpWebRequest req, Func<HttpWebResponse, T> responseHandler)
 		{
 			Contract.Requires(req != null);
-			Contract.Ensures(Contract.Result<Completion<HttpWebResponse>>() != null);
+			Contract.Ensures(Contract.Result<Completion<T>>() != null);
 
 			return ParallelExecuteHttpVerb(req, "GET", responseHandler);
 		}
@@ -423,7 +423,7 @@ namespace FlitBit.Core.Net
 			Contract.Requires<ArgumentNullException>(postBody != null);
 			Contract.Requires<ArgumentNullException>(contentType != null);
 			Contract.Requires<ArgumentException>(contentType.Length > 0);
-			Contract.Ensures(Contract.Result<Completion<HttpWebResponse>>() != null);
+			Contract.Ensures(Contract.Result<Completion<T>>() != null);
 
 			return ParallelExecuteHttpVerbWithPostBody(req, postBody, contentType, "POST", responseHandler);
 		}
@@ -445,7 +445,7 @@ namespace FlitBit.Core.Net
 			Contract.Requires<ArgumentNullException>(postBody != null);
 			Contract.Requires<ArgumentNullException>(contentType != null);
 			Contract.Requires<ArgumentException>(contentType.Length > 0);
-			Contract.Ensures(Contract.Result<Completion<HttpWebResponse>>() != null);
+			Contract.Ensures(Contract.Result<Completion<T>>() != null);
 
 			return ParallelExecuteHttpVerbWithPostBody(req, postBody, contentType, "PUT", responseHandler);
 		}
@@ -557,7 +557,7 @@ namespace FlitBit.Core.Net
 			Func<HttpWebResponse, T> responseHandler)
 		{
 			Contract.Requires<ArgumentNullException>(req != null);
-			Contract.Ensures(Contract.Result<Completion<HttpWebResponse>>() != null);
+			Contract.Ensures(Contract.Result<Completion<T>>() != null);
 
 			req.Method = httpVerb;
 
@@ -586,7 +586,7 @@ namespace FlitBit.Core.Net
 			Contract.Requires<ArgumentNullException>(postBody != null);
 			Contract.Requires<ArgumentNullException>(contentType != null);
 			Contract.Requires<ArgumentException>(contentType.Length > 0);
-			Contract.Ensures(Contract.Result<Completion<HttpWebResponse>>() != null);
+			Contract.Ensures(Contract.Result<Completion<T>>() != null);
 
 			req.Method = httpVerb;
 			req.ContentType = contentType;
