@@ -4,4 +4,9 @@
 	{
 		string Foo { get; set; }
 	}
+
+  public interface IUnimplementedInterface2
+  {
+    string Foo { get; set; }
+  }
 }

@@ -75,7 +75,7 @@ namespace FlitBit.Core.Tests.Parallel
 
 			foreach (var th in threads)
 			{
-				th.Join();
+				th.Join(TimeSpan.FromSeconds(30));
 			}
 			if (ex != null)
 			{
@@ -132,7 +132,7 @@ namespace FlitBit.Core.Tests.Parallel
 			}
 			foreach (var tpl in threads)
 			{
-				tpl.Item1.Join();
+				tpl.Item1.Join(TimeSpan.FromSeconds(30));
 			}
 			lock (sync)
 			{

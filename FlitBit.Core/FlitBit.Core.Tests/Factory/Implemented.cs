@@ -1,6 +1,6 @@
 ﻿namespace FlitBit.Core.Tests.Factory
 {
-	public class Implemented : Unimplemented
+	public class Implemented : Unimplemented2
 	{
 		public Implemented()
 		{

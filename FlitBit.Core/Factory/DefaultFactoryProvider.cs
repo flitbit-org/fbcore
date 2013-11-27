@@ -1,16 +1,13 @@
 ﻿namespace FlitBit.Core.Factory
 {
-	internal sealed class DefaultFactoryProvider : IFactoryProvider
-	{
-		readonly IFactory _factory = new DefaultFactory();
+  internal sealed class DefaultFactoryProvider : IFactoryProvider
+  {
+    readonly IFactory _factory = new DefaultFactory();
 
-		#region IFactoryProvider Members
+    #region IFactoryProvider Members
 
-		public IFactory GetFactory()
-		{
-			return _factory;
-		}
+    public IFactory GetFactory() { return _factory; }
 
-		#endregion
-	}
+    #endregion
+  }
 }

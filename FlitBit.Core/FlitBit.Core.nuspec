@@ -6,11 +6,11 @@
     <title>$title$</title>
     <authors>Phillip Clark</authors>
     <owners>$author$</owners>
-    <licenseUrl>http://fbcore.codeplex.com/license</licenseUrl>
-    <projectUrl>http://fbcore.codeplex.com/</projectUrl>
+    <licenseUrl>https://raw.github.com/flitbit-org/fbcore/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/flitbit-org/fbcore</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Core classes and utilities used by the FlitBit Frameworks.</description>
-    <releaseNotes>New IFactory methods to reduce reflection. From Tyler Garlick's fork.</releaseNotes>
+    <description>FlitBit Core - frameworks, utilities, and extensions for dotNet.</description>
+    <releaseNotes>Build from new home on github.</releaseNotes>
     <copyright>Copyright 2013</copyright>
   </metadata>
 </package>

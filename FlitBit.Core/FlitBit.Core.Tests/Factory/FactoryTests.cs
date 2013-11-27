@@ -43,20 +43,20 @@ namespace FlitBit.Core.Tests.Factory
 		{
 			var factory = FactoryProvider.Factory;
 			Assert.IsNotNull(factory);
-			Assert.IsFalse(factory.CanConstruct<IUnimplementedInterface>());
+			Assert.IsFalse(factory.CanConstruct<IUnimplementedInterface2>());
 			try
 			{
-				factory.CreateInstance<IUnimplementedInterface>();
+				factory.CreateInstance<IUnimplementedInterface2>();
 				Assert.Fail("Should have thrown InvalidOperationException!");
 			}
 			catch (InvalidOperationException)
 			{
 			}
 
-			factory.RegisterImplementationType<IUnimplementedInterface, Implemented>();
-			Assert.IsTrue(factory.CanConstruct<IUnimplementedInterface>());
+			factory.RegisterImplementationType<IUnimplementedInterface2, Implemented>();
+			Assert.IsTrue(factory.CanConstruct<IUnimplementedInterface2>());
 
-			var impl = factory.CreateInstance<IUnimplementedInterface>();
+			var impl = factory.CreateInstance<IUnimplementedInterface2>();
 			Assert.IsNotNull(impl);
 			Assert.IsNotNull(impl.Foo);
 		}
@@ -66,20 +66,20 @@ namespace FlitBit.Core.Tests.Factory
 		{
 			var factory = FactoryProvider.Factory;
 			Assert.IsNotNull(factory);
-			Assert.IsFalse(factory.CanConstruct<Unimplemented>());
+			Assert.IsFalse(factory.CanConstruct<Unimplemented2>());
 			try
 			{
-				factory.CreateInstance<Unimplemented>();
+				factory.CreateInstance<Unimplemented2>();
 				Assert.Fail("Should have thrown InvalidOperationException!");
 			}
 			catch (InvalidOperationException)
 			{
 			}
 
-			factory.RegisterImplementationType<Unimplemented, Implemented>();
-			Assert.IsTrue(factory.CanConstruct<Unimplemented>());
+			factory.RegisterImplementationType<Unimplemented2, Implemented>();
+			Assert.IsTrue(factory.CanConstruct<Unimplemented2>());
 
-			var impl = factory.CreateInstance<Unimplemented>();
+			var impl = factory.CreateInstance<Unimplemented2>();
 			Assert.IsNotNull(impl);
 			Assert.IsNotNull(impl.Foo);
 		}
