@@ -8,8 +8,22 @@
 	<PropertyGroup>
 		<SolutionDir>$(MSBuildThisFileDirectory.Trim('\\'))</SolutionDir>
 	</PropertyGroup>
-
-	<Import Project="$(MSBuildThisFileDirectory).build\3rdParty\MSBuild Extension Pack 4.0.8.0 Binaries\MSBuild.ExtensionPack.tasks"/>
+	<PropertyGroup>
+		<BuildToolsDirOffset></BuildToolsDirOffset>
+		<BuildToolsDirOffset Condition="!Exists('$(SolutionDir)\$(BuildToolsDirOffset).build\BuildTools.targets')">..\</BuildToolsDirOffset>
+		<BuildToolsDirOffset Condition="!Exists('$(SolutionDir)\$(BuildToolsDirOffset).build\BuildTools.targets')">..\..\</BuildToolsDirOffset>
+		<BuildToolsDirOffset Condition="!Exists('$(SolutionDir)\$(BuildToolsDirOffset).build\BuildTools.targets')">..\..\..\</BuildToolsDirOffset>
+		<BuildToolsDirOffset Condition="!Exists('$(SolutionDir)\$(BuildToolsDirOffset).build\BuildTools.targets')">..\..\..\..\</BuildToolsDirOffset>
+		<BuildToolsDirOffset Condition="!Exists('$(SolutionDir)\$(BuildToolsDirOffset).build\BuildTools.targets')">..\..\..\..\..\..\</BuildToolsDirOffset>
+		<BuildToolsDirOffset Condition="!Exists('$(SolutionDir)\$(BuildToolsDirOffset).build\BuildTools.targets')">..\..\..\..\..\..\..\</BuildToolsDirOffset>
+		<BuildToolsDirOffset Condition="!Exists('$(SolutionDir)\$(BuildToolsDirOffset).build\BuildTools.targets')">..\..\..\..\..\..\..\..\</BuildToolsDirOffset>
+		<BuildToolsDirOffset Condition="!Exists('$(SolutionDir)\$(BuildToolsDirOffset).build\BuildTools.targets')">..\..\..\..\..\..\..\..\..\</BuildToolsDirOffset>
+		<BuildToolsDirOffset Condition="!Exists('$(SolutionDir)\$(BuildToolsDirOffset).build\BuildTools.targets')">..\..\..\..\..\..\..\..\..\..\</BuildToolsDirOffset>
+		<BuildToolsDirOffset Condition="!Exists('$(SolutionDir)\$(BuildToolsDirOffset).build\BuildTools.targets')">..\..\..\..\..\..\..\..\..\..\..\</BuildToolsDirOffset>
+		<BuildToolsDir>$(SolutionDir)\$(BuildToolsDirOffset)</BuildToolsDir>
+	</PropertyGroup>
+	
+	<Import Project="$(BuildToolsDir).build\BuildTools.targets"/>
 
 	<Import Condition="Exists('$(SolutionDir)\VersionRoot.targets')"
 		Project="$(SolutionDir)\VersionRoot.targets" />
