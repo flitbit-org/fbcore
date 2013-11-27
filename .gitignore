@@ -6,5 +6,5 @@ TestResults/
 *.user
 *.version.cs
 *.log
-
 *.StyleCop
+*.nupkg

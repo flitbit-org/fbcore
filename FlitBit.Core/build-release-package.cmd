@@ -47,7 +47,7 @@ IF "%PLT%" == "" (
 	SET PLT="AnyCPU"
 )
 IF "%VRB%" == "" (
-	SET VRB="detailed"
+	SET VRB="diag"
 )
 
 FOR %%I IN (*.csproj) DO CALL :build_csproj "%%~nxI"	
