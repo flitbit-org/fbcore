@@ -13,15 +13,21 @@ namespace FlitBit.Core.Tests.Parallel
 		{
 			using (var scope = CleanupScope.NewOrSharedScope())
 			{
-				
 				var context = ContextFlow.Current;
-				using (var ambient = ContextFlow.ForkAmbient())
-				{
-					Assert.AreNotSame(context, ambient);
-					ContextFlow.EnsureAmbient(ambient);
-					Assert.AreSame(ContextFlow.Current, ambient);
-				}
+
+			  var task = Task.Factory.StartNew(ContextFlow.Capture(() =>
+			  {
+			    var ambient = ContextFlow.Current;
+			    Assert.AreNotSame(context, ambient);
+			    Assert.AreSame(scope, CleanupScope.Current);
+			  }));
+				
 				Assert.AreSame(context, ContextFlow.Current);
+
+			  task.Wait();
+			  Assert.IsFalse(task.IsFaulted);
+
+        Assert.AreSame(context, ContextFlow.Current);
 			}
 		}
 
@@ -31,7 +37,7 @@ namespace FlitBit.Core.Tests.Parallel
 			// TaskCreationOptions.LongRunning hints to TPL that it should always make a new thread for this work
 			// ContextFlow.ForkAmbient would only have an empty context in a new thread where no context is set,
 			// so only a new thread would guarantee the test results are accurate
-			var ambient = System.Threading.Tasks.Task.Factory.StartNew(() => ContextFlow.ForkAmbient(), System.Threading.Tasks.TaskCreationOptions.LongRunning).Result;
+			var ambient = Task.Factory.StartNew(() => ContextFlow.ForkAmbient(), System.Threading.Tasks.TaskCreationOptions.LongRunning).Result;
 			Assert.IsNull(ambient);
 		}
 

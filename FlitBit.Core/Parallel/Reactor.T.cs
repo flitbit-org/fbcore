@@ -9,6 +9,8 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Threading;
+using System.Threading.Tasks;
+using FlitBit.Core.Log;
 
 namespace FlitBit.Core.Parallel
 {
@@ -19,12 +21,11 @@ namespace FlitBit.Core.Parallel
   /// <typeparam name="TItem">item type TItem</typeparam>
   public class Reactor<TItem> : ReactorBase
   {
-    readonly WaitCallback _backgroundReactor;
-
     readonly Object _lock = new Object();
     readonly ReactorOptions _options;
     readonly ConcurrentQueue<TItem> _queue = new ConcurrentQueue<TItem>();
     readonly Action<Reactor<TItem>, TItem> _reactor;
+    readonly Thread _backgroundThread;
 
     int _backgroundWorkers;
     int _backgroundWorkersActive;
@@ -50,13 +51,16 @@ namespace FlitBit.Core.Parallel
 
       _reactor = reactor;
       _options = options ?? DefaultOptions;
-      _backgroundReactor = Background_Reactor;
+      _backgroundThread = new Thread(ReactorControllerLogic);
+      _backgroundThread.IsBackground = true;
+      _backgroundThread.Start();
+      Interlocked.Increment(ref _backgroundWorkers);
     }
 
     /// <summary>
     ///   Indicates whether the reactor is active.
     /// </summary>
-    public bool IsActive { get { return Thread.VolatileRead(ref _backgroundWorkersActive) > 0; } }
+    public bool IsActive { get { return _backgroundThread.IsAlive; } }
 
     /// <summary>
     ///   Indicates whethe the reactor is stopping.
@@ -137,65 +141,33 @@ namespace FlitBit.Core.Parallel
       return this;
     }
 
-    /// <summary>
-    ///   Determines if a log event is allowed for the levels given.
-    /// </summary>
-    /// <param name="levels"></param>
-    /// <returns></returns>
-    protected virtual bool AllowLogEvent(SourceLevels levels)
-    {
-      return false;
-    }
-
-    /// <summary>
-    ///   Occurs when logging messages are created on the reactor.
-    /// </summary>
-    /// <param name="eventType"></param>
-    /// <param name="message"></param>
-    protected virtual void OnLogMessage(TraceEventType eventType, string message)
-    {}
-
-    void Background_Reactor(object unusedState)
+    void ReactorControllerLogic()
     {
       var itemsHandled = 0;
-
       try
       {
-        int workers;
-        int active;
-        lock (_lock)
+        if (LogSink.IsLogging(SourceLevels.Verbose))
         {
-          workers = Interlocked.Increment(ref _backgroundWorkers);
-          Interlocked.Decrement(ref _backgroundWorkersScheduled);
-          active = Interlocked.Increment(ref _backgroundWorkersActive);
-        }
-        if (AllowLogEvent(SourceLevels.Verbose))
-        {
-          OnLogMessage(TraceEventType.Verbose,
+          LogSink.Verbose(
             String.Format(
-              "Entering background reactor logic: {0} of {1}", active, workers)
+              "Entering reactor controller logic: {0} of {1}", active, workers)
             );
         }
-        TItem item;
-        // Continue until signaled or no more items in queue...
-        while (!IsCanceled
-               && _queue.TryDequeue(out item))
+        while (!IsCanceled)
         {
-          itemsHandled++;
-          try
+          var pre = _queue.Count;
+          if (pre > 0)
           {
-            _reactor(this, item);
-          }
-          catch (Exception e)
-          {
-            if (AllowLogEvent(SourceLevels.Error))
-            {
-              OnLogMessage(TraceEventType.Verbose,
-                String.Format("Reactor threw an uncaught exception: {0}", e.FormatForLogging()));
+            itemsHandled += PerformReactorLogic();
+            var post = _queue.Count;
+            if (post > (pre + 1))
+            { // filling faster than draining, create more background tasks in the threadpool...
+              Interlocked.Increment(ref _backgroundWorkers);
+              Task.Factory.StartNew(Background_Reactor);
             }
-            if (OnUncaughtException(e))
+            else if (post == 0)
             {
-              throw;
+              
             }
           }
         }
@@ -205,15 +177,84 @@ namespace FlitBit.Core.Parallel
         var remaining = Interlocked.Decrement(ref _backgroundWorkersActive);
         try
         {
-          if (!IsCanceled
-              && remaining == 0
-              && _queue.Count > 0)
+          if (LogSink.IsLogging(SourceLevels.Verbose))
           {
-            CheckBackgroundReactorState();
+            LogSink.Verbose(
+              String.Format(
+                "Exiting reactor controller logic; handled {0} items, {1} remaining workers", itemsHandled,
+                Thread.VolatileRead(ref _backgroundWorkers) - 1)
+              );
           }
-          if (AllowLogEvent(SourceLevels.Verbose))
+        }
+        finally
+        {
+          Interlocked.Decrement(ref _backgroundWorkers);
+        }
+      }
+    }
+
+    int PerformReactorLogic()
+    {
+      var count = 0;
+      TItem item;
+      if (!IsCanceled
+          && _queue.TryDequeue(out item))
+      {
+        Interlocked.Increment(ref _backgroundWorkersActive);
+        try
+        {
+          count++;
+          _reactor(this, item);
+        }
+        catch (Exception e)
+        {
+          if (LogSink.IsLogging(SourceLevels.Error))
           {
-            OnLogMessage(TraceEventType.Verbose,
+            LogSink.Verbose(
+              String.Format("Reactor threw an uncaught exception: {0}", e.FormatForLogging()));
+          }
+          if (OnUncaughtException(e))
+          {
+            throw;
+          }
+        }
+        finally
+        {
+          Interlocked.Decrement(ref _backgroundWorkersActive);
+        }
+      }
+      return count;
+    }
+
+    void Background_Reactor()
+    {
+      var itemsHandled = 0;
+      try
+      {
+        int workers = Thread.VolatileRead(ref this._backgroundWorkers);
+        int active = Interlocked.Increment(ref this._backgroundWorkersActive);
+        if (LogSink.IsLogging(SourceLevels.Verbose))
+        {
+          LogSink.Verbose(
+            String.Format(
+              "Entering background reactor logic: {0} of {1}", active, workers)
+            );
+        }
+        // Continue until signaled or no more items in queue...
+        while (!IsCanceled)
+        {
+          var count = PerformReactorLogic();
+          itemsHandled += count;
+          if (count == 0) break;
+        }
+      }
+      finally
+      {
+        try
+        {
+          if (LogSink.IsLogging(SourceLevels.Verbose))
+          {
+            LogSink.Verbose(
               String.Format(
                 "Exiting background reactor; handled {0} items, {1} remaining workers", itemsHandled,
                 Thread.VolatileRead(ref _backgroundWorkers) - 1)
@@ -227,85 +268,36 @@ namespace FlitBit.Core.Parallel
       }
     }
 
-    void CheckBackgroundReactorState()
-    {
-      if (!IsCanceled)
-      {
-        lock (_lock)
-        {
-          var workers = _backgroundWorkersActive + _backgroundWorkersScheduled;
-          if (!IsCanceled
-              && _queue.Count > 0
-              && workers < _options.MaxDegreeOfParallelism)
-          {
-            ThreadPool.QueueUserWorkItem(this._backgroundReactor);
-            Interlocked.Increment(ref _backgroundWorkersScheduled);
-          }
-        }
-      }
-    }
-
     void Foreground_Reactor(TItem item, int dispatchesPerSequential)
     {
       var itemsHandled = 0;
-
       try
       {
-        int workers;
-        int active;
-        lock (_lock)
+        int workers = Thread.VolatileRead(ref this._backgroundWorkers);
+        int active = Interlocked.Increment(ref this._backgroundWorkersActive);
+        if (LogSink.IsLogging(SourceLevels.Verbose))
         {
-          workers = Interlocked.Increment(ref _backgroundWorkers);
-          Interlocked.Decrement(ref _backgroundWorkersScheduled);
-          active = Interlocked.Increment(ref _backgroundWorkersActive);
-        }
-        if (AllowLogEvent(SourceLevels.Verbose))
-        {
-          OnLogMessage(TraceEventType.Verbose,
+          LogSink.Verbose(
             String.Format(
-              "Entering foreground reactor logic: {0} of {1}", active, workers)
+              "Entering borrowed foreground thread: {0} of {1}", active, workers)
             );
         }
-        var it = item;
-        do
+        while (!IsCanceled && itemsHandled < dispatchesPerSequential)
         {
-          itemsHandled++;
-          try
-          {
-            _reactor(this, it);
-          }
-          catch (Exception e)
-          {
-            if (AllowLogEvent(SourceLevels.Error))
-            {
-              OnLogMessage(TraceEventType.Verbose,
-                String.Format("Reactor threw an uncaught exception: {0}", e.FormatForLogging()));
-            }
-            if (OnUncaughtException(e))
-            {
-              throw;
-            }
-          }
-        } while (!IsCanceled
-                 && itemsHandled <= dispatchesPerSequential
-                 && _queue.TryDequeue(out it));
+          var count = PerformReactorLogic();
+          itemsHandled += count;
+          if (count == 0) break;
+        }
       }
       finally
       {
-        var remaining = Interlocked.Decrement(ref _backgroundWorkersActive);
         try
         {
-          if (!IsCanceled
-              && remaining == 0
-              && _queue.Count > 0)
+          if (LogSink.IsLogging(SourceLevels.Verbose))
           {
-            CheckBackgroundReactorState();
-          }
-          if (AllowLogEvent(SourceLevels.Verbose))
-          {
-            OnLogMessage(TraceEventType.Verbose,
+            LogSink.Verbose(
               String.Format(
-                "Exiting foreground reactor; handled {0} items, {1} remaining workers", itemsHandled,
+                "Exiting borrowed foreground thread; handled {0} items, {1} remaining workers", itemsHandled,
                 Thread.VolatileRead(ref _backgroundWorkers) - 1)
               );
           }
@@ -317,27 +309,5 @@ namespace FlitBit.Core.Parallel
       }
     }
 
-    bool OnUncaughtException(Exception err)
-    {
-      if (_uncaughtException == null)
-      {
-        return false;
-      }
-
-      var args = new ReactorExceptionArgs(err);
-      _uncaughtException(this, args);
-      return args.Rethrow;
-    }
-
-    /// <summary>
-    ///   Event fired when uncaught exceptions are encountered by the reactor.
-    /// </summary>
-    public event EventHandler<ReactorExceptionArgs> UncaughtException
-    {
-      add { _uncaughtException += value; }
-      remove { _uncaughtException -= value; }
-    }
-
-    event EventHandler<ReactorExceptionArgs> _uncaughtException;
   }
 }

@@ -809,15 +809,16 @@ namespace FlitBit.Core.Parallel
 	  internal static class Ambient
     {
 	    const string CallContextKey = "FlitBitAmbientContextFlowKey";
-      //[ThreadStatic] static Stack<ContextFlow> __stack;
+      [ThreadStatic] static Stack<ContextFlow> __stack;
 
       internal static ContextFlow Push(ContextFlow ambient)
       {
-	      var stack = (Stack<ContextFlow>) CallContext.LogicalGetData(CallContextKey);
+        // .net 4.0 TPL doesn't flow the call context well so we'll keep track ourselves...
+        var stack = __stack; //(Stack<ContextFlow>) CallContext.LogicalGetData(CallContextKey);
 				if (stack == null)
         {
-					stack = new Stack<ContextFlow>();
-	        CallContext.LogicalSetData(CallContextKey, stack);
+					__stack = stack = new Stack<ContextFlow>();
+	        //CallContext.LogicalSetData(CallContextKey, stack);
         }
 				stack.Push(ambient);
         return ambient;
@@ -825,7 +826,7 @@ namespace FlitBit.Core.Parallel
 
       internal static bool TryPeek(out ContextFlow ambient)
       {
-				var stack = (Stack<ContextFlow>) CallContext.LogicalGetData(CallContextKey);
+        var stack = __stack; // (Stack<ContextFlow>) CallContext.LogicalGetData(CallContextKey);
 				if (stack != null
 						&& stack.Count > 0)
         {
@@ -838,7 +839,7 @@ namespace FlitBit.Core.Parallel
 
       internal static bool TryPop(ContextFlow comparand)
       {
-				var stack = (Stack<ContextFlow>)CallContext.LogicalGetData(CallContextKey);
+        var stack = __stack; // (Stack<ContextFlow>)CallContext.LogicalGetData(CallContextKey);
 				if (comparand != null
             && stack != null
             && stack.Count > 0)

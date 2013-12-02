@@ -19,7 +19,6 @@ namespace FlitBit.Core
   {
 		static readonly ILogSink LogSink = typeof(Disposable).GetLogSink();
 
-
     enum DisposalState
     {
       None = 0,
