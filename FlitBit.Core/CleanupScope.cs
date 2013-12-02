@@ -5,11 +5,14 @@
 #endregion
 
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Runtime.InteropServices;
 using System.Threading;
+using FlitBit.Core.Log;
 using FlitBit.Core.Parallel;
 using FlitBit.Core.Properties;
 
@@ -22,6 +25,118 @@ namespace FlitBit.Core
   /// </summary>
   public class CleanupScope : Disposable, ICleanupScope
   {
+
+	  internal class CleanupScopeContextFlowProvider : IContextFlowProvider
+	  {
+		  static readonly Lazy<CleanupScopeContextFlowProvider> Provider =
+			  new Lazy<CleanupScopeContextFlowProvider>(CreateAndRegisterContextFlowProvider, LazyThreadSafetyMode.ExecutionAndPublication);
+
+		  static CleanupScopeContextFlowProvider CreateAndRegisterContextFlowProvider()
+		  {
+			  var res = new CleanupScopeContextFlowProvider();
+			  ContextFlow.RegisterProvider(res);
+			  return res;
+		  }
+
+		  [ThreadStatic]
+		  static Stack<CleanupScope> __scopes;
+
+		  public CleanupScopeContextFlowProvider()
+		  {
+			  this.ContextKey = Guid.NewGuid();
+		  }
+
+			public Guid ContextKey
+			{
+				get; private set;
+			}
+
+			public object Capture()
+			{
+				var top = Peek();
+				if (top != null)
+				{
+					return top.ShareScope();
+				}
+				return null;
+			}
+
+			public void Attach(ContextFlow context, object captureKey)
+			{
+				var scope = (captureKey as CleanupScope);
+				if (scope != null)
+				{
+					if (__scopes == null)
+					{
+						__scopes = new Stack<CleanupScope>();
+					}
+					if (__scopes.Count > 0)
+					{
+						ReportAndClearOrphanedScopes(__scopes);
+					}
+					__scopes.Push(scope);
+				}
+			}
+
+			private void ReportAndClearOrphanedScopes(Stack<CleanupScope> scopes)
+			{
+				scopes.Clear();
+			}
+
+			public void Detach(ContextFlow context, object captureKey)
+			{
+				var scope = (captureKey as CleanupScope);
+				if (scope != null)
+				{
+					scope.Dispose();
+				}
+			}
+
+		  internal static void Push(CleanupScope scope)
+		  {
+			  var dummy = Provider.Value;
+			  if (__scopes == null)
+			  {
+				  __scopes = new Stack<CleanupScope>();
+			  }
+				__scopes.Push(scope);
+		  }
+
+		  internal static bool TryPop(CleanupScope scope)
+		  {
+			  if (__scopes != null && __scopes.Count > 0)
+			  {
+				  if (ReferenceEquals(__scopes.Peek(), scope))
+				  {
+					  __scopes.Pop();
+					  return true;
+				  }
+			  }
+			  return false;
+		  }
+
+			internal static CleanupScope Pop()
+			{
+				if (__scopes != null && __scopes.Count > 0)
+				{
+					return __scopes.Pop();
+				}
+				return default(CleanupScope);
+			}
+
+
+			internal static CleanupScope Peek()
+			{
+				if (__scopes != null && __scopes.Count > 0)
+				{
+					return __scopes.Peek();
+				}
+				return default(CleanupScope);
+			}
+	  }
+
+		static readonly ILogSink LogSink = typeof(CleanupScope).GetLogSink();
+
     readonly bool _independent;
     readonly ConcurrentStack<StackItem> _items = new ConcurrentStack<StackItem>();
     readonly object _ownerNotifier;
@@ -30,7 +145,8 @@ namespace FlitBit.Core
 
     EventHandler<CleanupScopeItemEventArgs> _itemAdded;
     EventHandler<CleanupScopeItemEventArgs> _itemDisposed;
-    // Reference counts disposing threads. We always have one.
+
+	  // Reference counts disposing threads. We always have one.
 
     /// <summary>
     ///   Creates a new scope.
@@ -48,7 +164,7 @@ namespace FlitBit.Core
       this._independent = independent;
       if (!_independent)
       {
-        ContextFlow.Push<ICleanupScope>(this);
+        CleanupScopeContextFlowProvider.Push(this);
       }
     }
 
@@ -150,7 +266,7 @@ namespace FlitBit.Core
       }
       if (disposing
           && !_independent
-          && !ContextFlow.TryPop<ICleanupScope>(this))
+          && !CleanupScopeContextFlowProvider.TryPop(this))
       {
         // Notify the caller that they are calling dispose out of order.
         // This never happens if the caller uses a 'using' 
@@ -158,7 +274,7 @@ namespace FlitBit.Core
           "Cleanup scope disposed out of order. To eliminate this possibility always wrap the scope in a 'using clause'.";
         try
         {
-          LogSink.OnTraceEvent(this, TraceEventType.Warning, message);
+          LogSink.Warning(message);
         }
           // ReSharper disable EmptyGeneralCatchClause
         catch
@@ -190,12 +306,13 @@ namespace FlitBit.Core
             // thrown by trace logic...
             try
             {
-              LogSink.OnTraceEvent(this, TraceEventType.Warning,
+	            var errItem = item;
+              LogSink.Warning(() =>
                 String.Concat(Resources.Warn_ErrorWhileDisposingCleanupScope,
                   ": ",
-                  (item.Disposable == null)
-                    ? item.Action.GetFullName()
-                    : item.Disposable.GetType()
+									(errItem.Disposable == null)
+										? errItem.Action.GetFullName()
+										: errItem.Disposable.GetType()
                           .FullName,
                   "; ", e.FormatForLogging())
                 );
@@ -299,7 +416,6 @@ namespace FlitBit.Core
       NotifyItemAdded(action);
     }
 
-    object IParallelShared.ParallelShare() { return ShareScope(); }
 
     #endregion
 
@@ -311,8 +427,7 @@ namespace FlitBit.Core
     {
       get
       {
-        ICleanupScope ambient;
-        return (ContextFlow.TryPeek(out ambient)) ? ambient : default(ICleanupScope);
+	      return CleanupScopeContextFlowProvider.Peek();
       }
     }
 
@@ -322,10 +437,10 @@ namespace FlitBit.Core
     /// <returns>a cleanup scope</returns>
     public static ICleanupScope NewOrSharedScope()
     {
-      ICleanupScope ambient;
-      return (ContextFlow.TryPeek(out ambient))
-               ? (ICleanupScope)ambient.ParallelShare()
-               : new CleanupScope();
+			var ambient = CleanupScopeContextFlowProvider.Peek();
+      return (ambient != null)
+               ? ambient.ShareScope()
+							 : new CleanupScope();
     }
 
     [StructLayout(LayoutKind.Sequential)]

@@ -27,7 +27,7 @@ namespace FlitBit.Core.Parallel
       {
         if (Thread.VolatileRead(ref _completed) > 0)
         {
-          Go.Parallel(background_Notifier);
+          ContextFlow.Parallel(background_Notifier);
         }
       }
     }
@@ -43,7 +43,7 @@ namespace FlitBit.Core.Parallel
       {
         if (Thread.VolatileRead(ref _completed) > 0)
         {
-          Go.Parallel(background_Notifier);
+          ContextFlow.Parallel(background_Notifier);
         }
       }
       return waitable;
@@ -60,7 +60,7 @@ namespace FlitBit.Core.Parallel
       {
         if (Thread.VolatileRead(ref _completed) > 0)
         {
-          Go.Parallel(background_Notifier);
+          ContextFlow.Parallel(background_Notifier);
         }
       }
       return waitable;
@@ -70,7 +70,7 @@ namespace FlitBit.Core.Parallel
     {
       Util.VolatileWrite(out _fault, e);
       Interlocked.Increment(ref _completed);
-      Go.Parallel(background_Notifier);
+      ContextFlow.Parallel(background_Notifier);
     }
 
     void background_Notifier()
@@ -123,7 +123,7 @@ namespace FlitBit.Core.Parallel
         }
         catch (Exception ee)
         {
-          Go.NotifyUncaughtException(delg.Target, ee);
+          ContextFlow.NotifyUncaughtException(delg.Target, ee);
         }
       }
     }
@@ -146,7 +146,7 @@ namespace FlitBit.Core.Parallel
           }
           catch (Exception ee)
           {
-            Go.NotifyUncaughtException(delg.Target, ee);
+            ContextFlow.NotifyUncaughtException(delg.Target, ee);
           }
         }
         catch (Exception ee)
@@ -157,7 +157,7 @@ namespace FlitBit.Core.Parallel
           }
           catch (Exception eee)
           {
-            Go.NotifyUncaughtException(delg.Target, eee);
+            ContextFlow.NotifyUncaughtException(delg.Target, eee);
           }
         }
       }
@@ -181,7 +181,7 @@ namespace FlitBit.Core.Parallel
           }
           catch (Exception ee)
           {
-            Go.NotifyUncaughtException(delg.Target, ee);
+            ContextFlow.NotifyUncaughtException(delg.Target, ee);
           }
         }
         catch (Exception ee)
@@ -192,7 +192,7 @@ namespace FlitBit.Core.Parallel
           }
           catch (Exception eee)
           {
-            Go.NotifyUncaughtException(delg.Target, eee);
+            ContextFlow.NotifyUncaughtException(delg.Target, eee);
           }
         }
       }

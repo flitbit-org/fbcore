@@ -7,6 +7,7 @@
 using System;
 using System.Diagnostics;
 using System.Text;
+using FlitBit.Core.Log;
 
 namespace FlitBit.Core
 {
@@ -16,6 +17,9 @@ namespace FlitBit.Core
   [Serializable]
   public abstract class Disposable : IInterrogateDisposable
   {
+		static readonly ILogSink LogSink = typeof(Disposable).GetLogSink();
+
+
     enum DisposalState
     {
       None = 0,
@@ -92,7 +96,7 @@ namespace FlitBit.Core
           {
             try
             {
-              if (LogSink.ShouldTrace(this, TraceEventType.Error))
+              if (LogSink.IsLogging(SourceLevels.Error))
               {
                 var cstack = CreationStack;
                 if (cstack != null)
@@ -125,13 +129,13 @@ namespace FlitBit.Core
                     }
                   }
 
-                  LogSink.OnTraceEvent(this, TraceEventType.Error,
-                    String.Concat("Disposed object disposed again.", builder));
+                  LogSink.Error(() =>
+                    String.Concat("Disposed object disposed again. ", builder));
                 }
                 else
                 {
-                  LogSink.OnTraceEvent(this, TraceEventType.Error, "Disposed object disposed again.");
-                }
+									LogSink.Error("Disposed object disposed again.");
+								}
               }
             }
 // ReSharper disable EmptyGeneralCatchClause

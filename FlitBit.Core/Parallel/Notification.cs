@@ -60,7 +60,7 @@ namespace FlitBit.Core.Parallel
             }
             catch (Exception e)
             {
-              Go.NotifyUncaughtException(after.Target, e);
+              ContextFlow.NotifyUncaughtException(after.Target, e);
             }
           }
         }
@@ -204,7 +204,7 @@ namespace FlitBit.Core.Parallel
         {}
         catch (Exception e)
         {
-          Go.NotifyUncaughtException(this, e);
+          ContextFlow.NotifyUncaughtException(this, e);
         }
         Thread.VolatileWrite(ref _status, CStatusStopped);
       }
@@ -302,7 +302,7 @@ namespace FlitBit.Core.Parallel
         {}
         catch (Exception e)
         {
-          Go.NotifyUncaughtException(this, e);
+          ContextFlow.NotifyUncaughtException(this, e);
         }
         Thread.VolatileWrite(ref _status, CStatusStopped);
       }

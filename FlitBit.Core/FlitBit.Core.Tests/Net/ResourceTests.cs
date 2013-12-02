@@ -34,7 +34,7 @@ namespace FlitBit.Core.Tests.Net
 																															{
 																																var value = row.doc;
 																																Console.WriteLine(String.Concat("timestamp: ", value.timestamp, ", machine_name: ",
-																																																value.machine_name, ", id: ", row.id, ", info: ", value.info));
+																																	value.machine_name, ", id: ", row.id, ", info: ", value.info));
 																															}
 																														}
 																													}
@@ -65,7 +65,7 @@ namespace FlitBit.Core.Tests.Net
 																																																							foreach (var tweet in d.results)
 																																																							{
 																																																								Console.WriteLine(String.Concat(tweet.from_user_name, " says: ",
-																																																																								tweet.text));
+																																																									tweet.text));
 																																																							}
 																																																						 }))
 			{
@@ -78,7 +78,7 @@ namespace FlitBit.Core.Tests.Net
 																																																							foreach (var tweet in d.results)
 																																																							{
 																																																								Console.WriteLine(String.Concat(tweet.from_user_name, " says: ",
-																																																																								tweet.text));
+																																																									tweet.text));
 																																																							}
 																																																						 }))
 				{
@@ -91,7 +91,7 @@ namespace FlitBit.Core.Tests.Net
 																																																								foreach (var tweet in d.results)
 																																																								{
 																																																									Console.WriteLine(String.Concat(tweet.from_user_name,
-																																																																									" says: ", tweet.text));
+																																																										" says: ", tweet.text));
 																																																								}
 																																																							 }))
 					{
@@ -184,7 +184,12 @@ namespace FlitBit.Core.Tests.Net
 
 			var docid = Guid.NewGuid().ToString("N");
 			var data =
-				new {timestamp = DateTime.UtcNow, info = dataGen.GetWords(rand.Next(8, 80)), machine_name = Environment.MachineName};
+				new
+				{
+					timestamp = DateTime.UtcNow,
+					info = dataGen.GetWords(rand.Next(8, 80)),
+					machine_name = Environment.MachineName
+				};
 
 			var testdb = new Uri(String.Concat("https://flitbit.cloudant.com/trubl/", docid));
 			Exception unexpected = null;
@@ -237,6 +242,9 @@ namespace FlitBit.Core.Tests.Net
 			});
 		}
 
-		static HttpWebRequest AttachTestCredentialsUsingBasicAuth(HttpWebRequest req) { return req.WithBasicAuth("nedlyincessicturandstolu", "bnoIEkLiuSLyHobSaOxcUL4o"); }
+		static HttpWebRequest AttachTestCredentialsUsingBasicAuth(HttpWebRequest req)
+		{
+			return req.WithBasicAuth("nedlyincessicturandstolu", "bnoIEkLiuSLyHobSaOxcUL4o");
+		}
 	}
 }

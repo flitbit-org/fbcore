@@ -66,7 +66,7 @@ namespace FlitBit.Core.Parallel
 
       if (ReferenceEquals(capture, completion))
       {
-        Go.Parallel(() => PerformDemuxOriginatorLogic(args, completion, continuation));
+        ContextFlow.Parallel(() => PerformDemuxOriginatorLogic(args, completion, continuation));
       }
       else
       {

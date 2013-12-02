@@ -1,4 +1,6 @@
-﻿using FlitBit.Core.Parallel;
+﻿using System.Threading;
+using System.Threading.Tasks;
+using FlitBit.Core.Parallel;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FlitBit.Core.Tests.Parallel
@@ -11,6 +13,7 @@ namespace FlitBit.Core.Tests.Parallel
 		{
 			using (var scope = CleanupScope.NewOrSharedScope())
 			{
+				
 				var context = ContextFlow.Current;
 				using (var ambient = ContextFlow.ForkAmbient())
 				{
@@ -30,6 +33,23 @@ namespace FlitBit.Core.Tests.Parallel
 			// so only a new thread would guarantee the test results are accurate
 			var ambient = System.Threading.Tasks.Task.Factory.StartNew(() => ContextFlow.ForkAmbient(), System.Threading.Tasks.TaskCreationOptions.LongRunning).Result;
 			Assert.IsNull(ambient);
+		}
+
+		[TestMethod]
+		public void ContextFlow_AmbientContextFlowsToBackgroundThread()
+		{
+			using (var scope = CleanupScope.NewOrSharedScope())
+			{
+				var outer = scope;
+				var ambient =
+					Task.Factory.StartNew(ContextFlow.Capture(() =>
+					{
+						var res = ContextFlow.Current;
+						Assert.AreSame(CleanupScope.Current, outer);
+						return res;
+					}), TaskCreationOptions.LongRunning).Result;
+				Assert.AreSame(ContextFlow.Current, ambient);
+			}
 		}
 
 		[TestMethod]

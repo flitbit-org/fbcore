@@ -7,7 +7,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace FlitBit.Core.Tests.Parallel
 {
 	[TestClass]
-	public class GoParallelTests
+	public class ContextFlowParallelTests
 	{
 		[TestMethod]
 		public void Parallel_ErrorPropagatesToErrorHandler()
@@ -15,7 +15,7 @@ namespace FlitBit.Core.Tests.Parallel
 			Exception caught = null;
 			var completed = false;
 
-			using (var completion = Go.ParallelWithCompletion(
+			using (var completion = ContextFlow.ParallelWithCompletion(
 																											 () =>
 																											 {
 																												Thread.Sleep(TimeSpan.FromSeconds(0.1));
@@ -45,9 +45,9 @@ namespace FlitBit.Core.Tests.Parallel
 			Exception uncaught = null;
 			var completed = false;
 
-			Go.OnUncaughtException += (sender, e) => { uncaught = e.Error; };
+			ContextFlow.OnUncaughtException += (sender, e) => { uncaught = e.Error; };
 
-			using (var completion = Go.ParallelWithCompletion(
+			using (var completion = ContextFlow.ParallelWithCompletion(
 																											 () =>
 																											 {
 																												Thread.Sleep(TimeSpan.FromSeconds(0.5));
@@ -86,7 +86,7 @@ namespace FlitBit.Core.Tests.Parallel
 			var completed = false;
 			var handbackTotal = 0;
 
-			using (var completion = Go.ParallelWithCompletion(
+			using (var completion = ContextFlow.ParallelWithCompletion(
 																											 () =>
 																											 {
 																												Thread.Sleep(TimeSpan.FromSeconds(1));
@@ -119,7 +119,7 @@ namespace FlitBit.Core.Tests.Parallel
 			Exception caught = null;
 			var completed = false;
 
-			using (var completion = Go.ParallelWithCompletion(
+			using (var completion = ContextFlow.ParallelWithCompletion(
 																											 () => Thread.Sleep(TimeSpan.FromSeconds(1))))
 			{
 				completion.Continue(
@@ -150,7 +150,7 @@ namespace FlitBit.Core.Tests.Parallel
 			var completed = false;
 			var observerCalled = false;
 
-			using (var completion = Go.ParallelWithCompletion(
+			using (var completion = ContextFlow.ParallelWithCompletion(
 																											 () => Thread.Sleep(TimeSpan.FromSeconds(1))))
 			{
 				completion.Continue(
@@ -182,7 +182,7 @@ namespace FlitBit.Core.Tests.Parallel
 		[TestMethod]
 		public void Parallel_ExecutionCanBeAwaited()
 		{
-			using (var completion = Go.ParallelWithCompletion(
+			using (var completion = ContextFlow.ParallelWithCompletion(
 																											 () => { Thread.Sleep(TimeSpan.FromSeconds(1)); }))
 			{
 				Assert.IsFalse(completion.IsCompleted);

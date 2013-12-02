@@ -7,7 +7,6 @@
 using System;
 using System.Diagnostics.Contracts;
 using FlitBit.Core.CodeContracts;
-using FlitBit.Core.Parallel;
 
 namespace FlitBit.Core
 {
@@ -15,7 +14,7 @@ namespace FlitBit.Core
   ///   Deliniates a cleanup scope.
   /// </summary>
   [ContractClass(typeof(ContractForICleanupScope))]
-  public interface ICleanupScope : IInterrogateDisposable, IParallelShared
+  public interface ICleanupScope : IInterrogateDisposable
   {
     /// <summary>
     ///   Adds a disposable item to the scope. When the scope
@@ -70,8 +69,6 @@ namespace FlitBit.Core
       public bool IsDisposed { get { throw new NotImplementedException(); } }
 
       public void Dispose() { throw new NotImplementedException(); }
-
-      public object ParallelShare() { throw new NotImplementedException(); }
 
       #endregion
     }
