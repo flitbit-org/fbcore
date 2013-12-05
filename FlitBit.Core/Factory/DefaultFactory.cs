@@ -149,15 +149,6 @@ namespace FlitBit.Core.Factory
     /// </summary>
     public IFactory Next { get; set; }
 
-    /// <summary>
-    ///   This type sharable between threads as-is.
-    /// </summary>
-    /// <returns></returns>
-    public object ParallelShare()
-    {
-      return this;
-    }
-
     #endregion
 
     struct TypeRecord

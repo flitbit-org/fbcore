@@ -711,51 +711,49 @@ namespace FlitBit.Core.Parallel
     /// </returns>
     protected override bool PerformDispose(bool disposing)
     {
+
       if (disposing && !Ambient.TryPop(this))
-      {
-        const string message = "Context disposed out of order. Thar be shenanigans in the disposery!";
+      {   
+        const string message = "Unchained context disposed!";
         try
         {
-	        if (LogSink.IsLogging(SourceLevels.Error))
-	        {
-		        var cstack = this.CreationStack;
-		        if (cstack != null)
-		        {
-			        var builder = new StringBuilder(2000);
-			        builder.Append(Environment.NewLine)
-				        .Append(">> Creation stack... ");
-			        foreach (var frame in this.CreationStack)
-			        {
-				        var method = frame.GetMethod();
-				        builder.Append(Environment.NewLine)
-					        .Append("\t >> ")
-					        .Append(method.DeclaringType.GetReadableSimpleName())
-					        .Append(".")
-					        .Append(method.Name);
-			        }
-			        builder.Append(Environment.NewLine)
-				        .Append(">> Disposal stack... ");
-			        var stackFrames = new StackTrace().GetFrames();
-			        if (stackFrames != null)
-			        {
-				        foreach (var frame in stackFrames)
-				        {
-					        var method = frame.GetMethod();
-					        builder.Append(Environment.NewLine)
-						        .Append("\t >> ")
-						        .Append(method.DeclaringType.GetReadableSimpleName())
-						        .Append(".")
-						        .Append(method.Name);
-				        }
-			        }
-			        LogSink.Error(() =>
-				        String.Concat(message, builder));
-		        }
-		        else
-		        {
-			        LogSink.Error(message);
-		        }
-	        }
+          var cstack = this.CreationStack;
+          if (cstack != null)
+          {
+            var builder = new StringBuilder(2000);
+            builder.Append(Environment.NewLine)
+                   .Append(">> Creation stack... ");
+            foreach (var frame in this.CreationStack)
+            {
+              var method = frame.GetMethod();
+              builder.Append(Environment.NewLine)
+                     .Append("\t >> ")
+                     .Append(method.DeclaringType.GetReadableSimpleName())
+                     .Append(".")
+                     .Append(method.Name);
+            }
+            builder.Append(Environment.NewLine)
+                   .Append(">> Disposal stack... ");
+            var stackFrames = new StackTrace().GetFrames();
+            if (stackFrames != null)
+            {
+              foreach (var frame in stackFrames)
+              {
+                var method = frame.GetMethod();
+                builder.Append(Environment.NewLine)
+                       .Append("\t >> ")
+                       .Append(method.DeclaringType.GetReadableSimpleName())
+                       .Append(".")
+                       .Append(method.Name);
+              }
+            }
+            LogSink.Information(() =>
+                                String.Concat(message, builder));
+          }
+          else
+          {
+            LogSink.Information(message);
+          }
         }
 // ReSharper disable once EmptyGeneralCatchClause
         catch
@@ -782,7 +780,7 @@ namespace FlitBit.Core.Parallel
     {
       if (ambient != null)
       {
-	      ambient.Attach();
+        Ambient.Attach(ambient);
         return ambient;
       }
 	    return null;
@@ -790,6 +788,7 @@ namespace FlitBit.Core.Parallel
 
 		private void Attach()
 		{
+
 			foreach (var tpl in _contexts)
 			{
 				tpl.Item1.Attach(this, tpl.Item2);
@@ -852,6 +851,21 @@ namespace FlitBit.Core.Parallel
           }
         }
         return false;
+      }
+
+      internal static ContextFlow Attach(ContextFlow ambient)
+      {
+        // .net 4.0 TPL doesn't flow the call context well so we'll keep track ourselves...
+        var stack = __stack; //(Stack<ContextFlow>) CallContext.LogicalGetData(CallContextKey);
+        if (stack == null)
+        {
+          __stack = stack = new Stack<ContextFlow>();
+          //CallContext.LogicalSetData(CallContextKey, stack);
+        }
+        if (stack.Count > 0) throw new InvalidOperationException("ContextFlow detected a context being attached over the top of an existing context");
+        ambient.Attach();
+        stack.Push(ambient);
+        return ambient;
       }
     }
 

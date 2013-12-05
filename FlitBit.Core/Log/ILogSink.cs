@@ -19,9 +19,9 @@ namespace FlitBit.Core.Log
 	public interface ILogSink
 	{
 		/// <summary>
-		///   The sink's source levels. Determines what actually gets logged.
+		///   The sink's trace event threshold. Determines what actually gets logged.
 		/// </summary>
-		SourceLevels Levels { get; }
+		TraceEventType TraceThreshold { get; }
 
 		/// <summary>
 		///   The log sink's name.
@@ -62,13 +62,13 @@ namespace FlitBit.Core.Log
 		/// <param name="evt">event details</param>
 		void Information(LogEvent evt);
 
-		/// <summary>
-		///   Indicates whether the log sink is forwarding messages
-		///   at the source level given.
-		/// </summary>
-		/// <param name="level">the source level to check</param>
-		/// <returns>true if forwarding; otherwise false</returns>
-		bool IsLogging(SourceLevels level);
+	  /// <summary>
+	  ///   Indicates whether the log sink is forwarding messages
+	  ///   at the source level given.
+	  /// </summary>
+	  /// <param name="evtType"></param>
+	  /// <returns>true if forwarding; otherwise false</returns>
+	  bool IsLogging(TraceEventType evtType);
 
 		/// <summary>
 		///   Notifies the sink that a resume activity occurred.

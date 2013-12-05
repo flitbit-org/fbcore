@@ -11,7 +11,7 @@ namespace FlitBit.Core.Factory
   ///   While the FlitBit.IoC's IContainer is-a IFactory, it is a trivial matter to build adapters to
   ///   other IoC containers by implementing IFactory to delegate to the IoC of your choice.
   /// </remarks>
-  public interface IFactory : IParallelShared
+  public interface IFactory
   {
     /// <summary>
     ///   Gets or sets the next factory when factories are chained.

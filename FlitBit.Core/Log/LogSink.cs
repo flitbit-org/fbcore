@@ -28,7 +28,6 @@ namespace FlitBit.Core.Log
 
 		readonly ILogSinkGhostWriter _ghostWriter;
 		readonly string _name;
-		SourceLevels _levels;
 		ILogSink _next;
 		TraceEventType _stackTraceThreshold;
 		TraceEventType _traceThreshold;
@@ -38,12 +37,12 @@ namespace FlitBit.Core.Log
 		///   Creates a new instance.
 		/// </summary>
 		/// <param name="name">the log sink's name</param>
-		/// <param name="levels">a source level</param>
+		/// <param name="evtType">a source level</param>
 		/// <param name="stackTraceThreshold">the stack threshold</param>
 		/// <param name="writer">an event writer</param>
 		/// <param name="next">the next sink in the chain or null</param>
 		/// <param name="ghostWriter"></param>
-		public LogSink(ILogSinkGhostWriter ghostWriter, string name, SourceLevels levels, TraceEventType stackTraceThreshold,
+    public LogSink(ILogSinkGhostWriter ghostWriter, string name, TraceEventType evtType, TraceEventType stackTraceThreshold,
 			LogEventWriter writer, ILogSink next)
 		{
 			Contract.Requires<ArgumentNullException>(ghostWriter != null);
@@ -53,14 +52,16 @@ namespace FlitBit.Core.Log
 
 			this._ghostWriter = ghostWriter;
 			this._name = name;
-			this._levels = levels;
-			this._traceThreshold = TranslateSourceLevelToTraceThreshold(levels);
+		  this._traceThreshold = evtType;
 			this._stackTraceThreshold = stackTraceThreshold;
 			this._next = next;
 			this._writer = writer;
 		}
 
-		TraceEventType TraceThreshold
+	  /// <summary>
+	  ///   The sink's trace event threshold. Determines what actually gets logged.
+	  /// </summary>
+	  public TraceEventType TraceThreshold
 		{
 			get
 			{
@@ -83,20 +84,6 @@ namespace FlitBit.Core.Log
 		///   The sink's name.
 		/// </summary>
 		public string Name { get { return this._name; } }
-
-		/// <summary>
-		///   The sink's source level.
-		/// </summary>
-		public SourceLevels Levels
-		{
-			get
-			{
-				Thread.MemoryBarrier();
-				var value = this._levels;
-				Thread.MemoryBarrier();
-				return value;
-			}
-		}
 
 		/// <summary>
 		///   The next sink in the chain.
@@ -140,24 +127,24 @@ namespace FlitBit.Core.Log
 			}
 		}
 
-		/// <summary>
-		///   Indicates whether the log sink is forwarding messages
-		///   at the source level given.
-		/// </summary>
-		/// <param name="level">the source level to check</param>
-		/// <returns>true if forwarding; otherwise false</returns>
-		public bool IsLogging(SourceLevels level)
-		{
-			return this.Levels.HasFlag(level);
-		}
+	  /// <summary>
+	  ///   Indicates whether the log sink is forwarding messages
+	  ///   at the source level given.
+	  /// </summary>
+	  /// <param name="evtType"></param>
+	  /// <returns>true if forwarding; otherwise false</returns>
+	  public bool IsLogging(TraceEventType evtType)
+	  {
+	    return evtType <= TraceThreshold 
+        || (NextSink != null && NextSink.IsLogging(evtType));
+	  }
 
-		void ILogSinkManagement.Reconfigure(SourceLevels level, TraceEventType stackTraceThreshold, LogEventWriter writer,
+    void ILogSinkManagement.Reconfigure(TraceEventType evtType, TraceEventType stackTraceThreshold, LogEventWriter writer,
 			ILogSink next)
 		{
 			Contract.Assert(writer != null);
 
-			this._levels = level;
-			this._traceThreshold = TranslateSourceLevelToTraceThreshold(level);
+      this._traceThreshold = evtType;
 			this._stackTraceThreshold = stackTraceThreshold;
 			this._next = next;
 			this._writer = writer;
@@ -364,30 +351,5 @@ namespace FlitBit.Core.Log
 		}
 
 		#endregion
-
-		static TraceEventType TranslateSourceLevelToTraceThreshold(SourceLevels levels)
-		{
-			switch (levels)
-			{
-				case SourceLevels.ActivityTracing:
-					return TraceEventType.Transfer;
-				case SourceLevels.All:
-					return TraceEventType.Verbose;
-				case SourceLevels.Critical:
-					return TraceEventType.Critical;
-				case SourceLevels.Error:
-					return TraceEventType.Error;
-				case SourceLevels.Information:
-					return TraceEventType.Information;
-				case SourceLevels.Off:
-					return 0;
-				case SourceLevels.Verbose:
-					return TraceEventType.Verbose;
-				case SourceLevels.Warning:
-					return TraceEventType.Warning;
-				default:
-					return default(TraceEventType);
-			}
-		}
 	}
 }

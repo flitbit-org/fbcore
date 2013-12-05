@@ -31,6 +31,11 @@ namespace FlitBit.Core.Parallel
     public static readonly int DefaultMaxParallelDepth = 10000;
 
     /// <summary>
+    /// Default yield frequency.
+    /// </summary>
+    public static readonly int DefaultYieldFrequency = 10;
+
+    /// <summary>
     ///   Creates a new instance.
     /// </summary>
     public ReactorOptions()
@@ -41,27 +46,25 @@ namespace FlitBit.Core.Parallel
     /// </summary>
     /// <param name="maxDegreeOfParallelism">a max degree of parallelism</param>
     public ReactorOptions(int maxDegreeOfParallelism)
-      : this(maxDegreeOfParallelism, false, 0, DefaultMaxParallelDepth, DefaultDispatchesPerBorrowedThread, false) { }
+      : this(maxDegreeOfParallelism, DefaultYieldFrequency, DefaultMaxParallelDepth, DefaultDispatchesPerBorrowedThread, false) { }
 
     /// <summary>
     ///   Creates a new instance.
     /// </summary>
     /// <param name="maxDegreeOfParallelism">a max degree of parallelism</param>
-    /// <param name="yieldBusyReactor">indicates whether to occasionally yield a busy reactor</param>
     /// <param name="yieldFrequency">indicates yield frequency when yielding a busy reactor</param>
     /// <param name="maxParallelDepth">maximum parallel depth</param>
     /// <param name="dispatchesPerSequential">dispatches per borowed thread</param>
     /// <param name="contextFlow">whether reactor task is executed in the caller's context</param>
-    public ReactorOptions(int maxDegreeOfParallelism, bool yieldBusyReactor, int yieldFrequency,
+    public ReactorOptions(int maxDegreeOfParallelism, int yieldFrequency,
       int maxParallelDepth, int dispatchesPerSequential, bool contextFlow)
     {
       Contract.Requires<ArgumentOutOfRangeException>(maxDegreeOfParallelism >= 1);
-      Contract.Requires<ArgumentOutOfRangeException>(!yieldBusyReactor || yieldFrequency >= 1);
+      Contract.Requires<ArgumentOutOfRangeException>(yieldFrequency >= 1);
       Contract.Requires<ArgumentOutOfRangeException>(maxParallelDepth >= 1);
       Contract.Requires<ArgumentOutOfRangeException>(dispatchesPerSequential >= 1);
 
       MaxDegreeOfParallelism = maxDegreeOfParallelism;
-      YieldBusyReactor = yieldBusyReactor;
       YieldFrequency = yieldFrequency;
       MaxParallelDepth = maxParallelDepth;
       DispatchesPerBorrowedThread = dispatchesPerSequential;
@@ -93,16 +96,10 @@ namespace FlitBit.Core.Parallel
     public int MaxParallelDepth { get; private set; }
 
     /// <summary>
-    ///   Whether the reactor yields busy reactor threads. This option can provide better parallelism when the
-    ///   entire thread pool is busy.
-    /// </summary>
-    public bool YieldBusyReactor { get; private set; }
-
-    /// <summary>
-    ///   Indicates the frequency at which a reactor thread yields.
+    ///   Indicates the frequency at which a reactor yields threadpool threads back to the pool.
     /// </summary>
     /// <remarks>
-    ///   Generally speaking, when a reactor is configured to yield, each thread pool thread will
+    ///   Generally speaking, each thread pool thread will
     ///   react to at most YieldFrequency items before yielding the thread back to the pool.
     /// </remarks>
     public int YieldFrequency { get; private set; }

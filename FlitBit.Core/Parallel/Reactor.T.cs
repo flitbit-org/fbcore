@@ -11,6 +11,7 @@ using System.Diagnostics.Contracts;
 using System.Threading;
 using System.Threading.Tasks;
 using FlitBit.Core.Log;
+using ThreadState = System.Threading.ThreadState;
 
 namespace FlitBit.Core.Parallel
 {
@@ -21,15 +22,14 @@ namespace FlitBit.Core.Parallel
   /// <typeparam name="TItem">item type TItem</typeparam>
   public class Reactor<TItem> : ReactorBase
   {
-    readonly Object _lock = new Object();
     readonly ReactorOptions _options;
-    readonly ConcurrentQueue<TItem> _queue = new ConcurrentQueue<TItem>();
+    readonly ConcurrentQueue<Tuple<TItem, ContextFlow>> _queue = new ConcurrentQueue<Tuple<TItem, ContextFlow>>();
     readonly Action<Reactor<TItem>, TItem> _reactor;
     readonly Thread _backgroundThread;
 
-    int _backgroundWorkers;
-    int _backgroundWorkersActive;
     int _backgroundWorkersScheduled;
+    int _foregroundWorkers;
+    int _backgroundWorkers;
     bool _canceled;
 
     /// <summary>
@@ -54,7 +54,7 @@ namespace FlitBit.Core.Parallel
       _backgroundThread = new Thread(ReactorControllerLogic);
       _backgroundThread.IsBackground = true;
       _backgroundThread.Start();
-      Interlocked.Increment(ref _backgroundWorkers);
+      Interlocked.Increment(ref _backgroundWorkersScheduled);
     }
 
     /// <summary>
@@ -65,7 +65,13 @@ namespace FlitBit.Core.Parallel
     /// <summary>
     ///   Indicates whethe the reactor is stopping.
     /// </summary>
-    public bool IsCanceled { get { return Util.VolatileRead(ref _canceled); } }
+    public bool IsCanceled {
+      get
+      {
+        return Util.VolatileRead(ref _canceled)
+               || Util.VolatileRead(ref AppDomainUnloaded);
+      } 
+    }
 
     /// <summary>
     ///   Determines if the reactor is empty. Empty means there are no items
@@ -80,11 +86,8 @@ namespace FlitBit.Core.Parallel
     {
       get
       {
-        lock (_lock)
-        {
-          return _backgroundWorkersActive == 0
-                 && _backgroundWorkersScheduled == 0;
-        }
+        return Thread.VolatileRead(ref _backgroundWorkers) == 1
+               && _queue.Count == 0;
       }
     }
 
@@ -117,194 +120,230 @@ namespace FlitBit.Core.Parallel
     {
       Contract.Requires<InvalidOperationException>(!IsCanceled);
 
-      if (_queue.Count > _options.MaxParallelDepth)
+      var itemAndContext = (_options.CaptureCallerContext)
+                                                   ? Tuple.Create(item, ContextFlow.ForkAmbient())
+                                                   : Tuple.Create(item, (ContextFlow)null);
+
+     
+      if (_queue.Count > _options.MaxParallelDepth
+          && !IsForegroundThreadBorrowed)  // prevents unexpected cycle through the reactor's action.
       {
-        if (!IsForegroundThreadBorrowed)
+        try
         {
-          try
-          {
-            IsForegroundThreadBorrowed = true;
-            Foreground_Reactor(item, _options.DispatchesPerBorrowedThread);
-          }
-          finally
-          {
-            IsForegroundThreadBorrowed = false;
-          }
+          IsForegroundThreadBorrowed = true;
+          Foreground_Reactor(itemAndContext, _options.DispatchesPerBorrowedThread);
+        }
+        finally
+        {
+          IsForegroundThreadBorrowed = false;
         }
       }
       else
       {
-        _queue.Enqueue(item);
+        _queue.Enqueue(itemAndContext);
       }
 
-      CheckBackgroundReactorState();
       return this;
     }
 
     void ReactorControllerLogic()
     {
       var itemsHandled = 0;
+      Interlocked.Increment(ref _backgroundWorkers);
+      Interlocked.Decrement(ref _backgroundWorkersScheduled);
       try
       {
-        if (LogSink.IsLogging(SourceLevels.Verbose))
+        if (LogSink.IsLogging(TraceEventType.Verbose))
         {
-          LogSink.Verbose(
-            String.Format(
-              "Entering reactor controller logic: {0} of {1}", active, workers)
-            );
+          LogSink.Verbose("Entering reactor controller logic.");
         }
         while (!IsCanceled)
         {
           var pre = _queue.Count;
+          var cycle = 0;
           if (pre > 0)
           {
-            itemsHandled += PerformReactorLogic();
+            cycle += PerformReactorLogic(null, 1);
+            itemsHandled += cycle;
             var post = _queue.Count;
-            if (post > (pre + 1))
+            if (post > pre
+                && post > (cycle + 2)
+                && Thread.VolatileRead(ref _backgroundWorkers) < _options.MaxDegreeOfParallelism)
             { // filling faster than draining, create more background tasks in the threadpool...
-              Interlocked.Increment(ref _backgroundWorkers);
+              Interlocked.Increment(ref _backgroundWorkersScheduled);
               Task.Factory.StartNew(Background_Reactor);
             }
             else if (post == 0)
             {
-              
+              PerformIdlingLogic();
             }
           }
         }
       }
       finally
       {
-        var remaining = Interlocked.Decrement(ref _backgroundWorkersActive);
-        try
+        Interlocked.Decrement(ref _backgroundWorkers);
+        if (LogSink.IsLogging(TraceEventType.Verbose))
         {
-          if (LogSink.IsLogging(SourceLevels.Verbose))
-          {
-            LogSink.Verbose(
-              String.Format(
-                "Exiting reactor controller logic; handled {0} items, {1} remaining workers", itemsHandled,
-                Thread.VolatileRead(ref _backgroundWorkers) - 1)
-              );
-          }
-        }
-        finally
-        {
-          Interlocked.Decrement(ref _backgroundWorkers);
+          LogSink.Verbose(
+            String.Format(
+              "Leaving reactor controller logic; handled {0} total items, {1} remaining background workers and {2} borrowed foreground threads.", itemsHandled,
+              Thread.VolatileRead(ref _backgroundWorkers),
+              Thread.VolatileRead(ref _foregroundWorkers)
+              )
+            );
         }
       }
     }
 
-    int PerformReactorLogic()
+    /// <summary>
+    /// Perform any idling logic.
+    /// </summary>
+    protected virtual void PerformIdlingLogic()
+    {
+      Thread.Yield();
+    }
+
+    int PerformReactorLogic(Tuple<TItem, ContextFlow> itemAndContext, int limit)
     {
       var count = 0;
-      TItem item;
-      if (!IsCanceled
-          && _queue.TryDequeue(out item))
+      var withContext = _options.CaptureCallerContext;
+      if (itemAndContext != null)
       {
-        Interlocked.Increment(ref _backgroundWorkersActive);
-        try
-        {
-          count++;
-          _reactor(this, item);
-        }
-        catch (Exception e)
-        {
-          if (LogSink.IsLogging(SourceLevels.Error))
-          {
-            LogSink.Verbose(
-              String.Format("Reactor threw an uncaught exception: {0}", e.FormatForLogging()));
-          }
-          if (OnUncaughtException(e))
-          {
-            throw;
-          }
-        }
-        finally
-        {
-          Interlocked.Decrement(ref _backgroundWorkersActive);
-        }
+        if (withContext) HandleItemWithContext(itemAndContext.Item1, itemAndContext.Item2);
+        else HandleItem(itemAndContext.Item1);
+        count++;
+      }
+      Tuple<TItem, ContextFlow> item;
+      while(!IsCanceled && count < limit && _queue.TryDequeue(out item))
+      {
+        if (withContext) HandleItemWithContext(item.Item1, item.Item2);
+        else HandleItem(item.Item1);
+        count++;
       }
       return count;
     }
 
+    private void HandleItem(TItem item)
+    {
+      try
+      {
+        _reactor(this, item);
+      }
+      catch (Exception e)
+      {
+        if (LogSink.IsLogging(TraceEventType.Error))
+        {
+          LogSink.Verbose(
+            String.Format("Reactor threw an uncaught exception: {0}", e.FormatForLogging()));
+        }
+        if (OnUncaughtException(e))
+        {
+          throw;
+        }
+      }
+    }
+
+    private void HandleItemWithContext(TItem item, ContextFlow contextFlow)
+    {
+      try
+      {
+        using (ContextFlow.EnsureAmbient(contextFlow))
+        {
+          try
+          {
+            _reactor(this, item);
+          }
+          catch (Exception e)
+          {
+            ContextFlow.NotifyUncaughtException(_reactor.Target, e);
+            throw;
+          }
+        }
+      }
+      catch (Exception e)
+      {
+        if (LogSink.IsLogging(TraceEventType.Error))
+        {
+          LogSink.Verbose(
+            String.Format("Reactor threw an uncaught exception: {0}", e.FormatForLogging()));
+        }
+        if (OnUncaughtException(e))
+        {
+          throw;
+        }
+      }
+    }
+
     void Background_Reactor()
     {
+      Interlocked.Increment(ref _backgroundWorkers);
+      Interlocked.Decrement(ref _backgroundWorkersScheduled);
       var itemsHandled = 0;
       try
       {
-        int workers = Thread.VolatileRead(ref this._backgroundWorkers);
-        int active = Interlocked.Increment(ref this._backgroundWorkersActive);
-        if (LogSink.IsLogging(SourceLevels.Verbose))
+        if (LogSink.IsLogging(TraceEventType.Verbose))
         {
           LogSink.Verbose(
             String.Format(
-              "Entering background reactor logic: {0} of {1}", active, workers)
+              "Entering background reactor logic: {0} background workers and {1} borrowed foreground threads.",
+              Thread.VolatileRead(ref _backgroundWorkers),
+              Thread.VolatileRead(ref _foregroundWorkers))
             );
         }
         // Continue until signaled or no more items in queue...
         while (!IsCanceled)
         {
-          var count = PerformReactorLogic();
+          var count = PerformReactorLogic(null, _options.YieldFrequency);
           itemsHandled += count;
           if (count == 0) break;
         }
       }
       finally
       {
-        try
+        Interlocked.Decrement(ref _backgroundWorkers);
+        if (LogSink.IsLogging(TraceEventType.Verbose))
         {
-          if (LogSink.IsLogging(SourceLevels.Verbose))
-          {
-            LogSink.Verbose(
-              String.Format(
-                "Exiting background reactor; handled {0} items, {1} remaining workers", itemsHandled,
-                Thread.VolatileRead(ref _backgroundWorkers) - 1)
-              );
-          }
-        }
-        finally
-        {
-          Interlocked.Decrement(ref _backgroundWorkers);
+          LogSink.Verbose(
+            String.Format(
+              "Leaving background reactor logic; handled {0} items, {1} remaining background workers and {2} borrowed foreground threads.",
+              itemsHandled,
+              Thread.VolatileRead(ref _backgroundWorkers),
+              Thread.VolatileRead(ref _foregroundWorkers))
+            );
         }
       }
     }
 
-    void Foreground_Reactor(TItem item, int dispatchesPerSequential)
+    void Foreground_Reactor(Tuple<TItem, ContextFlow> itemAndContext, int dispatchesPerSequential)
     {
+      Interlocked.Increment(ref _foregroundWorkers);
       var itemsHandled = 0;
       try
       {
-        int workers = Thread.VolatileRead(ref this._backgroundWorkers);
-        int active = Interlocked.Increment(ref this._backgroundWorkersActive);
-        if (LogSink.IsLogging(SourceLevels.Verbose))
+        if (LogSink.IsLogging(TraceEventType.Verbose))
         {
           LogSink.Verbose(
             String.Format(
-              "Entering borrowed foreground thread: {0} of {1}", active, workers)
+              "Entering borrowed foreground reactor logic: {0} background workers and {1} borrowed foreground threads.",
+              Thread.VolatileRead(ref _backgroundWorkers),
+              Thread.VolatileRead(ref _foregroundWorkers))
             );
         }
-        while (!IsCanceled && itemsHandled < dispatchesPerSequential)
-        {
-          var count = PerformReactorLogic();
-          itemsHandled += count;
-          if (count == 0) break;
-        }
+        itemsHandled = PerformReactorLogic(itemAndContext, dispatchesPerSequential);
       }
       finally
       {
-        try
+        Interlocked.Decrement(ref _foregroundWorkers);
+        if (LogSink.IsLogging(TraceEventType.Verbose))
         {
-          if (LogSink.IsLogging(SourceLevels.Verbose))
-          {
-            LogSink.Verbose(
-              String.Format(
-                "Exiting borrowed foreground thread; handled {0} items, {1} remaining workers", itemsHandled,
-                Thread.VolatileRead(ref _backgroundWorkers) - 1)
-              );
-          }
-        }
-        finally
-        {
-          Interlocked.Decrement(ref _backgroundWorkers);
+          LogSink.Verbose(
+            String.Format(
+              "Leaving borrowed foreground reactor logic; handled {0} items, {1} remaining background workers and {2} borrowed foreground threads.",
+              itemsHandled,
+              Thread.VolatileRead(ref _backgroundWorkers),
+              Thread.VolatileRead(ref _foregroundWorkers))
+            );
         }
       }
     }

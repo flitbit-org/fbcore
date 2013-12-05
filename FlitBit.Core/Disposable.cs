@@ -95,7 +95,7 @@ namespace FlitBit.Core
           {
             try
             {
-              if (LogSink.IsLogging(SourceLevels.Error))
+              if (LogSink.IsLogging(TraceEventType.Error))
               {
                 var cstack = CreationStack;
                 if (cstack != null)

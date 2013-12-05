@@ -21,9 +21,9 @@ namespace FlitBit.Core.Log
 		public const int CDefaultParallelDispatchThreshold = 10000;
 
 		/// <summary>
-		///   Default source level name.
+		///   Default trace threshold.
 		/// </summary>
-		public const SourceLevels CDefaultSourceLevel = SourceLevels.Warning;
+    public const TraceEventType CDefaultTraceThreshold = TraceEventType.Warning;
 
 		/// <summary>
 		///   Default stack trace threshold
@@ -33,7 +33,7 @@ namespace FlitBit.Core.Log
 		/// <summary>
 		///   Property name for defaultSourceLevel.
 		/// </summary>
-		public const string PropertyNameDefaultSourceLevel = "defaultSourceLevel";
+    public const string PropertyNameDefaultTraceThreshold = "defaultTraceThreshold";
 
 		/// <summary>
 		///   Property name for defaultStackTraceThreshold.
@@ -67,8 +67,8 @@ namespace FlitBit.Core.Log
 		///   The default source levels.
 		/// </summary>
 		/// <seealso cref="System.Diagnostics.SourceLevels" />
-		[ConfigurationProperty(PropertyNameDefaultSourceLevel, DefaultValue = CDefaultSourceLevel)]
-		public SourceLevels DefaultSourceLevel { get { return (SourceLevels) this[PropertyNameDefaultSourceLevel]; } set { this[PropertyNameDefaultSourceLevel] = value; } }
+		[ConfigurationProperty(PropertyNameDefaultTraceThreshold, DefaultValue = CDefaultTraceThreshold)]
+    public TraceEventType DefaultTraceThreshold { get { return (TraceEventType)this[PropertyNameDefaultTraceThreshold]; } set { this[PropertyNameDefaultTraceThreshold] = value; } }
 
 		/// <summary>
 		///   The default stack trace threshold

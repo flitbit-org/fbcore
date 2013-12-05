@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Threading;
 using FlitBit.Core.Log;
 
 namespace FlitBit.Core.Parallel
@@ -12,10 +13,25 @@ namespace FlitBit.Core.Parallel
     static readonly ILogSink BaseLogSink = typeof(ReactorBase).GetLogSink();
 
     /// <summary>
+    /// Sentinel value indicating whether the AppDomain has unloaded.
+    /// </summary>
+    protected static bool AppDomainUnloaded;
+
+    internal ReactorBase()
+		{
+			AppDomain.CurrentDomain.DomainUnload += CurrentDomain_DomainUnload;
+		}
+    static void CurrentDomain_DomainUnload(object sender, EventArgs e)
+    {
+      // signal all reactors that the appdomain has unloaded.
+      Util.VolatileWrite(out AppDomainUnloaded, true);
+    }
+
+    /// <summary>
     ///   The default options used by reactors when none are given to the constructor.
     /// </summary>
     public static readonly ReactorOptions DefaultOptions = new ReactorOptions(
-      ReactorOptions.DefaultMaxDegreeOfParallelism, false, 0, ReactorOptions.DefaultMaxParallelDepth, 5, false);
+      ReactorOptions.DefaultMaxDegreeOfParallelism, ReactorOptions.DefaultYieldFrequency, ReactorOptions.DefaultMaxParallelDepth, 5, false);
 
     /// <summary>
     ///   Indicates whether the foreground thread has been barrowed by the reactor.

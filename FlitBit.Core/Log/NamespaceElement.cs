@@ -33,18 +33,11 @@ namespace FlitBit.Core.Log
 	public class NamespaceElement : ConfigurationElement
 	{
 		const string PropertyNameNamespace = "namespace";
-		const string PropertyNameSourceLevel = "sourceLevel";
-		const string PropertyNameSpecialized = "specialized";
+		const string PropertyNameTraceThreshold = "traceThreshold";
 		const string PropertyNameStackTraceThreshold = "stackTraceThreshold";
 		const string PropertyNameWriterName = "writerName";
 		const string PropertyNameWriterType = "writer";
 		Type _writerType;
-
-		/// <summary>
-		///   Whether the namespace has specialized source levels, etc.
-		/// </summary>
-		[ConfigurationProperty(PropertyNameSpecialized, DefaultValue = false)]
-		public bool IsSpecialized { get { return (bool) this[PropertyNameSpecialized]; } set { this[PropertyNameSpecialized] = value; } }
 
 		/// <summary>
 		///   The namespace to which the configuration element applies.
@@ -58,16 +51,15 @@ namespace FlitBit.Core.Log
 		///   The source levels.
 		/// </summary>
 		/// <seealso cref="System.Diagnostics.SourceLevels" />
-		[ConfigurationProperty(PropertyNameSourceLevel, DefaultValue = LogConfigurationSection.CDefaultSourceLevel)]
-		public SourceLevels SourceLevel { get { return (SourceLevels) this[PropertyNameSourceLevel]; } set { this[PropertyNameSourceLevel] = value; } }
+		[ConfigurationProperty(PropertyNameTraceThreshold)]
+    public string TraceThreshold { get { return (string)this[PropertyNameTraceThreshold]; } set { this[PropertyNameTraceThreshold] = value; } }
 
 		/// <summary>
 		///   The stack trace threshold
 		/// </summary>
 		/// <seealso cref="System.Diagnostics.TraceEventType" />
-		[ConfigurationProperty(PropertyNameStackTraceThreshold,
-			DefaultValue = LogConfigurationSection.CDefaultStackTraceThreshold)]
-		public TraceEventType StackTraceThreshold { get { return (TraceEventType) this[PropertyNameStackTraceThreshold]; } set { this[PropertyNameStackTraceThreshold] = value; } }
+		[ConfigurationProperty(PropertyNameStackTraceThreshold)]
+		public string StackTraceThreshold { get { return (string) this[PropertyNameStackTraceThreshold]; } set { this[PropertyNameStackTraceThreshold] = value; } }
 
 		/// <summary>
 		///   The name of the sink (in the parent object's 'sinks' collection)
@@ -92,5 +84,29 @@ namespace FlitBit.Core.Log
 				});
 			}
 		}
+
+	  /// <summary>
+	  /// The trace threshold as a value.
+	  /// </summary>
+	  public TraceEventType TraceThresholdValue
+	  {
+	    get
+	    {
+	      TraceEventType res;
+	      return Enum.TryParse(TraceThreshold, out res) ? res : default(TraceEventType);
+	    }
+	  }
+
+	  /// <summary>
+	  /// the stack trace threshold as a value.
+	  /// </summary>
+    public TraceEventType StackTraceThresholdValue
+    {
+      get
+      {
+        TraceEventType res;
+        return Enum.TryParse(StackTraceThreshold, out res) ? res : default(TraceEventType);
+      }
+    }
 	}
 }

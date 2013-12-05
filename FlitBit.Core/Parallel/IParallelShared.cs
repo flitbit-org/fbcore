@@ -1,8 +1,11 @@
-﻿namespace FlitBit.Core.Parallel
+﻿using System;
+
+namespace FlitBit.Core.Parallel
 {
   /// <summary>
   ///   Framework interface used to share objects across threads using context-flow.
   /// </summary>
+  [Obsolete("No longer used by context flow.", false)]
   public interface IParallelShared
   {
     /// <summary>

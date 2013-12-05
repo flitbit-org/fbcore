@@ -43,7 +43,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.Critical))
+			if (!sink.IsLogging(TraceEventType.Critical))
 			{
 				return null;
 			}
@@ -80,7 +80,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.Critical))
+			if (!sink.IsLogging(TraceEventType.Critical))
 			{
 				return null;
 			}
@@ -120,7 +120,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 			
-			if (!sink.Levels.HasFlag(SourceLevels.Critical))
+			if (!sink.IsLogging(TraceEventType.Critical))
 			{
 				return null;
 			}
@@ -161,7 +161,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.Critical))
+			if (!sink.IsLogging(TraceEventType.Critical))
 			{
 				return null;
 			}
@@ -198,7 +198,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.Error))
+			if (!sink.IsLogging(TraceEventType.Error))
 			{
 				return null;
 			}
@@ -235,7 +235,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.Error))
+			if (!sink.IsLogging(TraceEventType.Error))
 			{
 				return null;
 			}
@@ -275,7 +275,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.Error))
+			if (!sink.IsLogging(TraceEventType.Error))
 			{
 				return null;
 			}
@@ -317,7 +317,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.Error))
+			if (!sink.IsLogging(TraceEventType.Error))
 			{
 				return null;
 			}
@@ -354,7 +354,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.Information))
+			if (!sink.IsLogging(TraceEventType.Information))
 			{
 				return null;
 			}
@@ -391,7 +391,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.Information))
+			if (!sink.IsLogging(TraceEventType.Information))
 			{
 				return null;
 			}
@@ -431,7 +431,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.Information))
+			if (!sink.IsLogging(TraceEventType.Information))
 			{
 				return null;
 			}
@@ -472,7 +472,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.Information))
+			if (!sink.IsLogging(TraceEventType.Information))
 			{
 				return null;
 			}
@@ -509,7 +509,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.ActivityTracing))
+			if (!sink.IsLogging(TraceEventType.Resume))
 			{
 				return null;
 			}
@@ -546,7 +546,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.ActivityTracing))
+			if (!sink.IsLogging(TraceEventType.Resume))
 			{
 				return null;
 			}
@@ -586,7 +586,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.ActivityTracing))
+			if (!sink.IsLogging(TraceEventType.Resume))
 			{
 				return null;
 			}
@@ -627,7 +627,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.ActivityTracing))
+			if (!sink.IsLogging(TraceEventType.Resume))
 			{
 				return null;
 			}
@@ -664,7 +664,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.ActivityTracing))
+			if (!sink.IsLogging(TraceEventType.Resume))
 			{
 				return null;
 			}
@@ -701,7 +701,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.ActivityTracing))
+			if (!sink.IsLogging(TraceEventType.Start))
 			{
 				return null;
 			}
@@ -741,7 +741,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.ActivityTracing))
+			if (!sink.IsLogging(TraceEventType.Start))
 			{
 				return null;
 			}
@@ -783,7 +783,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.ActivityTracing))
+			if (!sink.IsLogging(TraceEventType.Start))
 			{
 				return null;
 			}
@@ -819,7 +819,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.ActivityTracing))
+			if (!sink.IsLogging(TraceEventType.Stop))
 			{
 				return null;
 			}
@@ -859,7 +859,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.ActivityTracing))
+			if (!sink.IsLogging(TraceEventType.Stop))
 			{
 				return null;
 			}
@@ -900,7 +900,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.ActivityTracing))
+			if (!sink.IsLogging(TraceEventType.Stop))
 			{
 				return null;
 			}
@@ -937,7 +937,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.ActivityTracing))
+			if (!sink.IsLogging(TraceEventType.Suspend))
 			{
 				return null;
 			}
@@ -977,7 +977,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.ActivityTracing))
+			if (!sink.IsLogging(TraceEventType.Suspend))
 			{
 				return null;
 			}
@@ -1018,7 +1018,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.ActivityTracing))
+			if (!sink.IsLogging(TraceEventType.Suspend))
 			{
 				return null;
 			}
@@ -1055,7 +1055,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.ActivityTracing))
+			if (!sink.IsLogging(TraceEventType.Transfer))
 			{
 				return null;
 			}
@@ -1095,7 +1095,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.ActivityTracing))
+			if (!sink.IsLogging(TraceEventType.Transfer))
 			{
 				return null;
 			}
@@ -1136,7 +1136,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.ActivityTracing))
+			if (!sink.IsLogging(TraceEventType.Transfer))
 			{
 				return null;
 			}
@@ -1173,7 +1173,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.Verbose))
+			if (!sink.IsLogging(TraceEventType.Verbose))
 			{
 				return null;
 			}
@@ -1210,7 +1210,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.Verbose))
+			if (!sink.IsLogging(TraceEventType.Verbose))
 			{
 				return null;
 			}
@@ -1250,7 +1250,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.Verbose))
+			if (!sink.IsLogging(TraceEventType.Verbose))
 			{
 				return null;
 			}
@@ -1291,7 +1291,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.Verbose))
+			if (!sink.IsLogging(TraceEventType.Verbose))
 			{
 				return null;
 			}
@@ -1328,7 +1328,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.Warning))
+			if (!sink.IsLogging(TraceEventType.Warning))
 			{
 				return null;
 			}
@@ -1365,7 +1365,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.Warning))
+			if (!sink.IsLogging(TraceEventType.Warning))
 			{
 				return null;
 			}
@@ -1405,7 +1405,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.Warning))
+			if (!sink.IsLogging(TraceEventType.Warning))
 			{
 				return null;
 			}
@@ -1446,7 +1446,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(sink != null);
 
-			if (!sink.Levels.HasFlag(SourceLevels.Warning))
+			if (!sink.IsLogging(TraceEventType.Warning))
 			{
 				return null;
 			}

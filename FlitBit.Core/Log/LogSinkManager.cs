@@ -21,25 +21,24 @@ namespace FlitBit.Core.Log
 	{
 		static LogSinkManager __singleton;
 		readonly ConcurrentDictionary<string, ILogSink> _logSinks = new ConcurrentDictionary<string, ILogSink>();
-		readonly Reactor<DelegatedLogEventWriteRecord> _reactor;
+		readonly Reactor<Tuple<LogEventWriter,LogEvent>> _reactor;
 		ILogSink _default;
 
 		internal LogSinkManager()
 		{
 			this._reactor = new LogSinkReactor(Bg_WriteLogEvent, new ReactorOptions(
 																												ReactorOptions.DefaultMaxDegreeOfParallelism,
-																												false,
-																												0,
+																												ReactorOptions.DefaultYieldFrequency,
 																												LogConfigurationSection.Current.ParallelDispatchThreshold,
-																												ReactorOptions.DefaultDispatchesPerBorrowedThread
+																												ReactorOptions.DefaultDispatchesPerBorrowedThread,
+                                                        false
 																												));
 			this._reactor.UncaughtException += _reactor_UncaughtException;
-			AppDomain.CurrentDomain.DomainUnload += CurrentDomain_DomainUnload;
 		}
 
-		void Bg_WriteLogEvent(Reactor<DelegatedLogEventWriteRecord> reactor, DelegatedLogEventWriteRecord rec)
+    void Bg_WriteLogEvent(Reactor<Tuple<LogEventWriter, LogEvent>> reactor, Tuple<LogEventWriter, LogEvent> rec)
 		{
-			rec.Writer.WriteLogEvent(rec.Event);
+			rec.Item1.WriteLogEvent(rec.Item2);
 		}
 
 		ILogSink GetFallbackLogSink(string key, string namesp)
@@ -69,8 +68,8 @@ namespace FlitBit.Core.Log
 						var c = config.Namespaces[namesp];
 						if (c != null)
 						{
-							var level = (c.IsSpecialized) ? c.SourceLevel : config.DefaultSourceLevel;
-							var thresh = (c.IsSpecialized) ? c.StackTraceThreshold : config.DefaultStackTraceThreshold;
+              var level = (String.IsNullOrEmpty(c.TraceThreshold)) ? config.DefaultTraceThreshold : c.TraceThresholdValue;
+              var thresh = (String.IsNullOrEmpty(c.StackTraceThreshold)) ? config.DefaultStackTraceThreshold : c.StackTraceThresholdValue;
 							if (!String.IsNullOrEmpty(c.WriterName))
 							{
 								// TODO: resolve log writer by name
@@ -95,7 +94,7 @@ namespace FlitBit.Core.Log
 					if (result == null)
 					{
 						var def = this.DefaultLogSink;
-						result = new LogSink(this, namesp, def.Levels, def.StackTraceThreshold, LogEventWriter.NullWriter, def);
+						result = new LogSink(this, namesp, def.TraceThreshold, def.StackTraceThreshold, LogEventWriter.NullWriter, def);
 					}
 					while (namespaces.Count > 0)
 					{
@@ -132,11 +131,6 @@ namespace FlitBit.Core.Log
 			return sliceAt >= 0;
 		}
 
-		void CurrentDomain_DomainUnload(object sender, EventArgs e)
-		{
-			this._reactor.Cancel();
-		}
-
 		void _reactor_UncaughtException(object sender, ReactorExceptionArgs e)
 		{
 			// Since we're already logging, eat the exception.
@@ -151,10 +145,14 @@ namespace FlitBit.Core.Log
 		/// <param name="evt"></param>
 		public void GhostWrite(LogEventWriter writer, LogEvent evt)
 		{
-			if (!this._reactor.IsCanceled)
-			{
-				this._reactor.Push(new DelegatedLogEventWriteRecord(writer, evt));
-			}
+		  var scheduledWriter = writer ?? DefaultLogSink.Writer;
+		  if (!ReferenceEquals(LogEventWriter.NullWriter, scheduledWriter))
+		  {
+		    if (!this._reactor.IsCanceled)
+		    {
+          this._reactor.Push(Tuple.Create(scheduledWriter, evt));
+		    }
+		  }
 		}
 
 		#endregion
@@ -174,7 +172,7 @@ namespace FlitBit.Core.Log
 					var writer = config.ResolvedDefaultLogWriter;
 					return new LogSink(this
 														, "default"
-														, config.DefaultSourceLevel
+														, config.DefaultTraceThreshold
 														, config.DefaultStackTraceThreshold
 														, writer
 														, null);
@@ -212,35 +210,31 @@ namespace FlitBit.Core.Log
 		/// Gets the single instance.
 		/// </summary>
 		public static LogSinkManager Singleton { get { return Util.NonBlockingLazyInitializeVolatile(ref __singleton, () => new LogSinkManager()); } }
-
-		struct DelegatedLogEventWriteRecord
+    class LogSinkReactor : Reactor<Tuple<LogEventWriter, LogEvent>>
 		{
-			internal readonly LogEvent Event;
-			internal readonly LogEventWriter Writer;
+      static readonly Lazy<ILogSink> __logSink = new Lazy<ILogSink>(() =>
+      {
+        var res = typeof(LogSinkReactor).GetLogSink();
+        // Reconfigure the logsink so we don't flood the log with verbose reactor messages;
+        // otherwise for every log message processed there will be ~6 additional verbose messages.
+		   ((ILogSinkManagement)res).Reconfigure(TraceEventType.Warning, TraceEventType.Warning, res.Writer,
+		      res.NextSink);
+        return res;
+      }, LazyThreadSafetyMode.ExecutionAndPublication);
 
-			public DelegatedLogEventWriteRecord(LogEventWriter writer, LogEvent evt)
-			{
-				this.Writer = writer;
-				this.Event = evt;
-			}
-		}
 
-		class LogSinkReactor : Reactor<DelegatedLogEventWriteRecord>
-		{
-			public LogSinkReactor(Action<Reactor<DelegatedLogEventWriteRecord>, DelegatedLogEventWriteRecord> reactor,
+      public LogSinkReactor(Action<Reactor<Tuple<LogEventWriter, LogEvent>>, Tuple<LogEventWriter, LogEvent>> reactor,
 				ReactorOptions options)
 				: base(reactor, options)
 			{
 				Contract.Requires<ArgumentNullException>(reactor != null);
+        
 			}
 
-			protected override bool AllowLogEvent(SourceLevels levels)
-			{
-				// This filter prevents the reactor from flooding the log with
-				// background worker begin/end messages when the logging level is
-				// configured to be verbose.
-				return levels.HasFlag(SourceLevels.Warning);
-			}
+		  /// <summary>
+		  /// Gets the class' log sink.
+		  /// </summary>
+		  protected override ILogSink LogSink { get { return __logSink.Value; } }
 		}
 	}
 }

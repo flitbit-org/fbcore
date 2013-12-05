@@ -34,7 +34,9 @@ namespace FlitBit.Core.Log
 		public override void Initialize(string sourceName)
 		{}
 
-		public override void WriteLogEvent(LogEvent evt)
-		{}
+	  public override void WriteLogEvent(LogEvent evt)
+	  {
+	    
+	  }
 	}
 }
