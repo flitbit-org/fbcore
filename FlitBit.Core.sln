@@ -7,6 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlitBit.Core.Tests", "FlitB
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{13EBF6C7-2446-46D6-B547-22B89CD38BE5}"
 	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
 		Version.targets = Version.targets
 	EndProjectSection
 EndProject

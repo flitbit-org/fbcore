@@ -9,20 +9,24 @@ namespace FlitBit.Core.Tests.Parallel
 	public class ContextFlowTests
 	{
 		[TestMethod]
-		public void ContextFlow_ContextWhenNonEmptyContext()
+		public void ContextFlow_ContextFlowsWhenNonEmptyContext()
 		{
-			using (var scope = CleanupScope.NewOrSharedScope())
+      // To test whether context is captured, use CleanupScope since internally
+      // it is coded to flow with the context (registers an IContextFlowProvider).
+      using (var scope = CleanupScope.NewOrSharedScope())
 			{
+			  var outer = scope;
 				var context = ContextFlow.Current;
 
 			  var task = Task.Factory.StartNew(ContextFlow.Capture(() =>
 			  {
 			    var ambient = ContextFlow.Current;
 			    Assert.AreNotSame(context, ambient);
-			    Assert.AreSame(scope, CleanupScope.Current);
+          Assert.AreSame(outer, CleanupScope.Current);
 			  }));
 				
-				Assert.AreSame(context, ContextFlow.Current);
+				// detect shenanigans with current context
+        Assert.AreSame(context, ContextFlow.Current);
 
 			  task.Wait();
 			  Assert.IsFalse(task.IsFaulted);
@@ -30,34 +34,7 @@ namespace FlitBit.Core.Tests.Parallel
         Assert.AreSame(context, ContextFlow.Current);
 			}
 		}
-
-		[TestMethod]
-		public void ContextFlow_EmptyContextWhenNoContext()
-		{
-			// TaskCreationOptions.LongRunning hints to TPL that it should always make a new thread for this work
-			// ContextFlow.ForkAmbient would only have an empty context in a new thread where no context is set,
-			// so only a new thread would guarantee the test results are accurate
-			var ambient = Task.Factory.StartNew(() => ContextFlow.ForkAmbient(), System.Threading.Tasks.TaskCreationOptions.LongRunning).Result;
-			Assert.IsNull(ambient);
-		}
-
-		[TestMethod]
-		public void ContextFlow_AmbientContextFlowsToBackgroundThread()
-		{
-			using (var scope = CleanupScope.NewOrSharedScope())
-			{
-				var outer = scope;
-				var ambient =
-					Task.Factory.StartNew(ContextFlow.Capture(() =>
-					{
-						var res = ContextFlow.Current;
-						Assert.AreSame(CleanupScope.Current, outer);
-						return res;
-					}), TaskCreationOptions.LongRunning).Result;
-				Assert.AreSame(ContextFlow.Current, ambient);
-			}
-		}
-
+    
 		[TestMethod]
 		public void ContextFlow_FlowsWithParallelContinuations()
 		{

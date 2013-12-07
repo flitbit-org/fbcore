@@ -62,7 +62,7 @@
 		</ItemGroup>
 		
 		<PropertyGroup>
-			<AssemblyInfoVersionFile>Properties\AssemblyInfo.$(Configuration).$(VersionMajor).$(VersionMinor).$(VersionBuild).$(FinalVersionRevision).version.cs</AssemblyInfoVersionFile>
+			<AssemblyInfoVersionFile>Properties\AssemblyInfo.version.cs</AssemblyInfoVersionFile>
 			<MustWriteAssemblyInfoVersionFile Condition="!Exists('$(AssemblyInfoVersionFile)')">true</MustWriteAssemblyInfoVersionFile>
 		</PropertyGroup>
 
@@ -71,8 +71,6 @@
 	</Target>
 
 	<Target Name="Versioning" BeforeTargets="BeforeBuild" Condition="'$(RunVersioning)' == 'True'" DependsOnTargets="VersioningPrerequisites">
-		<CreateItem Include="$(AssemblyInfoVersionFile)">
-			<Output TaskParameter="Include" ItemName="Compile" />
-		</CreateItem>		
+		<Message Condition="'$(MustWriteAssemblyInfoVersionFile)' == 'true'" Text="Assembly version file written."/>
 	</Target>
 </Project>

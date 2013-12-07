@@ -10,7 +10,7 @@
     <projectUrl>https://github.com/flitbit-org/fbcore</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>FlitBit Core - frameworks, utilities, and extensions for dotNet.</description>
-    <releaseNotes>Build from new home on github.</releaseNotes>
+    <releaseNotes>Breaking change: updated ContextFlow with new pattern for capturing and restoring execution context; plays nice with TPL.</releaseNotes>
     <copyright>Copyright 2013</copyright>
   </metadata>
 </package>

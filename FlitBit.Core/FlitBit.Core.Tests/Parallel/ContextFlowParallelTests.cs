@@ -14,6 +14,8 @@ namespace FlitBit.Core.Tests.Parallel
 		{
 			Exception caught = null;
 			var completed = false;
+      var assumeFailure = DateTime.Now.Add(TimeSpan.FromMinutes(1));
+      
 
 			using (var completion = ContextFlow.ParallelWithCompletion(
 																											 () =>
@@ -29,9 +31,16 @@ namespace FlitBit.Core.Tests.Parallel
 														completed = true;
 													 });
 
-				// delay just long enough...
-				Thread.Sleep(TimeSpan.FromSeconds(0.3));
-			}
+        // Spinwait for completion...
+        while (!completed)
+        {
+          if (DateTime.Now > assumeFailure)
+          {
+            Assert.Fail("Failed to complete before the timeout.");
+          }
+          Thread.Sleep(200);
+        }
+      }
 
 			Assert.IsNotNull(caught);
 			Assert.AreEqual("Kaboom!", caught.Message);
@@ -44,6 +53,7 @@ namespace FlitBit.Core.Tests.Parallel
 			Exception caught = null;
 			Exception uncaught = null;
 			var completed = false;
+      var assumeFailure = DateTime.Now.Add(TimeSpan.FromMinutes(1));
 
 			ContextFlow.OnUncaughtException += (sender, e) => { uncaught = e.Error; };
 
@@ -65,17 +75,25 @@ namespace FlitBit.Core.Tests.Parallel
 				Assert.IsFalse(completion.IsCompleted);
 				Assert.IsFalse(completion.IsFaulted);
 
-				// delay just long enough...
-				Thread.Sleep(TimeSpan.FromSeconds(1));
+        // Spinwait for completion...
+        while (!completed || caught == null || uncaught == null)
+        {
+          if (DateTime.Now > assumeFailure)
+          {
+            Assert.Fail("Failed to complete before the timeout.");
+          }
+          Thread.Sleep(200);
+        }
 
-				Assert.IsTrue(completion.IsCompleted);
+        Assert.IsTrue(completed);
+        Assert.IsTrue(completion.IsCompleted);
 				Assert.IsTrue(completion.IsFaulted, "faulted due to the exception 'Kaboom!'");
 
-				Assert.IsNotNull(caught);
+        Assert.IsNotNull(caught);
+        Assert.IsNotNull(uncaught);
 				Assert.AreSame(caught, completion.Exception);
 				Assert.AreEqual("Kaboom!", caught.Message);
 				Assert.AreEqual("Whammy!", uncaught.Message);
-				Assert.IsTrue(completed);
 			}
 		}
 
@@ -85,6 +103,7 @@ namespace FlitBit.Core.Tests.Parallel
 			Exception caught = null;
 			var completed = false;
 			var handbackTotal = 0;
+      var assumeFailure = DateTime.Now.Add(TimeSpan.FromMinutes(1));
 
 			using (var completion = ContextFlow.ParallelWithCompletion(
 																											 () =>
@@ -101,8 +120,15 @@ namespace FlitBit.Core.Tests.Parallel
 														handbackTotal = total;
 													 });
 
-				// delay just long enough...
-				Thread.Sleep(TimeSpan.FromSeconds(1.2));
+        // Spinwait for completion...
+        while (!completed)
+        {
+          if (DateTime.Now > assumeFailure)
+          {
+            Assert.Fail("Failed to complete before the timeout.");
+          }
+          Thread.Sleep(200);
+        }
 
 				var result = completion.AwaitValue();
 
@@ -118,6 +144,7 @@ namespace FlitBit.Core.Tests.Parallel
 		{
 			Exception caught = null;
 			var completed = false;
+      var assumeFailure = DateTime.Now.Add(TimeSpan.FromMinutes(1));
 
 			using (var completion = ContextFlow.ParallelWithCompletion(
 																											 () => Thread.Sleep(TimeSpan.FromSeconds(1))))
@@ -132,8 +159,15 @@ namespace FlitBit.Core.Tests.Parallel
 				Assert.IsFalse(completion.IsCompleted);
 				Assert.IsFalse(completion.IsFaulted);
 
-				// delay just long enough...
-				Thread.Sleep(TimeSpan.FromSeconds(1.2));
+        // Spinwait for completion...
+        while (!completed)
+        {
+          if (DateTime.Now > assumeFailure)
+          {
+            Assert.Fail("Failed to complete before the timeout.");
+          }
+          Thread.Sleep(200);
+        }
 
 				Assert.IsTrue(completion.IsCompleted);
 				Assert.IsFalse(completion.IsFaulted);
@@ -149,6 +183,7 @@ namespace FlitBit.Core.Tests.Parallel
 			Exception caught = null;
 			var completed = false;
 			var observerCalled = false;
+      var assumeFailure = DateTime.Now.Add(TimeSpan.FromMinutes(1));
 
 			using (var completion = ContextFlow.ParallelWithCompletion(
 																											 () => Thread.Sleep(TimeSpan.FromSeconds(1))))
@@ -165,8 +200,15 @@ namespace FlitBit.Core.Tests.Parallel
 
 				completion.Continue(e => { observerCalled = true; });
 
-				// delay just long enough...
-				Thread.Sleep(TimeSpan.FromSeconds(1.2));
+        // Spinwait for completion...
+        while (!completed)
+        {
+          if (DateTime.Now > assumeFailure)
+          {
+            Assert.Fail("Failed to complete before the timeout.");
+          }
+          Thread.Sleep(200);
+        }
 
 				Assert.IsTrue(completion.Wait(TimeSpan.FromSeconds(2)));
 
@@ -182,16 +224,24 @@ namespace FlitBit.Core.Tests.Parallel
 		[TestMethod]
 		public void Parallel_ExecutionCanBeAwaited()
 		{
+      var assumeFailure = DateTime.Now.Add(TimeSpan.FromMinutes(1));
+
 			using (var completion = ContextFlow.ParallelWithCompletion(
-																											 () => { Thread.Sleep(TimeSpan.FromSeconds(1)); }))
+																											 () => Thread.Sleep(TimeSpan.FromSeconds(1))))
 			{
 				Assert.IsFalse(completion.IsCompleted);
 				Assert.IsFalse(completion.IsFaulted);
 
-				// delay just long enough...
-				Assert.IsTrue(completion.Wait(TimeSpan.FromSeconds(1.2)));
+        // Spinwait for completion...
+        while (!completion.IsCompleted)
+        {
+          if (DateTime.Now > assumeFailure)
+          {
+            Assert.Fail("Failed to complete before the timeout.");
+          }
+          Thread.Sleep(200);
+        }
 
-				Assert.IsTrue(completion.IsCompleted);
 				Assert.IsFalse(completion.IsFaulted);
 			}
 		}
