@@ -6,12 +6,12 @@ Core frameworks, utilities, and extensions for dotNet.
 
 The [FlitBit.Core](https://www.nuget.org/packages/FlitBit.Core/) library is published on [NuGet.org](https://www.nuget.org/packages/FlitBit.Core/) and can be installed through the Visual Studio `TOOLS` menu.
 
-## Background
+## Evolution
 
-The _FlitBit Frameworks_ have been evolving for over a decade and different parts have been used in production systems since the outset. If you dig in you will likely notice that there is overlap
-with the latest Microsoft .NET Framework libraries (~4.5). In some cases we chose an alternate implementation due to our own perception that the Microsoft provided implementation constrained us, but
-in most cases we implemented a capability that was not already a part of the framework. As we constantly evolve these libraries, be warned that our intention is to switch over to the Framework's
-implementations when and if they are deemed sufficient for our purposes.
+As when you dig in you will likely notice that there is overlap
+with the latest Microsoft .NET Framework libraries (~4.5). In some cases we chose an alternate implementation due to our own perception that the Microsoft provided implementation constrained us. In many
+other cases, we simply implemented a capability that was not already a part of the framework. Newer versions of .NET have introduced classes that overlap the scope of some of our own and as we constantly 
+evolve these libraries, be warned that our intention is to switch over to the Framework's implementations if they are deemed sufficient for our purposes.
 
 ## Useful Stuff
 
