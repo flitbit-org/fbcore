@@ -229,7 +229,7 @@ namespace FlitBit.Core.Tests.Net
 		{
 			GetTweetsAndPrint(new Uri("http://api.openweathermap.org/data/2.5/weather?q=London,uk"));
 			GetTweetsAndPrint(new Uri("http://api.openweathermap.org/data/2.5/weather?q=Seattle,wa"));
-			GetTweetsAndPrint(new Uri("http://api.openweathermap.org/data/2.5/weather?q=Salt,ut"));
+			GetTweetsAndPrint(new Uri("http://api.openweathermap.org/data/2.5/weather?q=Orem,ut"));
 		}
 
 		void GetTweetsAndPrint(Uri uri)
