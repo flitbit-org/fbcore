@@ -51,6 +51,12 @@ namespace FlitBit.Core.Tests
 	[TestClass]
 	public class DisposableTests
 	{
+    [TestCleanup]
+    public void Cleanup()
+    {
+      UncaughtExceptionTrap.CheckUncaughtException();
+    }
+
 		[TestMethod]
 		public void Dispose_DoesDispose()
 		{

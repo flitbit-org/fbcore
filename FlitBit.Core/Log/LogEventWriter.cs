@@ -28,15 +28,4 @@ namespace FlitBit.Core.Log
 		/// <param name="evt">the event</param>
 		public abstract void WriteLogEvent(LogEvent evt);
 	}
-
-	internal sealed class NullLogEventWriter : LogEventWriter
-	{
-		public override void Initialize(string sourceName)
-		{}
-
-	  public override void WriteLogEvent(LogEvent evt)
-	  {
-	    
-	  }
-	}
 }

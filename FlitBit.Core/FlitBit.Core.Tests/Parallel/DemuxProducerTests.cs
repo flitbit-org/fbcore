@@ -9,6 +9,12 @@ namespace FlitBit.Core.Tests.Parallel
 	[TestClass]
 	public class DemuxProducerTests
 	{
+    [TestCleanup]
+    public void Cleanup()
+    {
+      UncaughtExceptionTrap.CheckUncaughtException();
+    }
+
 		[TestMethod]
 		public void DemuxProducer_CanDemultiplexOps()
 		{

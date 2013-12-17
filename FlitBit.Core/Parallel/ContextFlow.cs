@@ -884,7 +884,12 @@ namespace FlitBit.Core.Parallel
 
 	  private static readonly ConcurrentBag<IContextFlowProvider> Providers = new ConcurrentBag<IContextFlowProvider>();
 		readonly List<Tuple<IContextFlowProvider, object>> _contexts; 
-		internal static void RegisterProvider(IContextFlowProvider provider)
+
+		/// <summary>
+		/// Registers a context flow provider.
+		/// </summary>
+		/// <param name="provider">the provider</param>
+		public static void RegisterProvider(IContextFlowProvider provider)
 		{
 			Providers.Add(provider);
 		}

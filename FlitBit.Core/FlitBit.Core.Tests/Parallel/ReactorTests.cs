@@ -11,6 +11,12 @@ namespace FlitBit.Core.Tests.Parallel
 	[TestClass]
 	public class ParallelReactorTests
 	{
+    [TestCleanup]
+    public void Cleanup()
+    {
+      UncaughtExceptionTrap.CheckUncaughtException();
+    }
+
 		[TestMethod]
 		public void Reactor_GetsNotifiedForAllItemsGiven()
 		{

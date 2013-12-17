@@ -119,6 +119,7 @@
     <Compile Include="..\AssemblyInfo.corporate.cs">
       <Link>Properties\AssemblyInfo.corporate.cs</Link>
     </Compile>
+    <Compile Include="Log\NullLogEventWriter.cs" />
     <Compile Include="Properties\AssemblyInfo.version.cs" />
     <Compile Include="AssemblyLocks.cs" />
     <Compile Include="Buffers\BufferReader.big-endian.cs" />

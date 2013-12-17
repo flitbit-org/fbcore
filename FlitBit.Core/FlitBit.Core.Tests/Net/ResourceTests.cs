@@ -9,6 +9,12 @@ namespace FlitBit.Core.Tests.Net
 	[TestClass]
 	public class ResourceTests
 	{
+    [TestCleanup]
+    public void Cleanup()
+    {
+      UncaughtExceptionTrap.CheckUncaughtException();
+    }
+
 		[TestMethod]
 		public void HttpGetDynamic_CanCallApiRequiringBasicAuth()
 		{

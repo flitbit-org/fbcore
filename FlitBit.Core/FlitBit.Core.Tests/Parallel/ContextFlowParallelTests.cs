@@ -9,6 +9,12 @@ namespace FlitBit.Core.Tests.Parallel
 	[TestClass]
 	public class ContextFlowParallelTests
 	{
+    [TestCleanup]
+    public void Cleanup()
+    {
+      UncaughtExceptionTrap.CheckUncaughtException();
+    }
+
 		[TestMethod]
 		public void Parallel_ErrorPropagatesToErrorHandler()
 		{

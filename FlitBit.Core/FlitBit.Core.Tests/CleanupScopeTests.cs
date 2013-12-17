@@ -7,6 +7,12 @@ namespace FlitBit.Core.Tests
 	[TestClass]
 	public class CleanupScopeTests
 	{
+	  [TestCleanup]
+	  public void Cleanup()
+	  {
+	    UncaughtExceptionTrap.CheckUncaughtException();
+	  }
+
 		[TestMethod]
 		public void CleanupScope_DisposableAddedWithinScopeHasDisposeCalledDuringCleanup()
 		{

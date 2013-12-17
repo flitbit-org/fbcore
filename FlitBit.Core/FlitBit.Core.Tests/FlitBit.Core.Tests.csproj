@@ -74,6 +74,7 @@
     <Compile Include="Parallel\NotificationTests.cs" />
     <Compile Include="Parallel\ReactorTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UncaughtExceptionTrap.cs" />
     <Compile Include="UtilTests.cs" />
     <Compile Include="Xml\XDynamicTests.cs" />
   </ItemGroup>

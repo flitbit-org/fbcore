@@ -19,7 +19,7 @@ namespace FlitBit.Core.Log
 	/// </summary>
 	public sealed class LogSinkManager : ILogSinkManager, ILogSinkGhostWriter
 	{
-		static LogSinkManager __singleton;
+    static LogSinkManager __singleton;
 		readonly ConcurrentDictionary<string, ILogSink> _logSinks = new ConcurrentDictionary<string, ILogSink>();
 		readonly Reactor<Tuple<LogEventWriter,LogEvent>> _reactor;
 		ILogSink _default;
@@ -117,7 +117,7 @@ namespace FlitBit.Core.Log
 			}
 		}
 
-		bool SliceNamespace(ref string namesp)
+	  static bool SliceNamespace(ref string namesp)
 		{
 			Contract.Requires<ArgumentNullException>(namesp != null);
 			var sliceAt = namesp.LastIndexOf('.');
@@ -133,7 +133,7 @@ namespace FlitBit.Core.Log
 
 		void _reactor_UncaughtException(object sender, ReactorExceptionArgs e)
 		{
-			// Since we're already logging, eat the exception.
+			// Since presumably, we're the logging mechanism and already logging, ensure we don't cycle.
 		}
 
 		#region ILogSinkGhostWriter Members
