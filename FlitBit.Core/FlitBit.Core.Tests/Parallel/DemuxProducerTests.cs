@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks.Dataflow;
 using FlitBit.Core.Parallel;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -20,13 +21,12 @@ namespace FlitBit.Core.Tests.Parallel
 		{
 			var test = new
 			{
-				Threads = 12,
-				Iterations = 1000,
+				Threads = 4,
+				Iterations = 100,
 				Max = 100
 			};
 			var originators = 0;
 			var observers = 0;
-			var blanks = 0;
 			var fails = 0;
 			var demux = new TestDemuxer();
 			var threads = new List<Thread>();
@@ -39,40 +39,34 @@ namespace FlitBit.Core.Tests.Parallel
 
 					for (var j = 0; j < test.Iterations; j++)
 					{
-						var observed = false;
 						var item = rand.Next(test.Max);
-						demux.TryConsume(item, (e, res) =>
-						{
-							if (e != null && ex == null)
-							{
-								ex = e;
-							}
-							else if (res == null)
-							{
-								Interlocked.Increment(ref blanks);
-							}
-							else
-							{
-								switch (res.Item1)
-								{
-									case DemuxResultKind.None:
-										Interlocked.Increment(ref fails);
-										break;
-									case DemuxResultKind.Observed:
-										Interlocked.Increment(ref observers);
-										break;
-									case DemuxResultKind.Originated:
-										Interlocked.Increment(ref originators);
-										break;
-								}
-							}
-							observed = true;
-						});
+					  var future = new Future<Observation>(); 
+					  demux.TryConsume(item, res =>
+					  {
+					    switch (res.Kind)
+					    {
+					      case DemuxResultKind.None:
+					        Interlocked.Increment(ref fails);
+					        break;
+					      case DemuxResultKind.Observed:
+					        Interlocked.Increment(ref observers);
+					        break;
+					      case DemuxResultKind.Originated:
+					        Interlocked.Increment(ref originators);
+					        break;
+					    }
+					    try
+					    {
+					      // If there was a background error it is rethrown here...
+                future.MarkCompleted(res.Result);
+					    }
+					    catch (Exception e)
+					    {
+					      future.MarkFaulted(e);
+					    }
+					  });
 
-						while (!observed)
-						{
-							Thread.Sleep(0);
-						}
+					  Assert.IsTrue(future.Wait(TimeSpan.FromSeconds(10)));
 					}
 				});
 				thread.Start();
@@ -81,7 +75,7 @@ namespace FlitBit.Core.Tests.Parallel
 
 			foreach (var th in threads)
 			{
-				th.Join(TimeSpan.FromSeconds(30));
+				th.Join();
 			}
 			if (ex != null)
 			{
@@ -90,7 +84,6 @@ namespace FlitBit.Core.Tests.Parallel
 
 			Console.Out.WriteLine(String.Concat("Originators: ", originators));
 			Console.Out.WriteLine(String.Concat("Observers: ", observers));
-			Console.Out.WriteLine(String.Concat("Blanks: ", blanks));
 			Console.Out.WriteLine(String.Concat("Fails: ", fails));
 			Assert.AreEqual(0, fails);
 		}
@@ -104,35 +97,35 @@ namespace FlitBit.Core.Tests.Parallel
 			var threads = new Tuple<Thread, Object>[10];
 			for (var i = 0; i < threads.Length; i++)
 			{
-				var tuple = new Tuple<Thread, Object>(new Thread(n =>
-				{
-					var idx = (int) n;
-					var completed = false;
-					producer.TryConsume(idx, (e, res) =>
-					{
-						if (e != null)
-						{
-							lock (sync)
-							{
-								var tpl = threads[idx];
-								threads[idx] = new Tuple<Thread, object>(tpl.Item1, e);
-							}
-						}
-						else
-						{
-							lock (sync)
-							{
-								var tpl = threads[idx];
-								threads[idx] = new Tuple<Thread, object>(tpl.Item1, tpl.Item1);
-							}
-						}
-						completed = true;
-					});
-					while (!completed)
-					{
-						Thread.Sleep(0);
-					}
-				}), null);
+			  var tuple = Tuple.Create(new Thread(n =>
+			  {
+			    var idx = (int)n;
+          var future = new Future<object>(); 
+
+          producer.TryConsume(idx, res =>
+          {
+            if (res.Error != null)
+            {
+              lock (sync)
+              {
+                var tpl = threads[idx];
+                threads[idx] = Tuple.Create(tpl.Item1, (object)res.Error);
+                future.MarkFaulted(res.Error);
+              }
+            }
+            else
+            {
+              lock (sync)
+              {
+                var tpl = threads[idx];
+                threads[idx] = Tuple.Create(tpl.Item1, (object)tpl.Item1);
+                future.MarkCompleted(tpl.Item1);
+              }
+            }
+          });
+			    Assert.IsTrue(future.Wait(TimeSpan.FromSeconds(10)));
+			  }), (object)null);
+
 				threads[i] = tuple;
 				tuple.Item1.Start(i);
 			}

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using FlitBit.Core.Parallel;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -16,41 +17,31 @@ namespace FlitBit.Core.Tests.Parallel
     }
 
 		[TestMethod]
-		public void Parallel_ErrorPropagatesToErrorHandler()
+		public void Parallel_ErrorPropagatesToCallerWaiter()
 		{
 			Exception caught = null;
-			var completed = false;
-      var assumeFailure = DateTime.Now.Add(TimeSpan.FromMinutes(1));
       
-
-			using (var completion = ContextFlow.ParallelWithCompletion(
-																											 () =>
-																											 {
-																												Thread.Sleep(TimeSpan.FromSeconds(0.1));
-																												throw new InvalidOperationException("Kaboom!");
-																											 }))
-			{
-				completion.Continue(
-													 e =>
-													 {
-														caught = e;
-														completed = true;
-													 });
-
-        // Spinwait for completion...
-        while (!completed)
+      using (var task = Task.Run(ContextFlow.Capture(() =>
+      {
+        Thread.Sleep(TimeSpan.FromSeconds(0.1));
+        throw new InvalidOperationException("Kaboom!");
+      })))
+      {
+        try
         {
-          if (DateTime.Now > assumeFailure)
+          if (!task.Wait(TimeSpan.FromMinutes(1)))
           {
             Assert.Fail("Failed to complete before the timeout.");
           }
-          Thread.Sleep(200);
+        }
+        catch (Exception e)
+        {
+          caught = e;
         }
       }
 
 			Assert.IsNotNull(caught);
-			Assert.AreEqual("Kaboom!", caught.Message);
-			Assert.IsTrue(completed);
+			Assert.AreEqual("Kaboom!", caught.InnerException.Message);
 		}
 
 		[TestMethod]

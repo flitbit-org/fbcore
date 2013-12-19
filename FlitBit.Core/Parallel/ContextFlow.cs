@@ -230,6 +230,7 @@ namespace FlitBit.Core.Parallel
 					catch (Exception e)
 					{
 						NotifyUncaughtException(task.Target, e);
+					  throw;
 					}
 				}
 			};
@@ -254,6 +255,7 @@ namespace FlitBit.Core.Parallel
 					catch (Exception e)
 					{
 						NotifyUncaughtException(task.Target, e);
+            throw;
 					}
 				}
 			};
@@ -279,6 +281,7 @@ namespace FlitBit.Core.Parallel
 					catch (Exception e)
 					{
 						NotifyUncaughtException(task.Target, e);
+            throw;
 					}
 				}
 			};
@@ -304,6 +307,7 @@ namespace FlitBit.Core.Parallel
 					catch (Exception e)
 					{
 						NotifyUncaughtException(task.Target, e);
+            throw;
 					}
 				}
 			};
@@ -329,6 +333,7 @@ namespace FlitBit.Core.Parallel
 					catch (Exception e)
 					{
 						NotifyUncaughtException(task.Target, e);
+            throw;
 					}
 				}
 			};
@@ -354,6 +359,7 @@ namespace FlitBit.Core.Parallel
 					catch (Exception e)
 					{
 						NotifyUncaughtException(task.Target, e);
+            throw;
 					}
 				}
 			};
@@ -379,6 +385,7 @@ namespace FlitBit.Core.Parallel
 					catch (Exception e)
 					{
 						NotifyUncaughtException(task.Target, e);
+            throw;
 					}
 				}
 			};
@@ -404,6 +411,7 @@ namespace FlitBit.Core.Parallel
 					catch (Exception e)
 					{
 						NotifyUncaughtException(task.Target, e);
+            throw;
 					} 
 				}
 			};
@@ -429,6 +437,7 @@ namespace FlitBit.Core.Parallel
 					catch (Exception e)
 					{
 						NotifyUncaughtException(task.Target, e);
+            throw;
 					}
 				}
 			};
@@ -454,6 +463,7 @@ namespace FlitBit.Core.Parallel
 					catch (Exception e)
 					{
 						NotifyUncaughtException(task.Target, e);
+            throw;
 					}
 				}
 			};
@@ -478,6 +488,7 @@ namespace FlitBit.Core.Parallel
 					catch (Exception e)
 					{
 						NotifyUncaughtException(task.Target, e);
+            throw;
 					}
 				}
 			};
