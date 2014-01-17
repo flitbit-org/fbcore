@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Text;
+using System.Threading.Tasks;
 using FlitBit.Core.Net;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -26,95 +27,28 @@ namespace FlitBit.Core.Tests.Net
 			// Create request and associate creds using basic auth...
 			var req = AttachTestCredentialsUsingBasicAuth(testdb.MakeResourceRequest());
 
-			using (var completion = req.ParallelGet(res => res.DeserializeResponseAsDynamic())
-																.ContinueWithCompletion(
-																											 (e, d) =>
-																											 {
-																												if ((unexpected = e) == null)
-																												{
-																													try
-																													{
-																														if (d.total_rows > 0)
-																														{
-																															foreach (var row in d.rows)
-																															{
-																																var value = row.doc;
-																																Console.WriteLine(String.Concat("timestamp: ", value.timestamp, ", machine_name: ",
-																																	value.machine_name, ", id: ", row.id, ", info: ", value.info));
-																															}
-																														}
-																													}
-																													catch (Exception assertionFailure)
-																													{
-																														unexpected = assertionFailure;
-																													}
-																												}
-																											 }))
-			{
-				completion.Wait(TimeSpan.FromSeconds(5));
-				Assert.IsTrue(completion.IsCompleted);
-			}
+		  using (var completion = req.ParallelGet(res => res.DeserializeResponseAsDynamic())
+		                             .ContinueWith((r) =>
+        {
+          var data = r.Result;
+		                                 if (data.total_rows > 0)
+		                                 {
+		                                   foreach (var row in data.rows)
+		                                   {
+		                                     var value = row.doc;
+		                                     Console.WriteLine(String.Concat("timestamp: ", value.timestamp,
+		                                       ", machine_name: ",
+		                                       value.machine_name, ", id: ", row.id, ", info: ", value.info));
+		                                   }
+		                                 }
 
-			Assert.IsNull(unexpected);
-		}
+		                               }))
+		  {
+		    completion.Wait(TimeSpan.FromSeconds(5));
+		    Assert.IsTrue(completion.IsCompleted);
+		  }
 
-		[TestMethod]
-		public void HttpGetDynamic_CanGetJsonFromWellKnownResource()
-		{
-			var hollywood = new Uri("http://search.twitter.com/search.json?q=hollywood");
-			var supreme = new Uri("http://search.twitter.com/search.json?q=supreme%20court");
-			var erlang = new Uri("http://search.twitter.com/search.json?q=erlang");
-
-			using (var h = hollywood.ParallelGet(res => res.DeserializeResponseAsDynamic()).ContinueWithCompletion(
-																																																						 (e, d) =>
-																																																						 {
-																																																							foreach (var tweet in d.results)
-																																																							{
-																																																								Console.WriteLine(String.Concat(tweet.from_user_name, " says: ",
-																																																									tweet.text));
-																																																							}
-																																																						 }))
-			{
-				Assert.IsFalse(h.IsCompleted);
-				Assert.IsFalse(h.IsFaulted);
-
-				using (var s = supreme.ParallelGet(res => res.DeserializeResponseAsDynamic()).ContinueWithCompletion(
-																																																						 (e, d) =>
-																																																						 {
-																																																							foreach (var tweet in d.results)
-																																																							{
-																																																								Console.WriteLine(String.Concat(tweet.from_user_name, " says: ",
-																																																									tweet.text));
-																																																							}
-																																																						 }))
-				{
-					Assert.IsFalse(s.IsCompleted);
-					Assert.IsFalse(s.IsFaulted);
-
-					using (var erl = erlang.ParallelGet(res => res.DeserializeResponseAsDynamic()).ContinueWithCompletion(
-																																																							 (e, d) =>
-																																																							 {
-																																																								foreach (var tweet in d.results)
-																																																								{
-																																																									Console.WriteLine(String.Concat(tweet.from_user_name,
-																																																										" says: ", tweet.text));
-																																																								}
-																																																							 }))
-					{
-						Assert.IsFalse(erl.IsCompleted);
-						Assert.IsFalse(erl.IsFaulted);
-
-						h.Wait(TimeSpan.FromSeconds(5));
-						s.Wait(TimeSpan.FromSeconds(5));
-						erl.Wait(TimeSpan.FromSeconds(5));
-
-						// In MTA I'd rather:
-						// 
-						// var waitHandles = new WaitHandle[] { h.WaitHandle, s.WaitHandle, erl.WaitHandle };
-						// WaitHandle.WaitAll(waitHandles);
-					}
-				}
-			}
+		  Assert.IsNull(unexpected);
 		}
 
 		[TestMethod]
@@ -128,57 +62,42 @@ namespace FlitBit.Core.Tests.Net
 
 			var req = AttachTestCredentialsUsingBasicAuth(testdb.MakeResourceRequest());
 
-			using (var completion = req.ParallelGet(res => res.DeserializeResponseAsDynamic())
-																.ContinueWithCompletion((e, d) =>
-																{
-																	if ((unexpected = e) == null)
-																	{
-																		try
-																		{
-																			if (d.total_rows > 0)
-																			{
-																				foreach (var row in d.rows)
-																				{
-																					var doc = new Uri(String.Concat(db, "/", row.id, "?rev=", row.value.rev));
-																					var delReq = AttachTestCredentialsUsingBasicAuth(doc.MakeResourceRequest());
-																					Console.WriteLine(String.Concat("Deleting: ", doc));
+		  using (var completion = req.ParallelGet(res => res.DeserializeResponseAsDynamic())
+		                             .ContinueWith((r) =>
+		                             {
+		                               var d = r.Result;
+		                               if (d.total_rows > 0)
+		                               {
+		                                 foreach (var row in d.rows)
+		                                 {
+		                                   var doc = new Uri(String.Concat(db, "/", row.id, "?rev=", row.value.rev));
+		                                   var delReq = AttachTestCredentialsUsingBasicAuth(doc.MakeResourceRequest());
+		                                   Console.WriteLine(String.Concat("Deleting: ", doc));
 
-																					var deleteResult = delReq.ParallelDelete(res => res.DeserializeResponseAsDynamic())
-																																	.ContinueWithCompletion((ee, dd) =>
-																																	{
-																																		if ((unexpected = ee) == null)
-																																		{
-																																			try
-																																			{
-																																				Console.WriteLine(String.Concat("Success deleting: ", doc));
-																																				Assert.IsTrue(dd.ok);
-																																			}
-																																			catch (Exception assertionFailure)
-																																			{
-																																				unexpected = assertionFailure;
-																																			}
-																																		}
-																																	});
-																					if (deleteResult.Wait(TimeSpan.FromSeconds(5)))
-																					{
-																						Assert.IsTrue(deleteResult.IsCompleted);
-																					}
-																				}
-																			}
-																		}
-																		catch (Exception assertionFailure)
-																		{
-																			unexpected = assertionFailure;
-																		}
-																	}
-																}))
-			{
-				if (completion.Wait(TimeSpan.FromSeconds(10)))
-				{
-					Assert.IsTrue(completion.IsCompleted);
-				}
-			}
-			Assert.IsNull(unexpected);
+		                                   var deleteResult = delReq.ParallelDelete(res => res.DeserializeResponseAsDynamic())
+		                                                            .ContinueWith((rr) =>
+		                                                            {
+		                                                              var dd = rr.Result;
+		                                                              Console.WriteLine(String.Concat("Success deleting: ",
+		                                                                doc));
+		                                                              Assert.IsTrue(dd.ok);
+
+		                                                            });
+		                                   if (deleteResult.Wait(TimeSpan.FromSeconds(5)))
+		                                   {
+		                                     Assert.IsTrue(deleteResult.IsCompleted);
+		                                   }
+		                                 }
+		                               }
+
+		                             }))
+		  {
+		    if (completion.Wait(TimeSpan.FromSeconds(10)))
+		    {
+		      Assert.IsTrue(completion.IsCompleted);
+		    }
+		  }
+		  Assert.IsNull(unexpected);
 		}
 
 		[TestMethod]
@@ -206,22 +125,19 @@ namespace FlitBit.Core.Tests.Net
 			var postBody = Encoding.UTF8.GetBytes(json);
 
 			using (var completion = req.ParallelPut(postBody, "application/json", res => res.DeserializeResponseAsDynamic())
-																.ContinueWithCompletion(
-																											 (e, d) =>
-																											 {
-																												if ((unexpected = e) == null)
-																												{
-																													try
-																													{
-																														Assert.IsTrue(d.ok);
-																														Assert.AreEqual(docid, d.id);
-																													}
-																													catch (Exception assertionFailure)
-																													{
-																														unexpected = assertionFailure;
-																													}
-																												}
-																											 }))
+        .ContinueWith((r) =>
+        {
+          var d = r.Result;
+          try
+          {
+            Assert.IsTrue(d.ok);
+            Assert.AreEqual(docid, d.id);
+          }
+          catch (Exception assertionFailure)
+          {
+            unexpected = assertionFailure;
+          }
+        }))
 			{
 				completion.Wait(TimeSpan.FromSeconds(5));
 				Assert.IsTrue(completion.IsCompleted);

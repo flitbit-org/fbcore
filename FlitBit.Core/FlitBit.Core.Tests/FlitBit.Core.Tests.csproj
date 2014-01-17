@@ -41,7 +41,7 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
     <Reference Include="Newtonsoft.Json, Version=4.5.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Newtonsoft.Json.4.5.11\lib\net40\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\..\packages\Newtonsoft.Json.5.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core">
@@ -77,9 +77,6 @@
     <Compile Include="Net\ResourceTests.cs" />
     <Compile Include="Parallel\ContextFlowTests.cs" />
     <Compile Include="Parallel\DemuxProducerTests.cs" />
-    <Compile Include="Parallel\ContextFlowParallelTests.cs" />
-    <Compile Include="Parallel\NotificationTests.cs" />
-    <Compile Include="Parallel\ReactorTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UncaughtExceptionTrap.cs" />
     <Compile Include="UtilTests.cs" />
