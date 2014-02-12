@@ -126,7 +126,10 @@
     <Compile Include="..\AssemblyInfo.corporate.cs">
       <Link>Properties\AssemblyInfo.corporate.cs</Link>
     </Compile>
+    <Compile Include="Log\DefaultLogSequenceGenerator.cs" />
+    <Compile Include="Log\ILogSequenceGenerator.cs" />
     <Compile Include="Log\NullLogEventWriter.cs" />
+    <Compile Include="Log\LogSequenceGenerator.cs" />
     <Compile Include="Parallel\ContextFlow.cs" />
     <Compile Include="Parallel\DemuxProducer.cs" />
     <Compile Include="Parallel\IContextFlowProvider.cs" />

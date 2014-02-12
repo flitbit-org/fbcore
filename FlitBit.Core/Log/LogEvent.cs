@@ -25,7 +25,6 @@ namespace FlitBit.Core.Log
 		static readonly string CacheMachineName;
 		static readonly int CacheProcessID;
 		static readonly string CacheProcessName;
-		static int __processSequence;
 
 		readonly int _sequence;
 		string _cachedStringRepresentation;
@@ -52,7 +51,7 @@ namespace FlitBit.Core.Log
 		{
 			Contract.Requires<ArgumentNullException>(source != null);
 
-			this._sequence = Interlocked.Increment(ref __processSequence);
+		  this._sequence = LogSequenceGenerator.Next;
 			this.TimestampUTC = DateTime.UtcNow;
 			this.ThreadID = Thread.CurrentThread.ManagedThreadId;
 			this.SourceName = source;
