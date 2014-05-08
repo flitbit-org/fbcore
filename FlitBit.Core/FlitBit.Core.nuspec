@@ -11,6 +11,6 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>FlitBit Core - frameworks, utilities, and extensions for dotNet.</description>
     <releaseNotes>Breaking change: updated ContextFlow with new pattern for capturing and restoring execution context; plays nice with TPL.</releaseNotes>
-    <copyright>Copyright© 2009-2014 Phillip Clark. All rights reserved.</copyright>
+    <copyright>COPYRIGHT© 2009-2014 Phillip Clark. All rights reserved.</copyright>
   </metadata>
 </package>

@@ -1,4 +1,10 @@
-﻿namespace FlitBit.Core.Meta
+﻿#region COPYRIGHT© 2009-2014 Phillip Clark. All rights reserved.
+
+// For licensing information see License.txt (MIT style licensing).
+
+#endregion
+
+namespace FlitBit.Core.Meta
 {
   /// <summary>
   ///   Basic enumeration of instance scopes.
