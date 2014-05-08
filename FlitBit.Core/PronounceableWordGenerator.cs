@@ -156,6 +156,7 @@ namespace FlitBit.Core
   // GpwData
   internal class GpwDataInit1
   {
+    // Apologies for the long scroll. My Resharper code-formatting options works well for a lot of code but not this.
     internal static readonly short[][][] Tris1 =
     {
       new[]

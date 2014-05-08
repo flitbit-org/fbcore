@@ -2,11 +2,9 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Runtime.Remoting.Messaging;
 using System.Text;
-using System.Threading;
 using FlitBit.Core.Log;
 
 namespace FlitBit.Core.Parallel
@@ -16,537 +14,547 @@ namespace FlitBit.Core.Parallel
   /// </summary>
   public sealed class ContextFlow : Disposable
   {
-		static readonly ILogSink LogSink = typeof(ContextFlow).GetLogSink();
+    static readonly ILogSink LogSink = typeof(ContextFlow).GetLogSink();
 
-	  static EventHandler<UncaughtExceptionArgs> __onUncaughtException;
+    static EventHandler<UncaughtExceptionArgs> __onUncaughtException;
 
-	  /// <summary>
-	  ///   Event fired when uncaught exceptions are raised by parallel operations.
-	  /// </summary>
-	  public static event EventHandler<UncaughtExceptionArgs> OnUncaughtException
-	  {
-		  add { __onUncaughtException += value; }
-		  remove
-		  {
-			  if (__onUncaughtException != null)
-			  {
-				  // ReSharper disable once DelegateSubtraction
-				  __onUncaughtException -= value;
-			  }
-		  }
-	  }
+    /// <summary>
+    ///   Event fired when uncaught exceptions are raised by parallel operations.
+    /// </summary>
+    public static event EventHandler<UncaughtExceptionArgs> OnUncaughtException
+    {
+      add { __onUncaughtException += value; }
+      remove
+      {
+        if (__onUncaughtException != null)
+        {
+          // ReSharper disable once DelegateSubtraction
+          __onUncaughtException -= value;
+        }
+      }
+    }
 
-	  /// <summary>
-	  ///   Notifies event handlers that an exception has occurred in a paralle operation.
-	  /// </summary>
-	  /// <param name="sender">the sender</param>
-	  /// <param name="e">the exception that was raised.</param>
-	  public static void NotifyUncaughtException(object sender, Exception e)
-	  {
-		  LogSink.Error(String.Concat("An uncaught exception occurred in a background thread.", e.FormatForLogging()));
-		  if (__onUncaughtException != null)
-		  {
-			  __onUncaughtException(sender, new UncaughtExceptionArgs(e));
-		  }
-	  }
+    /// <summary>
+    ///   Notifies event handlers that an exception has occurred in a paralle operation.
+    /// </summary>
+    /// <param name="sender">the sender</param>
+    /// <param name="e">the exception that was raised.</param>
+    public static void NotifyUncaughtException(object sender, Exception e)
+    {
+      LogSink.Error(String.Concat("An uncaught exception occurred in a background thread.", e.FormatForLogging()));
+      if (__onUncaughtException != null)
+      {
+        __onUncaughtException(sender, new UncaughtExceptionArgs(e));
+      }
+    }
 
-		/// <summary>
-		/// Creates an action that restores the ambient context around the specified task.
-		/// </summary>
-		/// <param name="task"></param>
-		/// <returns></returns>
-	  public static Action Capture(Action task)
-	  {
-		  var ctx = ForkAmbient();
-			return () =>
-			{
-				using (EnsureAmbient(ctx))
-				{
-					try
-					{
-						task();
-					}
-					catch (Exception e)
-					{
-						NotifyUncaughtException(task.Target, e);
-					  throw;
-					}
-				}
-			};
-	  }
-
-		/// <summary>
-		/// Creates an action that restores the ambient context around the specified task.
-		/// </summary>
-		/// <param name="task"></param>
-		/// <returns></returns>
-		public static Action<TArg> Capture<TArg>(Action<TArg> task)
-		{
-			var ctx = ForkAmbient();
-			return a =>
-			{
-				using (EnsureAmbient(ctx))
-				{
-					try
-					{
-						task(a);
-					}
-					catch (Exception e)
-					{
-						NotifyUncaughtException(task.Target, e);
+    /// <summary>
+    ///   Creates an action that restores the ambient context around the specified task.
+    /// </summary>
+    /// <param name="task"></param>
+    /// <returns></returns>
+    public static Action Capture(Action task)
+    {
+      var ctx = ForkAmbient();
+      return () =>
+      {
+        using (EnsureAmbient(ctx))
+        {
+          try
+          {
+            task();
+          }
+          catch (Exception e)
+          {
+            NotifyUncaughtException(task.Target, e);
             throw;
-					}
-				}
-			};
-		}
+          }
+        }
+      };
+    }
 
-		/// <summary>
-		/// Creates an action that restores the ambient context around the specified task.
-		/// </summary>
-		/// <param name="task"></param>
-		/// <returns></returns>
-		public static Action<TArg, TArg1> Capture<TArg, TArg1>(
-			Action<TArg, TArg1> task)
-		{
-			var ctx = ForkAmbient();
-			return (a, a1) =>
-			{
-				using (EnsureAmbient(ctx))
-				{
-					try
-					{
-						task(a, a1);
-					}
-					catch (Exception e)
-					{
-						NotifyUncaughtException(task.Target, e);
+    /// <summary>
+    ///   Creates an action that restores the ambient context around the specified task.
+    /// </summary>
+    /// <param name="task"></param>
+    /// <returns></returns>
+    public static Action<TArg> Capture<TArg>(Action<TArg> task)
+    {
+      var ctx = ForkAmbient();
+      return a =>
+      {
+        using (EnsureAmbient(ctx))
+        {
+          try
+          {
+            task(a);
+          }
+          catch (Exception e)
+          {
+            NotifyUncaughtException(task.Target, e);
             throw;
-					}
-				}
-			};
-		}
+          }
+        }
+      };
+    }
 
-		/// <summary>
-		/// Creates an action that restores the ambient context around the specified task.
-		/// </summary>
-		/// <param name="task"></param>
-		/// <returns></returns>
-		public static Action<TArg, TArg1, TArg2> Capture<TArg, TArg1, TArg2>(
-			Action<TArg, TArg1, TArg2> task)
-		{
-			var ctx = ForkAmbient();
-			return (a, a1, a2) =>
-			{
-				using (EnsureAmbient(ctx))
-				{
-					try
-					{
-						task(a, a1, a2);
-					}
-					catch (Exception e)
-					{
-						NotifyUncaughtException(task.Target, e);
+    /// <summary>
+    ///   Creates an action that restores the ambient context around the specified task.
+    /// </summary>
+    /// <param name="task"></param>
+    /// <returns></returns>
+    public static Action<TArg, TArg1> Capture<TArg, TArg1>(
+      Action<TArg, TArg1> task)
+    {
+      var ctx = ForkAmbient();
+      return (a, a1) =>
+      {
+        using (EnsureAmbient(ctx))
+        {
+          try
+          {
+            task(a, a1);
+          }
+          catch (Exception e)
+          {
+            NotifyUncaughtException(task.Target, e);
             throw;
-					}
-				}
-			};
-		}
+          }
+        }
+      };
+    }
 
-		/// <summary>
-		/// Creates an action that restores the ambient context around the specified task.
-		/// </summary>
-		/// <param name="task"></param>
-		/// <returns></returns>
-		public static Action<TArg, TArg1, TArg2, TArg3> Capture<TArg, TArg1, TArg2, TArg3>(
-			Action<TArg, TArg1, TArg2, TArg3> task)
-		{
-			var ctx = ForkAmbient();
-			return (a, a1, a2, a3) =>
-			{
-				using (EnsureAmbient(ctx))
-				{
-					try
-					{
-						task(a, a1, a2, a3);
-					}
-					catch (Exception e)
-					{
-						NotifyUncaughtException(task.Target, e);
+    /// <summary>
+    ///   Creates an action that restores the ambient context around the specified task.
+    /// </summary>
+    /// <param name="task"></param>
+    /// <returns></returns>
+    public static Action<TArg, TArg1, TArg2> Capture<TArg, TArg1, TArg2>(
+      Action<TArg, TArg1, TArg2> task)
+    {
+      var ctx = ForkAmbient();
+      return (a, a1, a2) =>
+      {
+        using (EnsureAmbient(ctx))
+        {
+          try
+          {
+            task(a, a1, a2);
+          }
+          catch (Exception e)
+          {
+            NotifyUncaughtException(task.Target, e);
             throw;
-					}
-				}
-			};
-		}
+          }
+        }
+      };
+    }
 
-		/// <summary>
-		/// Creates an action that restores the ambient context around the specified task.
-		/// </summary>
-		/// <param name="task"></param>
-		/// <returns></returns>
-		public static Action<TArg, TArg1, TArg2, TArg3, TArg4> Capture<TArg, TArg1, TArg2, TArg3, TArg4>(
-			Action<TArg, TArg1, TArg2, TArg3, TArg4> task)
-		{
-			var ctx = ForkAmbient();
-			return (a, a1, a2, a3, a4) =>
-			{
-				using (EnsureAmbient(ctx))
-				{
-					try
-					{
-						task(a, a1, a2, a3, a4);
-					}
-					catch (Exception e)
-					{
-						NotifyUncaughtException(task.Target, e);
+    /// <summary>
+    ///   Creates an action that restores the ambient context around the specified task.
+    /// </summary>
+    /// <param name="task"></param>
+    /// <returns></returns>
+    public static Action<TArg, TArg1, TArg2, TArg3> Capture<TArg, TArg1, TArg2, TArg3>(
+      Action<TArg, TArg1, TArg2, TArg3> task)
+    {
+      var ctx = ForkAmbient();
+      return (a, a1, a2, a3) =>
+      {
+        using (EnsureAmbient(ctx))
+        {
+          try
+          {
+            task(a, a1, a2, a3);
+          }
+          catch (Exception e)
+          {
+            NotifyUncaughtException(task.Target, e);
             throw;
-					}
-				}
-			};
-		}
+          }
+        }
+      };
+    }
 
-		/// <summary>
-		/// Creates an action that restores the ambient context around the specified task.
-		/// </summary>
-		/// <param name="task"></param>
-		/// <returns></returns>
-		public static Action<TArg, TArg1, TArg2, TArg3, TArg4, TArg5> Capture<TArg, TArg1, TArg2, TArg3, TArg4, TArg5>(
-			Action<TArg, TArg1, TArg2, TArg3, TArg4, TArg5> task)
-		{
-			var ctx = ForkAmbient();
-			return (a, a1, a2, a3, a4, a5) =>
-			{
-				using (EnsureAmbient(ctx))
-				{
-					try
-					{
-						task(a, a1, a2, a3, a4, a5);
-					}
-					catch (Exception e)
-					{
-						NotifyUncaughtException(task.Target, e);
+    /// <summary>
+    ///   Creates an action that restores the ambient context around the specified task.
+    /// </summary>
+    /// <param name="task"></param>
+    /// <returns></returns>
+    public static Action<TArg, TArg1, TArg2, TArg3, TArg4> Capture<TArg, TArg1, TArg2, TArg3, TArg4>(
+      Action<TArg, TArg1, TArg2, TArg3, TArg4> task)
+    {
+      var ctx = ForkAmbient();
+      return (a, a1, a2, a3, a4) =>
+      {
+        using (EnsureAmbient(ctx))
+        {
+          try
+          {
+            task(a, a1, a2, a3, a4);
+          }
+          catch (Exception e)
+          {
+            NotifyUncaughtException(task.Target, e);
             throw;
-					}
-				}
-			};
-		}
+          }
+        }
+      };
+    }
 
-		/// <summary>
-		/// Creates an action that restores the ambient context around the specified task.
-		/// </summary>
-		/// <param name="task"></param>
-		/// <returns></returns>
-		public static Action<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6> Capture<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>(
-			Action<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6> task)
-		{
-			var ctx = ForkAmbient();
-			return (a, a1, a2, a3, a4, a5, a6) =>
-			{
-				using (EnsureAmbient(ctx))
-				{
-					try
-					{
-						task(a, a1, a2, a3, a4, a5, a6);
-					}
-					catch (Exception e)
-					{
-						NotifyUncaughtException(task.Target, e);
+    /// <summary>
+    ///   Creates an action that restores the ambient context around the specified task.
+    /// </summary>
+    /// <param name="task"></param>
+    /// <returns></returns>
+    public static Action<TArg, TArg1, TArg2, TArg3, TArg4, TArg5> Capture<TArg, TArg1, TArg2, TArg3, TArg4, TArg5>(
+      Action<TArg, TArg1, TArg2, TArg3, TArg4, TArg5> task)
+    {
+      var ctx = ForkAmbient();
+      return (a, a1, a2, a3, a4, a5) =>
+      {
+        using (EnsureAmbient(ctx))
+        {
+          try
+          {
+            task(a, a1, a2, a3, a4, a5);
+          }
+          catch (Exception e)
+          {
+            NotifyUncaughtException(task.Target, e);
             throw;
-					} 
-				}
-			};
-		}
+          }
+        }
+      };
+    }
 
-		/// <summary>
-		/// Creates an action that restores the ambient context around the specified task.
-		/// </summary>
-		/// <param name="task"></param>
-		/// <returns></returns>
-		public static Action<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7> Capture<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>(
-			Action<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7> task)
-		{
-			var ctx = ForkAmbient();
-			return (a, a1, a2, a3, a4, a5, a6, a7) =>
-			{
-				using (EnsureAmbient(ctx))
-				{
-					try
-					{
-						task(a, a1, a2, a3, a4, a5, a6, a7);
-					}
-					catch (Exception e)
-					{
-						NotifyUncaughtException(task.Target, e);
+    /// <summary>
+    ///   Creates an action that restores the ambient context around the specified task.
+    /// </summary>
+    /// <param name="task"></param>
+    /// <returns></returns>
+    public static Action<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6> Capture
+      <TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>(
+      Action<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6> task)
+    {
+      var ctx = ForkAmbient();
+      return (a, a1, a2, a3, a4, a5, a6) =>
+      {
+        using (EnsureAmbient(ctx))
+        {
+          try
+          {
+            task(a, a1, a2, a3, a4, a5, a6);
+          }
+          catch (Exception e)
+          {
+            NotifyUncaughtException(task.Target, e);
             throw;
-					}
-				}
-			};
-		}
+          }
+        }
+      };
+    }
 
-		/// <summary>
-		/// Creates an action that restores the ambient context around the specified task.
-		/// </summary>
-		/// <param name="task"></param>
-		/// <returns></returns>
-		public static Action<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8> Capture<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>(
-			Action<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8> task)
-		{
-			var ctx = ForkAmbient();
-			return (a, a1, a2, a3, a4, a5, a6, a7, a8) =>
-			{
-				using (EnsureAmbient(ctx))
-				{
-					try
-					{
-						task(a, a1, a2, a3, a4, a5, a6, a7, a8);
-					}
-					catch (Exception e)
-					{
-						NotifyUncaughtException(task.Target, e);
+    /// <summary>
+    ///   Creates an action that restores the ambient context around the specified task.
+    /// </summary>
+    /// <param name="task"></param>
+    /// <returns></returns>
+    public static Action<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7> Capture
+      <TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7>(
+      Action<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7> task)
+    {
+      var ctx = ForkAmbient();
+      return (a, a1, a2, a3, a4, a5, a6, a7) =>
+      {
+        using (EnsureAmbient(ctx))
+        {
+          try
+          {
+            task(a, a1, a2, a3, a4, a5, a6, a7);
+          }
+          catch (Exception e)
+          {
+            NotifyUncaughtException(task.Target, e);
             throw;
-					}
-				}
-			};
-		}
+          }
+        }
+      };
+    }
 
-		/// <summary>
-		/// Creates an action that restores the ambient context around the specified task.
-		/// </summary>
-		/// <param name="task"></param>
-		/// <returns></returns>
-		public static Action<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9> Capture<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9>(Action<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9> task)
-		{
-			var ctx = ForkAmbient();
-			return (a, a1, a2, a3, a4, a5, a6, a7, a8, a9) =>
-			{
-				using (EnsureAmbient(ctx))
-				{
-					try
-					{
-						task(a, a1, a2, a3, a4, a5, a6, a7, a8, a9);
-					}
-					catch (Exception e)
-					{
-						NotifyUncaughtException(task.Target, e);
+    /// <summary>
+    ///   Creates an action that restores the ambient context around the specified task.
+    /// </summary>
+    /// <param name="task"></param>
+    /// <returns></returns>
+    public static Action<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8> Capture
+      <TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>(
+      Action<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8> task)
+    {
+      var ctx = ForkAmbient();
+      return (a, a1, a2, a3, a4, a5, a6, a7, a8) =>
+      {
+        using (EnsureAmbient(ctx))
+        {
+          try
+          {
+            task(a, a1, a2, a3, a4, a5, a6, a7, a8);
+          }
+          catch (Exception e)
+          {
+            NotifyUncaughtException(task.Target, e);
             throw;
-					}
-				}
-			};
-		}
+          }
+        }
+      };
+    }
 
-		/// <summary>
-		/// Creates an action that restores the ambient context around the specified task.
-		/// </summary>
-		/// <param name="task"></param>
-		/// <returns></returns>
-		public static Func<TResult> Capture<TResult>(
-			Func<TResult> task)
-		{
-			var ctx = ForkAmbient();
-			return () =>
-			{
-				using (EnsureAmbient(ctx))
-				{
-					return task();
-				}
-			};
-		}
+    /// <summary>
+    ///   Creates an action that restores the ambient context around the specified task.
+    /// </summary>
+    /// <param name="task"></param>
+    /// <returns></returns>
+    public static Action<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9> Capture
+      <TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9>(
+      Action<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9> task)
+    {
+      var ctx = ForkAmbient();
+      return (a, a1, a2, a3, a4, a5, a6, a7, a8, a9) =>
+      {
+        using (EnsureAmbient(ctx))
+        {
+          try
+          {
+            task(a, a1, a2, a3, a4, a5, a6, a7, a8, a9);
+          }
+          catch (Exception e)
+          {
+            NotifyUncaughtException(task.Target, e);
+            throw;
+          }
+        }
+      };
+    }
 
-		/// <summary>
-		/// Creates an action that restores the ambient context around the specified task.
-		/// </summary>
-		/// <param name="task"></param>
-		/// <returns></returns>
-		public static Func<TArg, TResult> Capture<TArg, TResult>(
-			Func<TArg, TResult> task)
-		{
-			var ctx = ForkAmbient();
-			return a =>
-			{
-				using (EnsureAmbient(ctx))
-				{
-					return task(a);
-				}
-			};
-		}
+    /// <summary>
+    ///   Creates an action that restores the ambient context around the specified task.
+    /// </summary>
+    /// <param name="task"></param>
+    /// <returns></returns>
+    public static Func<TResult> Capture<TResult>(
+      Func<TResult> task)
+    {
+      var ctx = ForkAmbient();
+      return () =>
+      {
+        using (EnsureAmbient(ctx))
+        {
+          return task();
+        }
+      };
+    }
 
-		/// <summary>
-		/// Creates an action that restores the ambient context around the specified task.
-		/// </summary>
-		/// <param name="task"></param>
-		/// <returns></returns>
-		public static Func<TArg, TArg1, TResult> Capture<TArg, TArg1, TResult>(
-			Func<TArg, TArg1, TResult> task)
-		{
-			var ctx = ForkAmbient();
-			return (a, a1) =>
-			{
-				using (EnsureAmbient(ctx))
-				{
-					return task(a, a1);
-				}
-			};
-		}
+    /// <summary>
+    ///   Creates an action that restores the ambient context around the specified task.
+    /// </summary>
+    /// <param name="task"></param>
+    /// <returns></returns>
+    public static Func<TArg, TResult> Capture<TArg, TResult>(
+      Func<TArg, TResult> task)
+    {
+      var ctx = ForkAmbient();
+      return a =>
+      {
+        using (EnsureAmbient(ctx))
+        {
+          return task(a);
+        }
+      };
+    }
 
-		/// <summary>
-		/// Creates an action that restores the ambient context around the specified task.
-		/// </summary>
-		/// <param name="task"></param>
-		/// <returns></returns>
-		public static Func<TArg, TArg1, TArg2, TResult> Capture<TArg, TArg1, TArg2, TResult>(
-			Func<TArg, TArg1, TArg2, TResult> task)
-		{
-			var ctx = ForkAmbient();
-			return (a, a1, a2) =>
-			{
-				using (EnsureAmbient(ctx))
-				{
-					return task(a, a1, a2);
-				}
-			};
-		}
+    /// <summary>
+    ///   Creates an action that restores the ambient context around the specified task.
+    /// </summary>
+    /// <param name="task"></param>
+    /// <returns></returns>
+    public static Func<TArg, TArg1, TResult> Capture<TArg, TArg1, TResult>(
+      Func<TArg, TArg1, TResult> task)
+    {
+      var ctx = ForkAmbient();
+      return (a, a1) =>
+      {
+        using (EnsureAmbient(ctx))
+        {
+          return task(a, a1);
+        }
+      };
+    }
 
-		/// <summary>
-		/// Creates an action that restores the ambient context around the specified task.
-		/// </summary>
-		/// <param name="task"></param>
-		/// <returns></returns>
-		public static Func<TArg, TArg1, TArg2, TArg3, TResult> Capture<TArg, TArg1, TArg2, TArg3, TResult>(
-			Func<TArg, TArg1, TArg2, TArg3, TResult> task)
-		{
-			var ctx = ForkAmbient();
-			return (a, a1, a2, a3) =>
-			{
-				using (EnsureAmbient(ctx))
-				{
-					return task(a, a1, a2, a3);
-				}
-			};
-		}
+    /// <summary>
+    ///   Creates an action that restores the ambient context around the specified task.
+    /// </summary>
+    /// <param name="task"></param>
+    /// <returns></returns>
+    public static Func<TArg, TArg1, TArg2, TResult> Capture<TArg, TArg1, TArg2, TResult>(
+      Func<TArg, TArg1, TArg2, TResult> task)
+    {
+      var ctx = ForkAmbient();
+      return (a, a1, a2) =>
+      {
+        using (EnsureAmbient(ctx))
+        {
+          return task(a, a1, a2);
+        }
+      };
+    }
 
-		/// <summary>
-		/// Creates an action that restores the ambient context around the specified task.
-		/// </summary>
-		/// <param name="task"></param>
-		/// <returns></returns>
-		public static Func<TArg, TArg1, TArg2, TArg3, TArg4, TResult> Capture<TArg, TArg1, TArg2, TArg3, TArg4, TResult>(
-			Func<TArg, TArg1, TArg2, TArg3, TArg4, TResult> task)
-		{
-			var ctx = ForkAmbient();
-			return (a, a1, a2, a3, a4) =>
-			{
-				using (EnsureAmbient(ctx))
-				{
-					return task(a, a1, a2, a3, a4);
-				}
-			};
-		}
+    /// <summary>
+    ///   Creates an action that restores the ambient context around the specified task.
+    /// </summary>
+    /// <param name="task"></param>
+    /// <returns></returns>
+    public static Func<TArg, TArg1, TArg2, TArg3, TResult> Capture<TArg, TArg1, TArg2, TArg3, TResult>(
+      Func<TArg, TArg1, TArg2, TArg3, TResult> task)
+    {
+      var ctx = ForkAmbient();
+      return (a, a1, a2, a3) =>
+      {
+        using (EnsureAmbient(ctx))
+        {
+          return task(a, a1, a2, a3);
+        }
+      };
+    }
 
-		/// <summary>
-		/// Creates an action that restores the ambient context around the specified task.
-		/// </summary>
-		/// <param name="task"></param>
-		/// <returns></returns>
-		public static Func<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TResult> Capture<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TResult>(
-			Func<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TResult> task)
-		{
-			var ctx = ForkAmbient();
-			return (a, a1, a2, a3, a4, a5) =>
-			{
-				using (EnsureAmbient(ctx))
-				{
-					return task(a, a1, a2, a3, a4, a5);
-				}
-			};
-		}
+    /// <summary>
+    ///   Creates an action that restores the ambient context around the specified task.
+    /// </summary>
+    /// <param name="task"></param>
+    /// <returns></returns>
+    public static Func<TArg, TArg1, TArg2, TArg3, TArg4, TResult> Capture<TArg, TArg1, TArg2, TArg3, TArg4, TResult>(
+      Func<TArg, TArg1, TArg2, TArg3, TArg4, TResult> task)
+    {
+      var ctx = ForkAmbient();
+      return (a, a1, a2, a3, a4) =>
+      {
+        using (EnsureAmbient(ctx))
+        {
+          return task(a, a1, a2, a3, a4);
+        }
+      };
+    }
 
-		/// <summary>
-		/// Creates an action that restores the ambient context around the specified task.
-		/// </summary>
-		/// <param name="task"></param>
-		/// <returns></returns>
-		public static Func<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TResult> Capture<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TResult>(
-			Func<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TResult> task)
-		{
-			var ctx = ForkAmbient();
-			return (a, a1, a2, a3, a4, a5, a6) =>
-			{
-				using (EnsureAmbient(ctx))
-				{
-					return task(a, a1, a2, a3, a4, a5, a6);
-				}
-			};
-		}
+    /// <summary>
+    ///   Creates an action that restores the ambient context around the specified task.
+    /// </summary>
+    /// <param name="task"></param>
+    /// <returns></returns>
+    public static Func<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TResult> Capture
+      <TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TResult>(
+      Func<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TResult> task)
+    {
+      var ctx = ForkAmbient();
+      return (a, a1, a2, a3, a4, a5) =>
+      {
+        using (EnsureAmbient(ctx))
+        {
+          return task(a, a1, a2, a3, a4, a5);
+        }
+      };
+    }
 
-		/// <summary>
-		/// Creates an action that restores the ambient context around the specified task.
-		/// </summary>
-		/// <param name="task"></param>
-		/// <returns></returns>
-		public static Func<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TResult> Capture<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TResult>(
-			Func<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TResult> task)
-		{
-			var ctx = ForkAmbient();
-			return (a, a1, a2, a3, a4, a5, a6, a7) =>
-			{
-				using (EnsureAmbient(ctx))
-				{
-					return task(a, a1, a2, a3, a4, a5, a6, a7);
-				}
-			};
-		}
+    /// <summary>
+    ///   Creates an action that restores the ambient context around the specified task.
+    /// </summary>
+    /// <param name="task"></param>
+    /// <returns></returns>
+    public static Func<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TResult> Capture
+      <TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TResult>(
+      Func<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TResult> task)
+    {
+      var ctx = ForkAmbient();
+      return (a, a1, a2, a3, a4, a5, a6) =>
+      {
+        using (EnsureAmbient(ctx))
+        {
+          return task(a, a1, a2, a3, a4, a5, a6);
+        }
+      };
+    }
 
-		/// <summary>
-		/// Creates an action that restores the ambient context around the specified task.
-		/// </summary>
-		/// <param name="task"></param>
-		/// <returns></returns>
-		public static Func<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TResult> Capture<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TResult>(
-			Func<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TResult> task)
-		{
-			var ctx = ForkAmbient();
-			return (a, a1, a2, a3, a4, a5, a6, a7, a8) =>
-			{
-				using (EnsureAmbient(ctx))
-				{
-					return task(a, a1, a2, a3, a4, a5, a6, a7, a8);
-				}
-			};
-		}
+    /// <summary>
+    ///   Creates an action that restores the ambient context around the specified task.
+    /// </summary>
+    /// <param name="task"></param>
+    /// <returns></returns>
+    public static Func<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TResult> Capture
+      <TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TResult>(
+      Func<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TResult> task)
+    {
+      var ctx = ForkAmbient();
+      return (a, a1, a2, a3, a4, a5, a6, a7) =>
+      {
+        using (EnsureAmbient(ctx))
+        {
+          return task(a, a1, a2, a3, a4, a5, a6, a7);
+        }
+      };
+    }
 
-		/// <summary>
-		/// Creates an action that restores the ambient context around the specified task.
-		/// </summary>
-		/// <param name="task"></param>
-		/// <returns></returns>
-		public static Func<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TResult> Capture<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TResult>(
-			Func<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TResult> task)
-		{
-			var ctx = ForkAmbient();
-			return (a, a1, a2, a3, a4, a5, a6, a7, a8, a9) =>
-			{
-				using (EnsureAmbient(ctx))
-				{
-					return task(a, a1, a2, a3, a4, a5, a6, a7, a8, a9);
-				}
-			};
-		}
+    /// <summary>
+    ///   Creates an action that restores the ambient context around the specified task.
+    /// </summary>
+    /// <param name="task"></param>
+    /// <returns></returns>
+    public static Func<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TResult> Capture
+      <TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TResult>(
+      Func<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TResult> task)
+    {
+      var ctx = ForkAmbient();
+      return (a, a1, a2, a3, a4, a5, a6, a7, a8) =>
+      {
+        using (EnsureAmbient(ctx))
+        {
+          return task(a, a1, a2, a3, a4, a5, a6, a7, a8);
+        }
+      };
+    }
 
-	  ContextFlow(bool independent)
-	  {
-		  if (!independent)
-		  {
-			  Ambient.Push(this);
-		  }
-	  }
+    /// <summary>
+    ///   Creates an action that restores the ambient context around the specified task.
+    /// </summary>
+    /// <param name="task"></param>
+    /// <returns></returns>
+    public static Func<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TResult> Capture
+      <TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TResult>(
+      Func<TArg, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TResult> task)
+    {
+      var ctx = ForkAmbient();
+      return (a, a1, a2, a3, a4, a5, a6, a7, a8, a9) =>
+      {
+        using (EnsureAmbient(ctx))
+        {
+          return task(a, a1, a2, a3, a4, a5, a6, a7, a8, a9);
+        }
+      };
+    }
 
-		/// <summary>
-		/// </summary>
-		/// <param name="contexts"></param>
-		public ContextFlow(List<Tuple<IContextFlowProvider, object>> contexts)
-			: this(true)
-		{
-			this._contexts = contexts;
-		}
+    ContextFlow(bool independent)
+    {
+      if (!independent)
+      {
+        Ambient.Push(this);
+      }
+    }
+
+    /// <summary>
+    /// </summary>
+    /// <param name="contexts"></param>
+    public ContextFlow(List<Tuple<IContextFlowProvider, object>> contexts)
+      : this(true)
+    {
+      this._contexts = contexts;
+    }
 
     /// <summary>
     ///   Performs the disposal.
@@ -557,9 +565,8 @@ namespace FlitBit.Core.Parallel
     /// </returns>
     protected override bool PerformDispose(bool disposing)
     {
-
       if (disposing && !Ambient.TryPop(this))
-      {   
+      {
         const string message = "Unchained context disposed!";
         try
         {
@@ -609,14 +616,14 @@ namespace FlitBit.Core.Parallel
       }
       if (disposing)
       {
-        foreach(var tpl in _contexts)
+        foreach (var tpl in _contexts)
         {
-	        tpl.Item1.Detach(this, tpl.Item2);
+          tpl.Item1.Detach(this, tpl.Item2);
         }
       }
       return true;
     }
-    
+
     /// <summary>
     ///   Attaches the given context to the current thread.
     /// </summary>
@@ -629,53 +636,51 @@ namespace FlitBit.Core.Parallel
         Ambient.Attach(ambient);
         return ambient;
       }
-	    return null;
+      return null;
     }
 
-		private void Attach()
-		{
-
-			foreach (var tpl in _contexts)
-			{
-				tpl.Item1.Attach(this, tpl.Item2);
-			}
-		}
-
-	  /// <summary>
-	  ///   Prepares a copy of the context for use in thread-pool and background threads.
-	  /// </summary>
-	  /// <returns>an instance suitable for use as a background thread's ambient context</returns>
-	  public static ContextFlow ForkAmbient()
-	  {
-			var contexts = (from provider in Providers let key = provider.Capture() where key != null select Tuple.Create(provider, key)).ToList();
-			return new ContextFlow(contexts);
-	  }
-
-	  internal static class Ambient
+    void Attach()
     {
-	    const string CallContextKey = "FlitBitAmbientContextFlowKey";
-      [ThreadStatic] static Stack<ContextFlow> __stack;
+      foreach (var tpl in _contexts)
+      {
+        tpl.Item1.Attach(this, tpl.Item2);
+      }
+    }
+
+    /// <summary>
+    ///   Prepares a copy of the context for use in thread-pool and background threads.
+    /// </summary>
+    /// <returns>an instance suitable for use as a background thread's ambient context</returns>
+    public static ContextFlow ForkAmbient()
+    {
+      var contexts =
+        (from provider in Providers let key = provider.Capture() where key != null select Tuple.Create(provider, key))
+          .ToList();
+      return new ContextFlow(contexts);
+    }
+
+    internal static class Ambient
+    {
+      const string CallContextKey = "FlitBitAmbientContextFlowKey";
 
       internal static ContextFlow Push(ContextFlow ambient)
       {
-        // .net 4.0 TPL doesn't flow the call context well so we'll keep track ourselves...
-        var stack = __stack; //(Stack<ContextFlow>) CallContext.LogicalGetData(CallContextKey);
-				if (stack == null)
+        var stack = (Stack<ContextFlow>) CallContext.LogicalGetData(CallContextKey);
+        if (stack == null)
         {
-					__stack = stack = new Stack<ContextFlow>();
-	        //CallContext.LogicalSetData(CallContextKey, stack);
+          CallContext.LogicalSetData(CallContextKey, stack = new Stack<ContextFlow>());
         }
-				stack.Push(ambient);
+        stack.Push(ambient);
         return ambient;
       }
 
       internal static bool TryPeek(out ContextFlow ambient)
       {
-        var stack = __stack; // (Stack<ContextFlow>) CallContext.LogicalGetData(CallContextKey);
-				if (stack != null
-						&& stack.Count > 0)
+        var stack = (Stack<ContextFlow>)CallContext.LogicalGetData(CallContextKey);
+        if (stack != null
+            && stack.Count > 0)
         {
-					ambient = stack.Peek();
+          ambient = stack.Peek();
           return true;
         }
         ambient = default(ContextFlow);
@@ -684,8 +689,8 @@ namespace FlitBit.Core.Parallel
 
       internal static bool TryPop(ContextFlow comparand)
       {
-        var stack = __stack; // (Stack<ContextFlow>)CallContext.LogicalGetData(CallContextKey);
-				if (comparand != null
+        var stack = (Stack<ContextFlow>)CallContext.LogicalGetData(CallContextKey);
+        if (comparand != null
             && stack != null
             && stack.Count > 0)
         {
@@ -701,43 +706,46 @@ namespace FlitBit.Core.Parallel
 
       internal static ContextFlow Attach(ContextFlow ambient)
       {
-        // .net 4.0 TPL doesn't flow the call context well so we'll keep track ourselves...
-        var stack = __stack; //(Stack<ContextFlow>) CallContext.LogicalGetData(CallContextKey);
+        var stack = (Stack<ContextFlow>)CallContext.LogicalGetData(CallContextKey);
         if (stack == null)
         {
-          __stack = stack = new Stack<ContextFlow>();
-          //CallContext.LogicalSetData(CallContextKey, stack);
+          stack = new Stack<ContextFlow>();
+          CallContext.LogicalSetData(CallContextKey, stack);
         }
-        if (stack.Count > 0) throw new InvalidOperationException("ContextFlow detected a context being attached over the top of an existing context");
+        if (stack.Count > 0)
+        {
+          throw new InvalidOperationException(
+            "ContextFlow detected a context being attached over the top of an existing context");
+        }
         ambient.Attach();
         stack.Push(ambient);
         return ambient;
       }
     }
 
-	  /// <summary>
-	  /// Gets the current context flow if one exists.
-	  /// </summary>
-	  public static ContextFlow Current
-	  {
-		  get
-		  {
-			  ContextFlow res;
-			  Ambient.TryPeek(out res);
-			  return res;
-		  }
-	  }
+    /// <summary>
+    ///   Gets the current context flow if one exists.
+    /// </summary>
+    public static ContextFlow Current
+    {
+      get
+      {
+        ContextFlow res;
+        Ambient.TryPeek(out res);
+        return res;
+      }
+    }
 
-	  private static readonly ConcurrentBag<IContextFlowProvider> Providers = new ConcurrentBag<IContextFlowProvider>();
-		readonly List<Tuple<IContextFlowProvider, object>> _contexts; 
+    static readonly ConcurrentBag<IContextFlowProvider> Providers = new ConcurrentBag<IContextFlowProvider>();
+    readonly List<Tuple<IContextFlowProvider, object>> _contexts;
 
-		/// <summary>
-		/// Registers a context flow provider.
-		/// </summary>
-		/// <param name="provider">the provider</param>
-		public static void RegisterProvider(IContextFlowProvider provider)
-		{
-			Providers.Add(provider);
-		}
-	}
+    /// <summary>
+    ///   Registers a context flow provider.
+    /// </summary>
+    /// <param name="provider">the provider</param>
+    public static void RegisterProvider(IContextFlowProvider provider)
+    {
+      Providers.Add(provider);
+    }
+  }
 }

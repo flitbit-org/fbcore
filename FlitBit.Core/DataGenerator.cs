@@ -250,18 +250,23 @@ namespace FlitBit.Core
     }
 
     /// <summary>
-    ///   Gets a random DateTime value.
+    ///   Gets a random DateTimeOffset value.
     /// </summary>
     /// <returns>the value</returns>
     public DateTimeOffset GetDateTimeOffset()
     {
+      var maxOffset = TimeSpan.FromHours(14)
+                              .Ticks;
       var ticks = GetInt64();
       if (ticks < 0)
       {
         ticks = Math.Abs(ticks);
       }
-      ticks = ticks % (DateTime.MaxValue.Ticks - TimeSpan.FromHours(14)
-                                                         .Ticks);
+      if (ticks < maxOffset)
+      {
+        ticks = maxOffset;
+      }
+      ticks = ticks % (DateTime.MaxValue.Ticks - maxOffset);
       var offsetHours = Math.Abs(GetInt32()) % 14;
       var offsetMinutes = TimeOffsetMinutes[Math.Abs(GetInt32()) % TimeOffsetMinutes.Length];
       var offset = TimeSpan.FromHours(GetBoolean() ? offsetHours : -offsetHours);
