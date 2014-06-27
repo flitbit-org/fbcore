@@ -59,9 +59,9 @@ namespace FlitBit.Core
 				return null;
 			}
 
-			public void Attach(ContextFlow context, object captureKey)
+			public object Attach(ContextFlow context, object capture)
 			{
-				var scope = (captureKey as CleanupScope);
+				var scope = (capture as CleanupScope);
 				if (scope != null)
 				{
 					if (__scopes == null)
@@ -74,6 +74,7 @@ namespace FlitBit.Core
 					}
 					__scopes.Push(scope);
 				}
+			  return scope;
 			}
 
 			private void ReportAndClearOrphanedScopes(Stack<CleanupScope> scopes)
@@ -81,9 +82,9 @@ namespace FlitBit.Core
 				scopes.Clear();
 			}
 
-			public void Detach(ContextFlow context, object captureKey)
+			public void Detach(ContextFlow context, object attachment, Exception err)
 			{
-				var scope = (captureKey as CleanupScope);
+				var scope = (attachment as CleanupScope);
 				if (scope != null)
 				{
 					scope.Dispose();

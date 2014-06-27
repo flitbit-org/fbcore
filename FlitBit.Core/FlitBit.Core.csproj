@@ -204,6 +204,7 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <Compile Include="Status.cs" />
+    <Compile Include="TaskExtensions.cs" />
     <Compile Include="TypeLocks.cs" />
     <Compile Include="Util.cs" />
     <Compile Include="WeakReference.cs" />

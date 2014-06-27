@@ -1,8 +1,6 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-using FlitBit.Core.Parallel;
+﻿using FlitBit.Core.Parallel;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+using System.Threading.Tasks;
 
 namespace FlitBit.Core.Tests.Parallel
 {

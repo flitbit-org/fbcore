@@ -64,7 +64,7 @@ namespace FlitBit.Core.Parallel
       var ctx = ForkAmbient();
       return () =>
       {
-        using (EnsureAmbient(ctx))
+        using (var inner = EnsureAmbient(ctx))
         {
           try
           {
@@ -72,12 +72,18 @@ namespace FlitBit.Core.Parallel
           }
           catch (Exception e)
           {
+            inner.AmbientException = e;
             NotifyUncaughtException(task.Target, e);
             throw;
           }
         }
       };
     }
+
+    /// <summary>
+    /// An uncaught exception observed by the context.
+    /// </summary>
+    public Exception AmbientException { get; private set; }
 
     /// <summary>
     ///   Creates an action that restores the ambient context around the specified task.
@@ -89,7 +95,7 @@ namespace FlitBit.Core.Parallel
       var ctx = ForkAmbient();
       return a =>
       {
-        using (EnsureAmbient(ctx))
+        using (var inner = EnsureAmbient(ctx))
         {
           try
           {
@@ -97,6 +103,7 @@ namespace FlitBit.Core.Parallel
           }
           catch (Exception e)
           {
+            inner.AmbientException = e;
             NotifyUncaughtException(task.Target, e);
             throw;
           }
@@ -115,7 +122,7 @@ namespace FlitBit.Core.Parallel
       var ctx = ForkAmbient();
       return (a, a1) =>
       {
-        using (EnsureAmbient(ctx))
+        using (var inner = EnsureAmbient(ctx))
         {
           try
           {
@@ -123,6 +130,7 @@ namespace FlitBit.Core.Parallel
           }
           catch (Exception e)
           {
+            inner.AmbientException = e;
             NotifyUncaughtException(task.Target, e);
             throw;
           }
@@ -141,7 +149,7 @@ namespace FlitBit.Core.Parallel
       var ctx = ForkAmbient();
       return (a, a1, a2) =>
       {
-        using (EnsureAmbient(ctx))
+        using (var inner = EnsureAmbient(ctx))
         {
           try
           {
@@ -149,6 +157,7 @@ namespace FlitBit.Core.Parallel
           }
           catch (Exception e)
           {
+            inner.AmbientException = e;
             NotifyUncaughtException(task.Target, e);
             throw;
           }
@@ -167,7 +176,7 @@ namespace FlitBit.Core.Parallel
       var ctx = ForkAmbient();
       return (a, a1, a2, a3) =>
       {
-        using (EnsureAmbient(ctx))
+        using (var inner = EnsureAmbient(ctx))
         {
           try
           {
@@ -175,6 +184,7 @@ namespace FlitBit.Core.Parallel
           }
           catch (Exception e)
           {
+            inner.AmbientException = e;
             NotifyUncaughtException(task.Target, e);
             throw;
           }
@@ -193,7 +203,7 @@ namespace FlitBit.Core.Parallel
       var ctx = ForkAmbient();
       return (a, a1, a2, a3, a4) =>
       {
-        using (EnsureAmbient(ctx))
+        using (var inner = EnsureAmbient(ctx))
         {
           try
           {
@@ -201,6 +211,7 @@ namespace FlitBit.Core.Parallel
           }
           catch (Exception e)
           {
+            inner.AmbientException = e;
             NotifyUncaughtException(task.Target, e);
             throw;
           }
@@ -219,7 +230,7 @@ namespace FlitBit.Core.Parallel
       var ctx = ForkAmbient();
       return (a, a1, a2, a3, a4, a5) =>
       {
-        using (EnsureAmbient(ctx))
+        using (var inner = EnsureAmbient(ctx))
         {
           try
           {
@@ -227,6 +238,7 @@ namespace FlitBit.Core.Parallel
           }
           catch (Exception e)
           {
+            inner.AmbientException = e;
             NotifyUncaughtException(task.Target, e);
             throw;
           }
@@ -246,7 +258,7 @@ namespace FlitBit.Core.Parallel
       var ctx = ForkAmbient();
       return (a, a1, a2, a3, a4, a5, a6) =>
       {
-        using (EnsureAmbient(ctx))
+        using (var inner = EnsureAmbient(ctx))
         {
           try
           {
@@ -254,6 +266,7 @@ namespace FlitBit.Core.Parallel
           }
           catch (Exception e)
           {
+            inner.AmbientException = e;
             NotifyUncaughtException(task.Target, e);
             throw;
           }
@@ -273,7 +286,7 @@ namespace FlitBit.Core.Parallel
       var ctx = ForkAmbient();
       return (a, a1, a2, a3, a4, a5, a6, a7) =>
       {
-        using (EnsureAmbient(ctx))
+        using (var inner = EnsureAmbient(ctx))
         {
           try
           {
@@ -281,6 +294,7 @@ namespace FlitBit.Core.Parallel
           }
           catch (Exception e)
           {
+            inner.AmbientException = e;
             NotifyUncaughtException(task.Target, e);
             throw;
           }
@@ -300,7 +314,7 @@ namespace FlitBit.Core.Parallel
       var ctx = ForkAmbient();
       return (a, a1, a2, a3, a4, a5, a6, a7, a8) =>
       {
-        using (EnsureAmbient(ctx))
+        using (var inner = EnsureAmbient(ctx))
         {
           try
           {
@@ -308,6 +322,7 @@ namespace FlitBit.Core.Parallel
           }
           catch (Exception e)
           {
+            inner.AmbientException = e;
             NotifyUncaughtException(task.Target, e);
             throw;
           }
@@ -327,7 +342,7 @@ namespace FlitBit.Core.Parallel
       var ctx = ForkAmbient();
       return (a, a1, a2, a3, a4, a5, a6, a7, a8, a9) =>
       {
-        using (EnsureAmbient(ctx))
+        using (var inner = EnsureAmbient(ctx))
         {
           try
           {
@@ -335,6 +350,7 @@ namespace FlitBit.Core.Parallel
           }
           catch (Exception e)
           {
+            inner.AmbientException = e;
             NotifyUncaughtException(task.Target, e);
             throw;
           }
@@ -353,9 +369,18 @@ namespace FlitBit.Core.Parallel
       var ctx = ForkAmbient();
       return () =>
       {
-        using (EnsureAmbient(ctx))
+        using (var inner = EnsureAmbient(ctx))
         {
-          return task();
+          try
+          {
+            return task();
+          }
+          catch (Exception e)
+          {
+            inner.AmbientException = e;
+            NotifyUncaughtException(task.Target, e);
+            throw;
+          }
         }
       };
     }
@@ -371,10 +396,20 @@ namespace FlitBit.Core.Parallel
       var ctx = ForkAmbient();
       return a =>
       {
-        using (EnsureAmbient(ctx))
+        using (var inner = EnsureAmbient(ctx))
         {
-          return task(a);
+          try
+          {
+            return task(a);
+          }
+          catch (Exception e)
+          {
+            inner.AmbientException = e;
+            NotifyUncaughtException(task.Target, e);
+            throw;
+          }
         }
+      
       };
     }
 
@@ -389,10 +424,20 @@ namespace FlitBit.Core.Parallel
       var ctx = ForkAmbient();
       return (a, a1) =>
       {
-        using (EnsureAmbient(ctx))
+        using (var inner = EnsureAmbient(ctx))
         {
-          return task(a, a1);
+          try
+          {
+            return task(a, a1);
+          }
+          catch (Exception e)
+          {
+            inner.AmbientException = e;
+            NotifyUncaughtException(task.Target, e);
+            throw;
+          }
         }
+      
       };
     }
 
@@ -407,10 +452,20 @@ namespace FlitBit.Core.Parallel
       var ctx = ForkAmbient();
       return (a, a1, a2) =>
       {
-        using (EnsureAmbient(ctx))
+        using (var inner = EnsureAmbient(ctx))
         {
-          return task(a, a1, a2);
+          try
+          {
+            return task(a, a1, a2);
+          }
+          catch (Exception e)
+          {
+            inner.AmbientException = e;
+            NotifyUncaughtException(task.Target, e);
+            throw;
+          }
         }
+      
       };
     }
 
@@ -425,10 +480,20 @@ namespace FlitBit.Core.Parallel
       var ctx = ForkAmbient();
       return (a, a1, a2, a3) =>
       {
-        using (EnsureAmbient(ctx))
+        using (var inner = EnsureAmbient(ctx))
         {
-          return task(a, a1, a2, a3);
+          try
+          {
+            return task(a, a1, a2, a3);
+          }
+          catch (Exception e)
+          {
+            inner.AmbientException = e;
+            NotifyUncaughtException(task.Target, e);
+            throw;
+          }
         }
+      
       };
     }
 
@@ -445,7 +510,19 @@ namespace FlitBit.Core.Parallel
       {
         using (EnsureAmbient(ctx))
         {
-          return task(a, a1, a2, a3, a4);
+          using (var inner = EnsureAmbient(ctx))
+          {
+            try
+            {
+              return task(a, a1, a2, a3, a4);
+            }
+            catch (Exception e)
+            {
+              inner.AmbientException = e;
+              NotifyUncaughtException(task.Target, e);
+              throw;
+            }
+          }
         }
       };
     }
@@ -462,9 +539,18 @@ namespace FlitBit.Core.Parallel
       var ctx = ForkAmbient();
       return (a, a1, a2, a3, a4, a5) =>
       {
-        using (EnsureAmbient(ctx))
+        using (var inner = EnsureAmbient(ctx))
         {
-          return task(a, a1, a2, a3, a4, a5);
+          try
+          {
+            return task(a, a1, a2, a3, a4, a5);
+          }
+          catch (Exception e)
+          {
+            inner.AmbientException = e;
+            NotifyUncaughtException(task.Target, e);
+            throw;
+          }
         }
       };
     }
@@ -481,9 +567,18 @@ namespace FlitBit.Core.Parallel
       var ctx = ForkAmbient();
       return (a, a1, a2, a3, a4, a5, a6) =>
       {
-        using (EnsureAmbient(ctx))
+        using (var inner = EnsureAmbient(ctx))
         {
-          return task(a, a1, a2, a3, a4, a5, a6);
+          try
+          {
+            return task(a, a1, a2, a3, a4, a5, a6);
+          }
+          catch (Exception e)
+          {
+            inner.AmbientException = e;
+            NotifyUncaughtException(task.Target, e);
+            throw;
+          }
         }
       };
     }
@@ -500,9 +595,18 @@ namespace FlitBit.Core.Parallel
       var ctx = ForkAmbient();
       return (a, a1, a2, a3, a4, a5, a6, a7) =>
       {
-        using (EnsureAmbient(ctx))
+        using (var inner = EnsureAmbient(ctx))
         {
-          return task(a, a1, a2, a3, a4, a5, a6, a7);
+          try
+          {
+            return task(a, a1, a2, a3, a4, a5, a6, a7);
+          }
+          catch (Exception e)
+          {
+            inner.AmbientException = e;
+            NotifyUncaughtException(task.Target, e);
+            throw;
+          }
         }
       };
     }
@@ -519,9 +623,18 @@ namespace FlitBit.Core.Parallel
       var ctx = ForkAmbient();
       return (a, a1, a2, a3, a4, a5, a6, a7, a8) =>
       {
-        using (EnsureAmbient(ctx))
+        using (var inner = EnsureAmbient(ctx))
         {
-          return task(a, a1, a2, a3, a4, a5, a6, a7, a8);
+          try
+          {
+            return task(a, a1, a2, a3, a4, a5, a6, a7, a8);
+          }
+          catch (Exception e)
+          {
+            inner.AmbientException = e;
+            NotifyUncaughtException(task.Target, e);
+            throw;
+          }
         }
       };
     }
@@ -538,10 +651,20 @@ namespace FlitBit.Core.Parallel
       var ctx = ForkAmbient();
       return (a, a1, a2, a3, a4, a5, a6, a7, a8, a9) =>
       {
-        using (EnsureAmbient(ctx))
+        using (var inner = EnsureAmbient(ctx))
         {
-          return task(a, a1, a2, a3, a4, a5, a6, a7, a8, a9);
+          try
+          {
+            return task(a, a1, a2, a3, a4, a5, a6, a7, a8, a9);
+          }
+          catch (Exception e)
+          {
+            inner.AmbientException = e;
+            NotifyUncaughtException(task.Target, e);
+            throw;
+          }
         }
+
       };
     }
 
@@ -622,9 +745,9 @@ namespace FlitBit.Core.Parallel
       }
       if (disposing)
       {
-        foreach (var tpl in _contexts)
+        foreach (var tpl in _attachments)
         {
-          tpl.Item1.Detach(this, tpl.Item2);
+          tpl.Item1.Detach(this, tpl.Item2, AmbientException);
         }
       }
       return true;
@@ -647,10 +770,8 @@ namespace FlitBit.Core.Parallel
 
     void Attach()
     {
-      foreach (var tpl in _contexts)
-      {
-        tpl.Item1.Attach(this, tpl.Item2);
-      }
+      var attachements = this._contexts.Select(tpl => Tuple.Create(tpl.Item1, tpl.Item1.Attach(this, tpl.Item2))).ToList();
+      _attachments = attachements;
     }
 
     /// <summary>
@@ -744,6 +865,7 @@ namespace FlitBit.Core.Parallel
 
     static readonly ConcurrentBag<IContextFlowProvider> Providers = new ConcurrentBag<IContextFlowProvider>();
     readonly List<Tuple<IContextFlowProvider, object>> _contexts;
+    List<Tuple<IContextFlowProvider, object>> _attachments;
 
     /// <summary>
     ///   Registers a context flow provider.
