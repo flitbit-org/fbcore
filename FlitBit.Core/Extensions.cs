@@ -238,6 +238,63 @@ namespace FlitBit.Core
     }
 
     /// <summary>
+    ///   Gets a member from the expression given.
+    /// </summary>
+    /// <param name="expression"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T1"></typeparam>
+    /// <returns></returns>
+    public static MemberInfo GetMemberFromExpression<T, T1>(this Expression<Func<T, T1, object>> expression)
+    {
+      Contract.Requires<ArgumentNullException>(expression != null);
+
+      var body = expression.Body as MemberExpression;
+      if (body != null)
+      {
+        var memberExpression = body;
+        return memberExpression.Member;
+      }
+      var unaryExpression = (UnaryExpression)expression.Body;
+
+      var operand = unaryExpression.Operand as MemberExpression;
+      if (operand != null)
+      {
+        var memberExpression = operand;
+        return memberExpression.Member;
+      }
+      return null;
+    }
+
+    /// <summary>
+    ///   Gets a member from the expression given.
+    /// </summary>
+    /// <param name="expression"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T1"></typeparam>
+    /// <typeparam name="T3"></typeparam>
+    /// <returns></returns>
+    public static MemberInfo GetMemberFromExpression<T, T1, T3>(this Expression<Func<T, T1, T3, object>> expression)
+    {
+      Contract.Requires<ArgumentNullException>(expression != null);
+
+      var body = expression.Body as MemberExpression;
+      if (body != null)
+      {
+        var memberExpression = body;
+        return memberExpression.Member;
+      }
+      var unaryExpression = (UnaryExpression)expression.Body;
+
+      var operand = unaryExpression.Operand as MemberExpression;
+      if (operand != null)
+      {
+        var memberExpression = operand;
+        return memberExpression.Member;
+      }
+      return null;
+    }
+
+    /// <summary>
     ///   Gets a readable full name. Since this method uses reflection it should be used
     ///   rarely. It was created to supply simpler type names when constructing error messages.
     /// </summary>
