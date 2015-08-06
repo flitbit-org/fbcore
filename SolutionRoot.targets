@@ -3,8 +3,12 @@
   This file prepares the solution-root and imports any solution-level targets
 	for inclusion in the build. It is used during command line execution as well
 	as during Visual Studio builds.
+    
+  WARNING: If you modify this file in the VS environement, you must close and reopen your
+           solution in order for VS to see the changes. It loads the MSBuild project underlying
+           your projects only once!
 -->
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">			
+    <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">			
 	<PropertyGroup>
 		<SolutionDir>$(MSBuildThisFileDirectory.Trim('\\'))</SolutionDir>
 	</PropertyGroup>
@@ -23,7 +27,8 @@
 		<BuildToolsDir>$(SolutionDir)\$(BuildToolsDirOffset)</BuildToolsDir>
 	</PropertyGroup>
 	
-	<Import Project="$(BuildToolsDir).build\BuildTools.targets"/>
+	<Import Condition="Exists('$(BuildToolsDir).build\BuildTools.targets')" 
+            Project="$(BuildToolsDir).build\BuildTools.targets"/>
 
 	<Import Condition="Exists('$(SolutionDir)\VersionRoot.targets')"
 		Project="$(SolutionDir)\VersionRoot.targets" />

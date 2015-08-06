@@ -1,6 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!--
   This file establishes the major, minor and build version numbers for an assembly.
+  
+  WARNING: If you modify this file in the VS environement, you must close and reopen your
+           solution in order for VS to see the changes. VS loads the MSBuild project underlying
+           your projects only once!
+           
+           Releases come from command line driven builds so this shouldn't be an issue.
 -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>

@@ -1,6 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!--
   This file provides version stamps used by the build.
+  
+  WARNING: If you modify this file in the VS environement, you must close and reopen your
+           solution in order for VS to see the changes. It loads the MSBuild project underlying
+           your projects only once!
 -->
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 	<Import Condition="Exists('$(MSBuildThisFileDirectory)Version.targets')" Project="$(MSBuildThisFileDirectory)Version.targets" />

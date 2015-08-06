@@ -1,14 +1,16 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlitBit.Core.Tests", "FlitBit.Core\FlitBit.Core.Tests\FlitBit.Core.Tests.csproj", "{610CE987-E9FC-4EAC-8B81-3F994EE2F5FA}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{13EBF6C7-2446-46D6-B547-22B89CD38BE5}"
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
+		SolutionRoot.targets = SolutionRoot.targets
 		Version.targets = Version.targets
+		VersionRoot.targets = VersionRoot.targets
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlitBit.Core", "FlitBit.Core\FlitBit.Core.csproj", "{1A595799-42B9-4ED3-8715-DD4ACAA9450B}"
